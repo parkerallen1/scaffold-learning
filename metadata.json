@@ -1,0 +1,5 @@
+{
+  "name": "Quiz Master",
+  "description": "An interactive web application that presents questions from a JSON source. Users can have questions read aloud via text-to-speech, work through problems, and submit answers. Progress to the next question is unlocked upon a correct answer.",
+  "requestFramePermissions": []
+}
