@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
+import PasswordGate from './components/PasswordGate';
 import { QUESTIONS } from './constants';
 import { Question } from './types';
 import { speak, generateQuestionsFromImage } from './services/geminiService';
@@ -312,6 +313,7 @@ const App: React.FC = () => {
 
 
   return (
+    <PasswordGate>
     <div className={`relative min-h-screen ${appBackgroundColor} text-gray-800 dark:text-gray-200 flex flex-col items-center justify-center p-4 sm:p-6 md:p-8 font-sans transition-colors duration-300`}>
       {/* Admin Button & Password UI */}
       <div className="absolute top-4 left-4 z-40">
@@ -500,6 +502,7 @@ const App: React.FC = () => {
         </div>
       )}
     </div>
+    </PasswordGate>
   );
 };
 
