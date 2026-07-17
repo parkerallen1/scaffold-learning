@@ -11,8 +11,15 @@ Quiz Master today is a ~700-line React 19 + Vite + Tailwind(CDN) app: one questi
 - Every phase ends with the app fully working and deployable. No phase leaves things half-wired.
 - Preserve the existing visual design exactly unless a task says otherwise. When decomposing `App.tsx`, copy Tailwind classes verbatim.
 
+**Target platform: Chromebooks first.** Students use this primarily on school Chromebooks (Chrome on ChromeOS). This is a favorable target — Chrome supports everything planned (`speechSynthesis` with `onboundary`, `SpeechRecognition`, IndexedDB, canvas) — but it imposes hard requirements:
+- **Touch + stylus:** many Chromebooks are touchscreens/2-in-1s with styluses. The work canvas must use **Pointer Events** (not separate mouse/touch handlers) so finger, stylus, and trackpad all draw correctly, with `touch-action: none` on the canvas to stop page scroll/zoom while drawing.
+- **Small screens:** the common Chromebook display is 1366×768 (and tablet-mode portrait). Every screen must be verified at 1366×768 — the `min-h-[85vh]` card, floating answer box, and canvas must not collide or require scrolling mid-question.
+- **Low-end hardware:** budget Celeron/MediaTek machines. Keep the bundle small (no heavy chart/animation libs), avoid layout-thrashing animations, and prefer CSS transforms.
+- **School-managed devices/networks:** content filters can block unknown domains. All assets must be served from our own Firebase Hosting origin (fonts bundled locally, no CDNs — already planned) and API calls go only to our Firebase project's domains. Audio only ever plays from a user gesture (already the pattern) so autoplay policies never bite.
+- **Per-student ChromeOS logins:** each student's Google login on a Chromebook gets its own Chrome storage, so IndexedDB data is naturally separated per student on shared devices. Caveat: data does **not** follow a student to a different Chromebook — that's the trigger for the optional Firestore sync extension (Phase 3+), noted below.
+
 **Decisions assumed (flag to Parker if wrong):**
-1. **Local-first persistence** via IndexedDB (Dexie). No accounts/login; profiles are device-local. Firestore sync is a possible Phase 3+ extension, not required.
+1. **Local-first persistence** via IndexedDB (Dexie). No accounts/login; profiles are device-local. On school Chromebooks each student's ChromeOS login already isolates storage, so this is safe on shared carts — but data doesn't follow a student across devices. Firestore sync is the Phase 3+ extension if students rotate Chromebooks day to day.
 2. **Gemini key moves behind Firebase Functions** (callable functions). This requires the Firebase **Blaze plan** (pay-as-you-go; effectively free at this usage). If Blaze is a no-go, fallback: keep the client-side key during development and gate the deployed app behind the existing password wall, but treat the key as disposable/rotatable.
 3. **Dual TTS engines:** browser `speechSynthesis` becomes the default (free, offline, and its `onboundary` events enable word-by-word read-along highlighting); Gemini TTS ("Kore") stays as the high-quality voice option (no highlighting).
 
@@ -27,7 +34,7 @@ Quiz Master today is a ~700-line React 19 + Vite + Tailwind(CDN) app: one questi
 - Install Tailwind properly (Tailwind v4 via `@tailwindcss/vite` plugin, or v3 + PostCSS — either is fine): remove the CDN `<script>` and the `aistudiocdn.com` importmap from `index.html`; add React/`@google/genai` as normal bundled deps. Keep `darkMode: 'class'` behavior.
 - Decompose `App.tsx` (509 lines) into components, preserving markup/classes verbatim:
   - `QuestionCard` (question text + speaker + optional data table)
-  - `WorkCanvas` (drawing canvas + Clear; fix: stroke color should be theme-aware so it's visible on the dark canvas `dark:bg-gray-700`)
+  - `WorkCanvas` (drawing canvas + Clear; fix: stroke color should be theme-aware so it's visible on the dark canvas `dark:bg-gray-700`; **rewrite input handling on Pointer Events** with `touch-action: none` so finger/stylus/trackpad all work on Chromebook touchscreens)
   - `AnswerPanel` (the floating frosted input card + Next button)
   - `SettingsPanel` (the current "admin" modal, extended over later phases)
   - `TimerDisplay`, `RewardModal`, `CompletionScreen`, `PasswordGate`, `SpeakerIcon`
@@ -90,6 +97,7 @@ interface Attempt { id: string; profileId: string; quizId: string; questionId: s
 - `npm run dev`: password gate → profile picker → seed quiz plays identically to v1 (TTS, canvas, timer, rewards, backgrounds all work per profile).
 - Upload a worksheet photo → quiz extracts → save to library → **reload the page** → quiz and profile settings are still there.
 - `npm test` green (checkAnswer suite); `npm run build` succeeds with no CDN references; deployed function TTS works with no `GEMINI_API_KEY` string anywhere in `dist/`.
+- **Chromebook check:** at a 1366×768 viewport (Chrome devtools responsive mode, then a real Chromebook if available) the full flow works with no mid-question scrolling; canvas draws with touch and stylus; the entire deployed app loads with devtools request-blocking of all third-party domains enabled (proves no external assets for school filters to break).
 
 ---
 
@@ -118,7 +126,7 @@ interface Attempt { id: string; profileId: string; quizId: string; questionId: s
 
 ### 2.6 Multiple answer modes
 - **Multiple choice rendering:** `answerType: 'multipleChoice'` renders 2–4 large tappable choice buttons in place of the text input (same frosted card styling). `extractQuiz` schema optionally emits choices; settings toggle "convert quiz to multiple choice" asks Gemini to generate distractors for an existing quiz.
-- **Voice answers:** mic button on the answer box using the Web Speech API (`SpeechRecognition`); transcript lands in the input for normal checking. Feature-detect; hide the mic where unsupported (Firefox).
+- **Voice answers:** mic button on the answer box using the Web Speech API (`SpeechRecognition`); transcript lands in the input for normal checking. Feature-detect; hide the mic where unsupported (Firefox). Works in Chrome/ChromeOS — but note school admin policy can disable mic access on managed Chromebooks, so this must degrade gracefully (mic button hidden or showing a friendly "mic not available" note, never an error).
 
 ### 2.7 Focus & pacing
 - **Focus mode** (per profile): hides question counter, gear, and timer chrome — just the question, canvas, and answer box.
@@ -135,7 +143,8 @@ interface Attempt { id: string; profileId: string; quizId: string; questionId: s
 ### Phase 2 verification
 - Read-along: words highlight in sync with browser TTS at 0.75× on a long word problem; Gemini voice still works as the alternate engine.
 - Wrong answer twice → hint ladder appears tier by tier → "Show me" path advances and flags the question; diagnosis sentence appears for a plausible mistake (e.g. answering `100.42` to `25.14 + 76.38` from misaligned decimal addition).
-- Each preset applies its toggles; multiple-choice quiz renders buttons; mic input works in Chrome; visual timer disc shrinks smoothly; all settings persist per profile across reload.
+- Each preset applies its toggles; multiple-choice quiz renders buttons; mic input works in Chrome and degrades gracefully when mic permission is denied; visual timer disc shrinks smoothly; all settings persist per profile across reload.
+- **Chromebook check:** read-along highlighting, chunked reading, and multiple-choice buttons all usable by touch at 1366×768; larger font scales (1.5×) don't break the card layout at that size.
 
 ---
 
@@ -164,6 +173,7 @@ interface Attempt { id: string; profileId: string; quizId: string; questionId: s
 ### 3.6 Progress dashboard
 - New section in the PIN-protected settings area, per profile: accuracy over time (line), time-per-question trend, hints used, needs-review list, weak topics (roll up `attempts` by `question.topic`). Charts with plain SVG or a tiny chart lib — match the existing card styling.
 - "Session recap" card for the student on the completion screen: X correct, best streak, badges (gentle, no grades/percentages in kid view).
+- Charts must stay lightweight (plain SVG preferred) — the dashboard runs on the same low-end Chromebooks.
 
 ### 3.7 Topic-prompt quiz generation
 - In the library: "Generate from topic" — free-text prompt ("10 questions, 5th grade decimal division, word problems") → `generateQuiz(prompt)` function returns full Question objects **including hints, steps, choices, topic, difficulty** in one call. Saves straight to the library.
