@@ -1,0 +1,167 @@
+import { z } from 'zod';
+
+import {
+  classroomIdSchema,
+  epochMillisSchema,
+  studentIdSchema,
+  supportPlanIdSchema,
+  teacherIdSchema,
+} from './ids.js';
+
+export const CORE_SUPPORT_KEYS = ['readAloud', 'readingChunks', 'focusView', 'hintLadder'] as const;
+
+export const SUPPORT_KEYS = [
+  ...CORE_SUPPORT_KEYS,
+  'flexibleResponse',
+  'calmPacing',
+  'breakPrompt',
+] as const;
+
+export const supportKeySchema = z.enum(SUPPORT_KEYS);
+export type SupportKey = z.infer<typeof supportKeySchema>;
+
+export const SUPPORT_CATALOG = Object.freeze({
+  readAloud: { label: 'Read aloud', description: 'Replayable browser speech with speed control.' },
+  readingChunks: { label: 'Reading chunks', description: 'Reveal directions by sentence or step.' },
+  focusView: { label: 'Focus view', description: 'Hide nonessential controls for one problem.' },
+  hintLadder: { label: 'Hint ladder', description: 'Offer increasingly specific approved help.' },
+  flexibleResponse: {
+    label: 'Flexible response',
+    description: 'Use an approved response presentation.',
+  },
+  calmPacing: { label: 'Calm pacing', description: 'Use no timer or a non-expiring visual cue.' },
+  breakPrompt: {
+    label: 'Break prompt',
+    description: 'Offer an optional short pause after effort.',
+  },
+} satisfies Readonly<Record<SupportKey, Readonly<{ label: string; description: string }>>>);
+
+const enabledSchema = z.boolean().default(true);
+
+export const readAloudSettingsSchema = z
+  .object({
+    supportKey: z.literal('readAloud'),
+    enabled: enabledSchema,
+    speed: z.number().min(0.5).max(2).default(1),
+  })
+  .strict();
+
+export const readingChunksSettingsSchema = z
+  .object({
+    supportKey: z.literal('readingChunks'),
+    enabled: enabledSchema,
+    chunkMode: z.enum(['sentence', 'step']),
+    revealAllAllowed: z.literal(true),
+  })
+  .strict();
+
+export const focusViewSettingsSchema = z
+  .object({
+    supportKey: z.literal('focusView'),
+    enabled: enabledSchema,
+    hideNonessentialChrome: z.boolean().default(true),
+  })
+  .strict();
+
+export const hintLadderSettingsSchema = z
+  .object({
+    supportKey: z.literal('hintLadder'),
+    enabled: enabledSchema,
+    maxTier: z.number().int().min(1).max(3).default(3),
+    allowAnalogousExample: z.boolean().default(true),
+  })
+  .strict();
+
+export const flexibleResponseSettingsSchema = z
+  .object({
+    supportKey: z.literal('flexibleResponse'),
+    enabled: enabledSchema,
+    preferredMode: z.enum(['typing', 'selection']),
+    allowStudentChoice: z.boolean().default(true),
+  })
+  .strict();
+
+export const calmPacingSettingsSchema = z
+  .object({
+    supportKey: z.literal('calmPacing'),
+    enabled: enabledSchema,
+    timerMode: z.enum(['off', 'elapsed', 'nonExpiringCountdown']),
+    durationSeconds: z.number().int().min(30).max(3600).optional(),
+  })
+  .strict()
+  .superRefine((settings, context) => {
+    if (settings.timerMode === 'nonExpiringCountdown' && settings.durationSeconds === undefined) {
+      context.addIssue({
+        code: 'custom',
+        path: ['durationSeconds'],
+        message: 'A non-expiring countdown requires a duration.',
+      });
+    }
+  });
+
+export const breakPromptSettingsSchema = z
+  .object({
+    supportKey: z.literal('breakPrompt'),
+    enabled: enabledSchema,
+    afterAttempts: z.number().int().min(1).max(10),
+    durationSeconds: z.number().int().min(30).max(600),
+    skippable: z.literal(true),
+  })
+  .strict();
+
+export const supportSettingsSchema = z.discriminatedUnion('supportKey', [
+  readAloudSettingsSchema,
+  readingChunksSettingsSchema,
+  focusViewSettingsSchema,
+  hintLadderSettingsSchema,
+  flexibleResponseSettingsSchema,
+  calmPacingSettingsSchema,
+  breakPromptSettingsSchema,
+]);
+
+export const supportSettingsSnapshotSchema = supportSettingsSchema.readonly();
+
+export const supportPlanVersionSchema = z
+  .object({
+    id: supportPlanIdSchema,
+    classroomId: classroomIdSchema,
+    studentId: studentIdSchema,
+    version: z.number().int().positive(),
+    supports: z.array(supportSettingsSnapshotSchema).max(SUPPORT_KEYS.length).readonly(),
+    source: z.enum(['manual', 'onboardingRecommendation', 'audit']),
+    approvedBy: teacherIdSchema,
+    approvedAt: epochMillisSchema,
+    supersedesId: supportPlanIdSchema.nullable(),
+  })
+  .strict()
+  .superRefine((plan, context) => {
+    const keys = plan.supports.map((support) => support.supportKey);
+    if (new Set(keys).size !== keys.length) {
+      context.addIssue({
+        code: 'custom',
+        path: ['supports'],
+        message: 'Support keys must be unique.',
+      });
+    }
+  })
+  .readonly();
+
+export const supportRecommendationSchema = z
+  .object({
+    supportKey: supportKeySchema,
+    proposedSettings: supportSettingsSchema,
+    rationale: z.string().trim().min(1).max(600),
+    basedOn: z.array(z.string().trim().min(1).max(300)).min(1).max(8),
+    confidence: z.enum(['low', 'medium', 'high']),
+    cautions: z.array(z.string().trim().min(1).max(300)).max(6).default([]),
+    status: z.enum(['proposed', 'approved', 'rejected']).default('proposed'),
+  })
+  .strict()
+  .refine((value) => value.supportKey === value.proposedSettings.supportKey, {
+    message: 'The proposed settings must match the support key.',
+    path: ['proposedSettings', 'supportKey'],
+  });
+
+export type SupportSettings = z.infer<typeof supportSettingsSchema>;
+export type SupportPlanVersion = z.infer<typeof supportPlanVersionSchema>;
+export type SupportRecommendation = z.infer<typeof supportRecommendationSchema>;

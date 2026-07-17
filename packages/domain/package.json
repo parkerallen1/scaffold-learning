@@ -1,15 +1,22 @@
 {
-  "name": "quiz-master-functions",
+  "name": "@quiz-master/domain",
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "main": "lib/index.js",
-  "engines": {
-    "node": "22"
+  "main": "dist/index.js",
+  "types": "src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
   },
+  "files": [
+    "dist"
+  ],
   "scripts": {
-    "clean": "node -e \"require('node:fs').rmSync('lib', { recursive: true, force: true })\"",
-    "prebuild": "npm --prefix ../packages/domain run build",
+    "clean": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\"",
     "build": "npm run clean && tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "format": "prettier --write \"src/**/*.ts\"",
@@ -17,14 +24,12 @@
     "check": "npm run format:check && npm run typecheck"
   },
   "dependencies": {
-    "@quiz-master/domain": "*",
-    "firebase-admin": "14.2.0",
-    "firebase-functions": "7.3.0",
     "zod": "4.4.3"
   },
   "devDependencies": {
     "@types/node": "22.14.0",
     "prettier": "3.9.5",
-    "typescript": "5.8.2"
+    "typescript": "5.8.2",
+    "vitest": "4.1.10"
   }
 }

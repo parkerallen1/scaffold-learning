@@ -1,11 +1,15 @@
 import {
   recommendationInputSchema,
   recommendationResultSchema,
-  type AiProvider,
   type RecommendationInput,
   type RecommendationResult,
-} from './contracts.js';
+} from '@quiz-master/domain';
 import { fakeRecommendationFixture } from './fixtures.js';
+
+export interface AiProvider {
+  readonly name: string;
+  recommendSupports(input: RecommendationInput): Promise<RecommendationResult>;
+}
 
 export class FakeAiProvider implements AiProvider {
   readonly name = 'fake';
