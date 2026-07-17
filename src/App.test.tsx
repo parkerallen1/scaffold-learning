@@ -1,0 +1,32 @@
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { describe, expect, it, vi } from 'vitest';
+
+import App from './App';
+import { speak } from './services/speech';
+
+vi.mock('./services/speech', () => ({
+  speak: vi.fn().mockResolvedValue(undefined),
+}));
+
+describe('App', () => {
+  it('reads the first question and advances after a correct answer', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    expect(screen.getByText('Question 1 of 12')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Next Question' })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Read question aloud' }));
+    expect(speak).toHaveBeenCalledWith(
+      'Use mental math to find the sum or difference. 4.25 + 1.36 + 2.75 = ___',
+    );
+
+    const answerInput = screen.getByLabelText('Your Final Answer');
+    await user.type(answerInput, '8.36');
+    await user.click(screen.getByRole('button', { name: 'Next Question' }));
+
+    expect(screen.getByText('Question 2 of 12')).toBeInTheDocument();
+    expect(answerInput).toHaveValue('');
+  });
+});

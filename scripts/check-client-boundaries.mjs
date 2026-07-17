@@ -27,10 +27,12 @@ const scan = async (entryPath) => {
 
   const entries = await readdir(entryPath, { withFileTypes: true });
 
-  await Promise.all(entries.map(async (entry) => {
-    const childPath = path.join(entryPath, entry.name);
-    await scan(childPath);
-  }));
+  await Promise.all(
+    entries.map(async (entry) => {
+      const childPath = path.join(entryPath, entry.name);
+      await scan(childPath);
+    }),
+  );
 };
 
 await Promise.all(roots.map(scan));
