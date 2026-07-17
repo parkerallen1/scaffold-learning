@@ -1,5 +1,4 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import PasswordGate from './components/PasswordGate';
 import { QUESTIONS } from './constants';
 import { Question } from './types';
 import { speak } from './services/speech';
@@ -18,9 +17,7 @@ const App: React.FC = () => {
   const [isDrawing, setIsDrawing] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  // Admin panel state
-  const [isPasswordMode, setIsPasswordMode] = useState<boolean>(false);
-  const [passwordInput, setPasswordInput] = useState<string>('');
+  // Prototype settings panel state
   const [showAdminPanel, setShowAdminPanel] = useState<boolean>(false);
   const [appBackgroundColor, setAppBackgroundColor] = useState<string>('bg-gray-100 dark:bg-gray-900');
 
@@ -106,36 +103,6 @@ const App: React.FC = () => {
     return () => window.removeEventListener('resize', resizeCanvas);
 
   }, [clearCanvas, isFinished, currentQuestionIndex]);
-
-  useEffect(() => {
-    if (!isPasswordMode) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-        if (e.key === 'Escape') {
-            setIsPasswordMode(false);
-            setPasswordInput('');
-            return;
-        }
-        if (e.key === 'Backspace') {
-            setPasswordInput(prev => prev.slice(0, -1));
-            return;
-        }
-        if (e.key.length === 1 && /^[a-zA-Z0-9]$/.test(e.key) && passwordInput.length < 5) {
-            const newPassword = passwordInput + e.key.toLowerCase();
-            setPasswordInput(newPassword);
-            if (newPassword === 'admin') {
-                setShowAdminPanel(true);
-                setIsPasswordMode(false);
-                setPasswordInput('');
-            } else if (newPassword.length >= 5) {
-                setIsPasswordMode(false);
-                setPasswordInput('');
-            }
-        }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-}, [isPasswordMode, passwordInput]);
-
 
   const handleAnswerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const answer = e.target.value;
@@ -256,39 +223,34 @@ const App: React.FC = () => {
 
 
   return (
-    <PasswordGate>
     <div className={`relative min-h-screen ${appBackgroundColor} text-gray-800 dark:text-gray-200 flex flex-col items-center justify-center p-4 sm:p-6 md:p-8 font-sans transition-colors duration-300`}>
-      {/* Admin Button & Password UI */}
+      {/* Prototype settings button */}
       <div className="absolute top-4 left-4 z-40">
           <button 
-              onClick={() => { setIsPasswordMode(true); setPasswordInput(''); }} 
+              onClick={() => setShowAdminPanel(true)}
               className="p-2 bg-gray-200 dark:bg-gray-700 rounded-full hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
-              aria-label="Admin Settings"
+              aria-label="Prototype Settings"
           >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-600 dark:text-gray-300" viewBox="0 0 20 20" fill="currentColor">
                  <path fillRule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0l-.1.41-1.38.65c-1.28.6-1.95 2.12-1.39 3.4l.18.41-1.13 1.03c-1.11 1.01-.52 2.92.8 3.45l1.32.52.4.41c.42 1.76 2.86 1.76 3.28 0l.4-.41 1.32-.52c1.32-.53 1.91-2.44.8-3.45l-1.13-1.03.18-.41c.56-1.28-.11-2.8-1.39-3.4l-1.38-.65-.1-.41zM10 12a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
               </svg>
           </button>
-          {isPasswordMode && (
-              <div className="absolute top-full left-0 mt-2 flex gap-1.5 p-2 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm rounded-md shadow-lg">
-                  {Array.from({ length: 5 }).map((_, i) => (
-                      <div key={i} className={`w-3 h-3 rounded-full transition-colors ${i < passwordInput.length ? 'bg-gray-700 dark:bg-gray-200' : 'bg-gray-300 dark:bg-gray-600'}`}></div>
-                  ))}
-              </div>
-          )}
       </div>
       
       <div className="relative w-full min-h-[85vh] max-w-7xl bg-white dark:bg-gray-800 rounded-2xl shadow-2xl flex flex-col">
-        {/* Admin Modal */}
+        {/* Prototype settings modal */}
         {showAdminPanel && (
             <div className="absolute inset-0 bg-gray-900/60 flex items-center justify-center z-30 rounded-2xl">
                 <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl w-full max-w-md m-4 max-h-[90vh] overflow-y-auto">
                     <div className="flex justify-between items-center mb-6">
-                        <h3 className="text-xl font-bold">Admin Settings</h3>
+                        <h3 className="text-xl font-bold">Prototype Settings</h3>
                         <button onClick={() => setShowAdminPanel(false)} className="p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700">
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                         </button>
                     </div>
+                    <p className="mb-6 text-sm text-gray-500 dark:text-gray-400">
+                      Classroom permissions arrive with teacher sign-in in a later milestone.
+                    </p>
                     
                     <div className="space-y-6">
                         {/* Background Color Setting */}
@@ -441,7 +403,6 @@ const App: React.FC = () => {
         </div>
       )}
     </div>
-    </PasswordGate>
   );
 };
 
