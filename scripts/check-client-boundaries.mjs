@@ -1,34 +1,35 @@
 import { existsSync } from 'node:fs';
-import { readdir, readFile } from 'node:fs/promises';
+import { readdir, readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
 
 const forbiddenMarkers = [
   'GoogleGenAI',
   'GEMINI_API_KEY',
   'process.env.API_KEY',
+  'aistudiocdn.com',
+  'cdn.tailwindcss.com',
 ];
 
-// TODO(M0-04): Add aistudiocdn.com and cdn.tailwindcss.com after runtime CDNs are removed.
-const roots = ['src', ...(existsSync('dist') ? ['dist'] : [])];
+const roots = ['src', 'index.html', 'vite.config.ts', ...(existsSync('dist') ? ['dist'] : [])];
 const violations = [];
 
 const scan = async (entryPath) => {
+  const entryStats = await stat(entryPath);
+  if (entryStats.isFile()) {
+    const contents = await readFile(entryPath, 'utf8');
+    for (const marker of forbiddenMarkers) {
+      if (contents.includes(marker)) {
+        violations.push(`${entryPath}: ${marker}`);
+      }
+    }
+    return;
+  }
+
   const entries = await readdir(entryPath, { withFileTypes: true });
 
   await Promise.all(entries.map(async (entry) => {
     const childPath = path.join(entryPath, entry.name);
-
-    if (entry.isDirectory()) {
-      await scan(childPath);
-      return;
-    }
-
-    const contents = await readFile(childPath, 'utf8');
-    for (const marker of forbiddenMarkers) {
-      if (contents.includes(marker)) {
-        violations.push(`${childPath}: ${marker}`);
-      }
-    }
+    await scan(childPath);
   }));
 };
 
