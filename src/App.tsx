@@ -2,25 +2,12 @@ import React, { useState, useCallback, useRef, useEffect } from 'react';
 import PasswordGate from './components/PasswordGate';
 import { QUESTIONS } from './constants';
 import { Question } from './types';
-import { speak, generateQuestionsFromImage } from './services/geminiService';
+import { speak } from './services/speech';
 import { SpeakerIcon } from './components/SpeakerIcon';
-
-const fileToBase64 = (file: File): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => {
-      const result = reader.result as string;
-      // remove the "data:mime/type;base64," prefix
-      resolve(result.split(',')[1]);
-    };
-    reader.onerror = error => reject(error);
-  });
-};
 
 
 const App: React.FC = () => {
-  const [questions, setQuestions] = useState<Question[]>(QUESTIONS);
+  const questions = QUESTIONS;
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState<number>(0);
   const [userAnswer, setUserAnswer] = useState<string>('');
   const [isCorrect, setIsCorrect] = useState<boolean>(false);
@@ -36,9 +23,6 @@ const App: React.FC = () => {
   const [passwordInput, setPasswordInput] = useState<string>('');
   const [showAdminPanel, setShowAdminPanel] = useState<boolean>(false);
   const [appBackgroundColor, setAppBackgroundColor] = useState<string>('bg-gray-100 dark:bg-gray-900');
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [isGenerating, setIsGenerating] = useState<boolean>(false);
-  const [generationError, setGenerationError] = useState<string | null>(null);
 
   // Interest Reward state
   const [isInterestEnabled, setIsInterestEnabled] = useState<boolean>(false);
@@ -62,15 +46,6 @@ const App: React.FC = () => {
       }
     }
   }, []);
-  
-  const resetQuiz = (newQuestions: Question[]) => {
-    setQuestions(newQuestions);
-    setCurrentQuestionIndex(0);
-    setUserAnswer('');
-    setIsCorrect(false);
-    setIsFinished(false);
-    clearCanvas();
-  };
   
   const handleNextQuestion = useCallback(() => {
     setShowInterestReward(false);
@@ -214,38 +189,6 @@ const App: React.FC = () => {
     }
   }, [currentQuestion.question, isLoadingTTS]);
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files && event.target.files[0]) {
-      setSelectedFile(event.target.files[0]);
-      setGenerationError(null);
-    }
-  };
-
-  const handleGenerateQuestions = async () => {
-    if (!selectedFile) {
-      setGenerationError("Please select a file first.");
-      return;
-    }
-    setIsGenerating(true);
-    setGenerationError(null);
-    try {
-      const base64Data = await fileToBase64(selectedFile);
-      const newQuestions = await generateQuestionsFromImage(base64Data, selectedFile.type);
-      if (newQuestions && newQuestions.length > 0) {
-        resetQuiz(newQuestions);
-        setShowAdminPanel(false);
-        setSelectedFile(null);
-      } else {
-        throw new Error("The AI returned no questions. Please check the file content.");
-      }
-    } catch (error) {
-      console.error("Failed to generate questions:", error);
-      setGenerationError(error instanceof Error ? error.message : "An unknown error occurred.");
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-  
   const handleInterestFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
       const file = event.target.files[0];
@@ -400,16 +343,12 @@ const App: React.FC = () => {
 
                         <hr className="dark:border-gray-600"/>
 
-                        {/* Question Generation Setting */}
+                        {/* Secure teacher import is implemented in a later milestone. */}
                         <div>
-                           <label className="block mb-3 font-semibold text-gray-700 dark:text-gray-300">Load from File</label>
-                           <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">Upload an image or PDF to generate new questions.</p>
-                           <input type="file" onChange={handleFileChange} accept="image/jpeg,image/png,image/webp,application/pdf" className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-blue-900/50 dark:file:text-blue-300 dark:hover:file:bg-blue-900"/>
-                           {selectedFile && <p className="text-xs text-gray-500 mt-2">Selected: {selectedFile.name}</p>}
-                           <button onClick={handleGenerateQuestions} disabled={!selectedFile || isGenerating} className="w-full mt-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-bold py-2 px-4 rounded-lg shadow-md transition-transform transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-blue-400/50 flex items-center justify-center gap-2">
-                            {isGenerating ? (<><svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Generating...</>) : "Generate Questions"}
-                           </button>
-                           {generationError && <p className="text-red-500 text-sm mt-2">{generationError}</p>}
+                           <h4 className="mb-3 font-semibold text-gray-700 dark:text-gray-300">Worksheet Import</h4>
+                           <div aria-disabled="true" className="rounded-lg border border-gray-300 bg-gray-50 p-4 text-sm text-gray-600 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300">
+                             Secure AI import is coming through the teacher workflow. File uploads are unavailable for now.
+                           </div>
                         </div>
                     </div>
                 </div>

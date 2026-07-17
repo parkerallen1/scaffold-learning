@@ -6,11 +6,11 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "check:client": "node scripts/check-client-boundaries.mjs"
   },
   "dependencies": {
     "react": "^19.2.0",
-    "@google/genai": "^1.27.0",
     "react-dom": "^19.2.0"
   },
   "devDependencies": {
