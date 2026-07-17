@@ -295,6 +295,7 @@ Device-local IndexedDB profiles are rejected as the primary model because they c
 
 - Teachers authenticate with Firebase Google sign-in.
 - Students use a class code plus a student-specific PIN/QR credential for the prototype; do not require a student email.
+- The class code + student handle + PIN is exchanged server-side for a scoped Firebase custom token. An unauthenticated PIN screen is not an authorization boundary.
 - Authorization is enforced with Firestore rules and callable-function checks.
 - Browser storage may cache active work for resilience, but it is not an authority boundary.
 
@@ -357,6 +358,8 @@ Rules for every operation:
 ## 9. Build Week implementation plan
 
 Each milestone ends in a deployable app. Commit each logical task separately and keep the tree clean.
+
+The commit-sized dependency graph, agent ownership rules, verification commands, and packet-level acceptance criteria live in [`IMPLEMENTATION.md`](./IMPLEMENTATION.md). `PLAN.md` remains the product contract; `IMPLEMENTATION.md` is the execution contract.
 
 The submission cut line is after Milestone 5. Milestones 0–5 are P0; Milestone 6 is P1 stretch. If the deadline gets tight, reduce visual polish and support count before cutting authorization, teacher approval, evidence grounding, or failure fallbacks.
 
