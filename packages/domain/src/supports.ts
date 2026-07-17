@@ -200,7 +200,7 @@ export const supportPlanVersionSchema = z
     studentId: studentIdSchema,
     version: z.number().int().positive(),
     supports: z.array(supportSettingsSnapshotSchema).max(SUPPORT_KEYS.length).readonly(),
-    source: z.enum(['manual', 'onboardingRecommendation', 'audit']),
+    source: z.enum(['manual', 'onboardingRecommendation', 'audit', 'revert']),
     approvedBy: teacherIdSchema,
     approvedAt: epochMillisSchema,
     supersedesId: supportPlanIdSchema.nullable(),
@@ -237,3 +237,30 @@ export const supportRecommendationSchema = z
 export type SupportSettings = z.infer<typeof supportSettingsSchema>;
 export type SupportPlanVersion = z.infer<typeof supportPlanVersionSchema>;
 export type SupportRecommendation = z.infer<typeof supportRecommendationSchema>;
+
+export const createNextSupportPlanVersion = ({
+  id,
+  previous,
+  supports,
+  source,
+  approvedBy,
+  approvedAt,
+}: Readonly<{
+  id: SupportPlanVersion['id'];
+  previous: SupportPlanVersion;
+  supports: readonly SupportSettings[];
+  source: SupportPlanVersion['source'];
+  approvedBy: SupportPlanVersion['approvedBy'];
+  approvedAt: SupportPlanVersion['approvedAt'];
+}>): SupportPlanVersion =>
+  supportPlanVersionSchema.parse({
+    id,
+    classroomId: previous.classroomId,
+    studentId: previous.studentId,
+    version: previous.version + 1,
+    supports,
+    source,
+    approvedBy,
+    approvedAt,
+    supersedesId: previous.id,
+  });

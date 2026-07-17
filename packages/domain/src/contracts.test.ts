@@ -7,6 +7,7 @@ import {
   CORE_SUPPORT_KEYS,
   SUPPORT_CATALOG,
   SUPPORT_KEYS,
+  createNextSupportPlanVersion,
   supportRecommendationSchema,
   supportSettingsSchema,
 } from './supports.js';
@@ -57,6 +58,24 @@ describe('support catalog boundaries', () => {
       expect(catalogEntry.caution.length).toBeGreaterThan(0);
       expect(catalogEntry.evidenceSignals.length).toBeGreaterThan(0);
     }
+  });
+
+  it('creates an immutable, attributable next version without mutating the prior plan', () => {
+    const previous = syntheticDomainFixtures.supportPlan;
+    const next = createNextSupportPlanVersion({
+      id: 'plan_demo_02' as typeof previous.id,
+      previous,
+      supports: [SUPPORT_CATALOG.focusView.defaultSettings],
+      source: 'revert',
+      approvedBy: previous.approvedBy,
+      approvedAt: previous.approvedAt,
+    });
+
+    expect(next.version).toBe(previous.version + 1);
+    expect(next.supersedesId).toBe(previous.id);
+    expect(next.supports).toEqual([SUPPORT_CATALOG.focusView.defaultSettings]);
+    expect(previous.supports).toHaveLength(2);
+    expect(Object.isFrozen(next)).toBe(true);
   });
 });
 
