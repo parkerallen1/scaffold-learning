@@ -20,8 +20,8 @@ Quiz Master today is a ~700-line React 19 + Vite + Tailwind(CDN) app: one questi
 
 **Decisions assumed (flag to Parker if wrong):**
 1. **Local-first persistence** via IndexedDB (Dexie). No accounts/login; profiles are device-local. On school Chromebooks each student's ChromeOS login already isolates storage, so this is safe on shared carts — but data doesn't follow a student across devices. Firestore sync is the Phase 3+ extension if students rotate Chromebooks day to day.
-2. **Gemini key moves behind Firebase Functions** (callable functions). This requires the Firebase **Blaze plan** (pay-as-you-go; effectively free at this usage). If Blaze is a no-go, fallback: keep the client-side key during development and gate the deployed app behind the existing password wall, but treat the key as disposable/rotatable.
-3. **Dual TTS engines:** browser `speechSynthesis` becomes the default (free, offline, and its `onboundary` events enable word-by-word read-along highlighting); Gemini TTS ("Kore") stays as the high-quality voice option (no highlighting).
+2. **In-app AI runs on the OpenAI API** — swapped from Gemini because this is the OpenAI Build Week submission (see Hackathon section below): GPT vision for worksheet extraction and canvas reading, GPT for hints/diagnosis/variants/quiz generation, OpenAI TTS for the premium voice. The **API key moves behind Firebase Functions** (callable functions), which requires the Firebase **Blaze plan** (pay-as-you-go; effectively free at this usage). If Blaze is a no-go before the deadline, fallback: client-side key behind the existing password gate, treated as disposable/rotatable, with a note in the README — acceptable for the hackathon demo, fix after.
+3. **Dual TTS engines:** browser `speechSynthesis` becomes the default (free, offline, and its `onboundary` events enable word-by-word read-along highlighting); **OpenAI TTS** is the high-quality voice option (no highlighting). Browser-default also matters because hackathon credits are exhausted — every AI response gets cached and the free voice does the everyday work.
 
 ---
 
@@ -58,7 +58,7 @@ interface Question {
 interface Quiz { id: string; name: string; tags: string[]; createdAt: number; source: 'seed'|'upload'|'topic'; questions: Question[]; }
 interface Profile { id: string; name: string; avatarColor: string; settings: ProfileSettings; createdAt: number; }
 interface ProfileSettings { backgroundColor: string; timerMode: 'off'|'countdown'|'visual'|'stopwatch'; timerSeconds: number;
-  rewardEnabled: boolean; ttsEngine: 'browser'|'gemini'; ttsRate: number; fontFamily: 'default'|'lexend'|'opendyslexic';
+  rewardEnabled: boolean; ttsEngine: 'browser'|'openai'; ttsRate: number; fontFamily: 'default'|'lexend'|'opendyslexic';
   fontScale: number; letterSpacing: 'normal'|'wide'; chunkedReading: boolean; focusMode: boolean; feedbackStyle: 'instant'|'submit'; }
 interface Attempt { id: string; profileId: string; quizId: string; questionId: string; givenAnswer: string;
   correct: boolean; hintsUsed: number; msElapsed: number; timestamp: number; }
@@ -88,15 +88,15 @@ interface Attempt { id: string; profileId: string; quizId: string; questionId: s
 - Add `feedbackStyle` setting: keep current keystroke-instant mode as an option, but default to **submit mode**: student presses Check (or Enter); wrong answers get an encouraging message ("Not yet — take another look!") rather than an instant red border on every keystroke. Correct keeps the green celebration + Next button.
 - Count attempts per question into `attempts` table (foundation for hints/diagnosis in Phase 2 and dashboard in Phase 3).
 
-### 1.8 Gemini behind Firebase Functions
-- `functions/` (Node 20, TypeScript): two callable functions — `tts(text, voice)` and `extractQuiz(base64, mimeType)` — porting the logic from `services/geminiService.ts`; key lives in Functions secrets (`firebase functions:secrets:set GEMINI_API_KEY`).
+### 1.8 OpenAI API behind Firebase Functions
+- `functions/` (Node 20, TypeScript): two callable functions — `tts(text, voice)` (OpenAI TTS) and `extractQuiz(base64, mimeType)` (GPT vision with structured outputs / JSON schema — replaces the old Gemini logic in `services/geminiService.ts`, which gets deleted); key lives in Functions secrets (`firebase functions:secrets:set OPENAI_API_KEY`).
 - Client `src/services/ai.ts` calls the functions via the Firebase JS SDK; remove the `define` block exposing the key in `vite.config.ts`.
 - Add App Check or at minimum keep the password gate + basic rate limiting in the function.
 
 ### Phase 1 verification
 - `npm run dev`: password gate → profile picker → seed quiz plays identically to v1 (TTS, canvas, timer, rewards, backgrounds all work per profile).
 - Upload a worksheet photo → quiz extracts → save to library → **reload the page** → quiz and profile settings are still there.
-- `npm test` green (checkAnswer suite); `npm run build` succeeds with no CDN references; deployed function TTS works with no `GEMINI_API_KEY` string anywhere in `dist/`.
+- `npm test` green (checkAnswer suite); `npm run build` succeeds with no CDN references; deployed function TTS works with no API key string anywhere in `dist/`.
 - **Chromebook check:** at a 1366×768 viewport (Chrome devtools responsive mode, then a real Chromebook if available) the full flow works with no mid-question scrolling; canvas draws with touch and stylus; the entire deployed app loads with devtools request-blocking of all third-party domains enabled (proves no external assets for school filters to break).
 
 ---
@@ -106,7 +106,7 @@ interface Attempt { id: string; profileId: string; quizId: string; questionId: s
 *The learning-challenge features: read-along TTS, dyslexia-friendly text, hints instead of walls, mistake diagnosis, multiple answer modes, calmer pacing.*
 
 ### 2.1 Read-along TTS with word highlighting
-- `src/services/tts.ts` with two engines behind one interface: `browser` (default — `speechSynthesis`, `onboundary` events drive a highlighted `<span>` per word in `QuestionCard`, karaoke-style) and `gemini` (existing high-quality voice, no highlighting).
+- `src/services/tts.ts` with two engines behind one interface: `browser` (default — `speechSynthesis`, `onboundary` events drive a highlighted `<span>` per word in `QuestionCard`, karaoke-style) and `openai` (OpenAI TTS high-quality voice, no highlighting).
 - Speed control (0.5×–1.2×) and a replay button in the question card; per-profile `ttsRate`/`ttsEngine` settings.
 
 ### 2.2 Text presentation settings (per profile)
@@ -119,13 +119,13 @@ interface Attempt { id: string; profileId: string; quizId: string; questionId: s
 - After all hints + 2 more wrong attempts: "Show me the answer" appears; question is marked **needs-review** (feeds Phase 3 spaced repetition) and the student may proceed. No more infinite walls.
 
 ### 2.4 Mistake diagnosis
-- On a wrong submit (submit mode only), call a new `diagnose(question, givenAnswer)` callable function → Gemini returns one encouraging, specific sentence ("You added before multiplying — try the multiplication first."). Show it under the answer box; cache per (question, answer) to avoid repeat calls; fall back silently to the generic message on error.
+- On a wrong submit (submit mode only), call a new `diagnose(question, givenAnswer)` callable function → GPT returns one encouraging, specific sentence ("You added before multiplying — try the multiplication first."). Show it under the answer box; cache per (question, answer) to avoid repeat calls; fall back silently to the generic message on error.
 
 ### 2.5 Simplify / rephrase
-- Button on the question card: `simplify(question)` function → Gemini rewrites in simpler language (same numbers, same answer). Show below the original; TTS can read the simplified version. Cache per question.
+- Button on the question card: `simplify(question)` function → GPT rewrites in simpler language (same numbers, same answer). Show below the original; TTS can read the simplified version. Cache per question.
 
 ### 2.6 Multiple answer modes
-- **Multiple choice rendering:** `answerType: 'multipleChoice'` renders 2–4 large tappable choice buttons in place of the text input (same frosted card styling). `extractQuiz` schema optionally emits choices; settings toggle "convert quiz to multiple choice" asks Gemini to generate distractors for an existing quiz.
+- **Multiple choice rendering:** `answerType: 'multipleChoice'` renders 2–4 large tappable choice buttons in place of the text input (same frosted card styling). `extractQuiz` schema optionally emits choices; settings toggle "convert quiz to multiple choice" asks GPT to generate distractors for an existing quiz.
 - **Voice answers:** mic button on the answer box using the Web Speech API (`SpeechRecognition`); transcript lands in the input for normal checking. Feature-detect; hide the mic where unsupported (Firefox). Works in Chrome/ChromeOS — but note school admin policy can disable mic access on managed Chromebooks, so this must degrade gracefully (mic button hidden or showing a friendly "mic not available" note, never an error).
 
 ### 2.7 Focus & pacing
@@ -141,7 +141,7 @@ interface Attempt { id: string; profileId: string; quizId: string; questionId: s
 - Presets are starting points — individual toggles remain editable after applying.
 
 ### Phase 2 verification
-- Read-along: words highlight in sync with browser TTS at 0.75× on a long word problem; Gemini voice still works as the alternate engine.
+- Read-along: words highlight in sync with browser TTS at 0.75× on a long word problem; OpenAI voice still works as the alternate engine.
 - Wrong answer twice → hint ladder appears tier by tier → "Show me" path advances and flags the question; diagnosis sentence appears for a plausible mistake (e.g. answering `100.42` to `25.14 + 76.38` from misaligned decimal addition).
 - Each preset applies its toggles; multiple-choice quiz renders buttons; mic input works in Chrome and degrades gracefully when mic permission is denied; visual timer disc shrinks smoothly; all settings persist per profile across reload.
 - **Chromebook check:** read-along highlighting, chunked reading, and multiple-choice buttons all usable by touch at 1366×768; larger font scales (1.5×) don't break the card layout at that size.
@@ -158,7 +158,7 @@ interface Attempt { id: string; profileId: string; quizId: string; questionId: s
 - **Warm-up deck:** starting any quiz first offers due review cards for that profile ("3 review questions first!") — skippable by the adult, on by default.
 
 ### 3.2 Similar-problem generator
-- After a miss (or from the hint ladder's "worked example" tier), `generateVariant(question)` function → Gemini produces the same problem shape with different numbers + answer + hints. Passing the variant clears the needs-review flag ("prove you've got it").
+- After a miss (or from the hint ladder's "worked example" tier), `generateVariant(question)` function → GPT produces the same problem shape with different numbers + answer + hints. Passing the variant clears the needs-review flag ("prove you've got it").
 - Validate the variant server-side (schema check; for numeric questions, sanity-check the answer parses).
 
 ### 3.3 Adaptive difficulty
@@ -168,7 +168,7 @@ interface Attempt { id: string; profileId: string; quizId: string; questionId: s
 - Use `steps[]` on questions: a "Break it down" button (or auto-offer after hints exhausted) walks the student through sub-answers one at a time, each with its own small input + check, then the final answer. Generate steps at quiz-extraction time alongside hints.
 
 ### 3.5 Handwriting answer recognition
-- "Check my work" button next to Clear: exports the canvas PNG, sends to a `readWork(imageBase64, question)` function (Gemini vision) → returns the final answer it sees (student is told to circle it). Fills the answer box for normal checking — the canvas becomes an input path for dysgraphic/keyboard-averse kids, not just scratch space.
+- "Check my work" button next to Clear: exports the canvas PNG, sends to a `readWork(imageBase64, question)` function (GPT vision) → returns the final answer it sees (student is told to circle it). Fills the answer box for normal checking — the canvas becomes an input path for dysgraphic/keyboard-averse kids, not just scratch space.
 
 ### 3.6 Progress dashboard
 - New section in the PIN-protected settings area, per profile: accuracy over time (line), time-per-question trend, hints used, needs-review list, weak topics (roll up `attempts` by `question.topic`). Charts with plain SVG or a tiny chart lib — match the existing card styling.
