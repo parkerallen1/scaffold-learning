@@ -5,6 +5,7 @@ import { syntheticDomainFixtures } from './fixtures.js';
 import { studentSafeIdentitySchema } from './identity.js';
 import {
   CORE_SUPPORT_KEYS,
+  SUPPORT_CATALOG,
   SUPPORT_KEYS,
   supportRecommendationSchema,
   supportSettingsSchema,
@@ -46,6 +47,16 @@ describe('support catalog boundaries', () => {
     });
 
     expect(recommendation.status).toBe('proposed');
+  });
+
+  it('provides valid defaults, cautions, and evidence signals for every support', () => {
+    for (const supportKey of SUPPORT_KEYS) {
+      const catalogEntry = SUPPORT_CATALOG[supportKey];
+
+      expect(supportSettingsSchema.parse(catalogEntry.defaultSettings).supportKey).toBe(supportKey);
+      expect(catalogEntry.caution.length).toBeGreaterThan(0);
+      expect(catalogEntry.evidenceSignals.length).toBeGreaterThan(0);
+    }
   });
 });
 

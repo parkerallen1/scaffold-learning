@@ -21,20 +21,92 @@ export const supportKeySchema = z.enum(SUPPORT_KEYS);
 export type SupportKey = z.infer<typeof supportKeySchema>;
 
 export const SUPPORT_CATALOG = Object.freeze({
-  readAloud: { label: 'Read aloud', description: 'Replayable browser speech with speed control.' },
-  readingChunks: { label: 'Reading chunks', description: 'Reveal directions by sentence or step.' },
-  focusView: { label: 'Focus view', description: 'Hide nonessential controls for one problem.' },
-  hintLadder: { label: 'Hint ladder', description: 'Offer increasingly specific approved help.' },
+  readAloud: {
+    label: 'Read aloud',
+    description: 'Replayable browser speech with speed control.',
+    caution: 'Audio starts only after the student asks for it and never plays automatically.',
+    evidenceSignals: ['activated', 'replayed', 'speedChanged'],
+    defaultSettings: { supportKey: 'readAloud', enabled: true, speed: 1 },
+  },
+  readingChunks: {
+    label: 'Reading chunks',
+    description: 'Reveal directions by sentence or teacher-approved step.',
+    caution: 'Always preserve the original wording and let the student reveal all directions.',
+    evidenceSignals: ['shown', 'chunkAdvanced', 'revealAll'],
+    defaultSettings: {
+      supportKey: 'readingChunks',
+      enabled: true,
+      chunkMode: 'step',
+      revealAllAllowed: true,
+    },
+  },
+  focusView: {
+    label: 'Focus view',
+    description: 'Hide nonessential controls for one problem.',
+    caution: 'Progress, help, and exit controls must remain available.',
+    evidenceSignals: ['activated', 'dismissed'],
+    defaultSettings: {
+      supportKey: 'focusView',
+      enabled: true,
+      hideNonessentialChrome: true,
+    },
+  },
+  hintLadder: {
+    label: 'Hint ladder',
+    description: 'Offer increasingly specific teacher-approved help.',
+    caution: 'Early hints must not reveal the answer or replace the learning target.',
+    evidenceSignals: ['tierShown', 'attemptAfterHint', 'completed'],
+    defaultSettings: {
+      supportKey: 'hintLadder',
+      enabled: true,
+      maxTier: 3,
+      allowAnalogousExample: true,
+    },
+  },
   flexibleResponse: {
     label: 'Flexible response',
     description: 'Use an approved response presentation.',
+    caution: 'Do not change the response format when doing so changes the learning target.',
+    evidenceSignals: ['modeSelected', 'modeChanged'],
+    defaultSettings: {
+      supportKey: 'flexibleResponse',
+      enabled: true,
+      preferredMode: 'typing',
+      allowStudentChoice: true,
+    },
   },
-  calmPacing: { label: 'Calm pacing', description: 'Use no timer or a non-expiring visual cue.' },
+  calmPacing: {
+    label: 'Calm pacing',
+    description: 'Use no timer or a non-expiring visual cue.',
+    caution: 'A timer reaching zero must never submit, advance, or block the student.',
+    evidenceSignals: ['timerShown', 'timerHidden'],
+    defaultSettings: { supportKey: 'calmPacing', enabled: true, timerMode: 'off' },
+  },
   breakPrompt: {
     label: 'Break prompt',
     description: 'Offer an optional short pause after effort.',
+    caution: 'Breaks are optional, skippable, and never framed as a consequence.',
+    evidenceSignals: ['shown', 'activated', 'dismissed', 'completed'],
+    defaultSettings: {
+      supportKey: 'breakPrompt',
+      enabled: true,
+      afterAttempts: 3,
+      durationSeconds: 120,
+      skippable: true,
+    },
   },
-} satisfies Readonly<Record<SupportKey, Readonly<{ label: string; description: string }>>>);
+} satisfies Readonly<
+  Record<
+    SupportKey,
+    Readonly<{
+      label: string;
+      description: string;
+      caution: string;
+      evidenceSignals: readonly string[];
+      defaultSettings: Readonly<Record<string, boolean | number | string>>;
+    }>
+  >
+>);
 
 const enabledSchema = z.boolean().default(true);
 
