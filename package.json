@@ -3,13 +3,22 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "workspaces": [
+    "functions"
+  ],
   "engines": {
     "node": "^20.19.0 || >=22.12.0"
   },
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "npm run build:client && npm run build --workspace functions",
+    "build:client": "vite build",
     "preview": "vite preview",
+    "emulators:start": "npm run build --workspace functions && firebase emulators:start --project demo-quiz-master --only auth,firestore,functions,hosting",
+    "emulators:exec": "npm run build --workspace functions && firebase emulators:exec --project demo-quiz-master --only auth,firestore,functions",
+    "firebase:validate": "firebase emulators:exec --project demo-quiz-master --only firestore \"node -e 'process.exit(0)'\"",
+    "functions:clean": "npm run clean --workspace functions",
+    "functions:check": "npm run check --workspace functions",
     "check:client": "node scripts/check-client-boundaries.mjs",
     "typecheck": "tsc --noEmit",
     "lint": "eslint . --max-warnings 0",
@@ -17,9 +26,10 @@
     "format:check": "prettier --check .",
     "test": "vitest",
     "test:run": "vitest run",
-    "check": "npm run format:check && npm run lint && npm run typecheck && npm run test:run && npm run build && npm run check:client"
+    "check": "npm run functions:clean && npm run format:check && npm run lint && npm run typecheck && npm run functions:check && npm run test:run && npm run build && npm run check:client"
   },
   "dependencies": {
+    "firebase": "12.16.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },
@@ -37,6 +47,7 @@
     "eslint-plugin-jsx-a11y": "6.10.2",
     "eslint-plugin-react-hooks": "7.1.1",
     "eslint-plugin-react-refresh": "0.5.3",
+    "firebase-tools": "15.24.0",
     "globals": "17.7.0",
     "jsdom": "29.1.1",
     "prettier": "3.9.5",

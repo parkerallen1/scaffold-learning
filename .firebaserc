@@ -1,3 +1,6 @@
 {
-  "projects": { "default": "quiz-master-pg" }
+  "projects": {
+    "default": "demo-quiz-master",
+    "production": "quiz-master-pg"
+  }
 }
