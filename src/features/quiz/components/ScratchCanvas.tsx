@@ -1,5 +1,5 @@
-import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react';
-import type { MouseEvent, ReactNode, TouchEvent } from 'react';
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef } from 'react';
+import type { PointerEvent, ReactNode } from 'react';
 
 interface ScratchCanvasProps {
   children: ReactNode;
@@ -12,8 +12,8 @@ export interface ScratchCanvasHandle {
 
 export const ScratchCanvas = forwardRef<ScratchCanvasHandle, ScratchCanvasProps>(
   ({ children, questionIndex }, ref) => {
-    const [isDrawing, setIsDrawing] = useState(false);
     const canvasRef = useRef<HTMLCanvasElement>(null);
+    const activePointerIdRef = useRef<number | null>(null);
 
     const clearCanvas = useCallback(() => {
       const canvas = canvasRef.current;
@@ -33,51 +33,91 @@ export const ScratchCanvas = forwardRef<ScratchCanvasHandle, ScratchCanvasProps>
 
       const resizeCanvas = () => {
         const parent = canvas.parentElement;
-        if (parent) {
-          canvas.width = parent.clientWidth;
-          canvas.height = parent.clientHeight;
-          const context = canvas.getContext('2d');
-          if (context) {
-            context.lineCap = 'round';
-            context.lineJoin = 'round';
-            context.strokeStyle = 'black';
-            context.lineWidth = 3;
-          }
-        }
+        if (!parent || parent.clientWidth <= 0 || parent.clientHeight <= 0) return;
+
+        const nextWidth = parent.clientWidth;
+        const nextHeight = parent.clientHeight;
+        const previousWidth = canvas.width;
+        const previousHeight = canvas.height;
+
+        if (nextWidth === previousWidth && nextHeight === previousHeight) return;
+
+        const snapshot = document.createElement('canvas');
+        snapshot.width = previousWidth;
+        snapshot.height = previousHeight;
+        snapshot.getContext('2d')?.drawImage(canvas, 0, 0);
+
+        canvas.width = nextWidth;
+        canvas.height = nextHeight;
+
+        const context = canvas.getContext('2d');
+        if (!context) return;
+
+        context.lineCap = 'round';
+        context.lineJoin = 'round';
+        context.strokeStyle = 'black';
+        context.lineWidth = 3;
+        context.drawImage(
+          snapshot,
+          0,
+          0,
+          previousWidth,
+          previousHeight,
+          0,
+          0,
+          nextWidth,
+          nextHeight,
+        );
       };
 
       resizeCanvas();
       window.addEventListener('resize', resizeCanvas);
       return () => window.removeEventListener('resize', resizeCanvas);
+    }, []);
+
+    useEffect(() => {
+      clearCanvas();
     }, [clearCanvas, questionIndex]);
 
-    const getCoords = (event: MouseEvent | TouchEvent) => {
+    const getCoords = (event: PointerEvent<HTMLCanvasElement>) => {
       const canvas = canvasRef.current;
       if (!canvas) return { x: 0, y: 0 };
       const rect = canvas.getBoundingClientRect();
-      if ('touches' in event.nativeEvent) {
-        return {
-          x: event.nativeEvent.touches[0].clientX - rect.left,
-          y: event.nativeEvent.touches[0].clientY - rect.top,
-        };
-      }
       return {
-        x: event.nativeEvent.clientX - rect.left,
-        y: event.nativeEvent.clientY - rect.top,
+        x: event.clientX - rect.left,
+        y: event.clientY - rect.top,
       };
     };
 
-    const startDrawing = (event: MouseEvent | TouchEvent) => {
-      const context = canvasRef.current?.getContext('2d');
-      if (!context) return;
+    const startDrawing = (event: PointerEvent<HTMLCanvasElement>) => {
+      if (
+        activePointerIdRef.current !== null ||
+        event.isPrimary === false ||
+        (event.pointerType === 'mouse' && event.button !== 0)
+      ) {
+        return;
+      }
+
+      const canvas = canvasRef.current;
+      const context = canvas?.getContext('2d');
+      if (!canvas || !context) return;
+
+      event.preventDefault();
       const { x, y } = getCoords(event);
       context.beginPath();
       context.moveTo(x, y);
-      setIsDrawing(true);
+      activePointerIdRef.current = event.pointerId;
+
+      try {
+        canvas.setPointerCapture(event.pointerId);
+      } catch {
+        // Pointer capture may already be lost during rapid device or window changes.
+      }
     };
 
-    const draw = (event: MouseEvent | TouchEvent) => {
-      if (!isDrawing) return;
+    const draw = (event: PointerEvent<HTMLCanvasElement>) => {
+      if (activePointerIdRef.current !== event.pointerId) return;
+
       event.preventDefault();
       const context = canvasRef.current?.getContext('2d');
       if (!context) return;
@@ -86,11 +126,20 @@ export const ScratchCanvas = forwardRef<ScratchCanvasHandle, ScratchCanvasProps>
       context.stroke();
     };
 
-    const stopDrawing = () => {
-      const context = canvasRef.current?.getContext('2d');
-      if (!context) return;
-      context.closePath();
-      setIsDrawing(false);
+    const stopDrawing = (event: PointerEvent<HTMLCanvasElement>) => {
+      if (activePointerIdRef.current !== event.pointerId) return;
+
+      const canvas = canvasRef.current;
+      canvas?.getContext('2d')?.closePath();
+      activePointerIdRef.current = null;
+
+      try {
+        if (canvas?.hasPointerCapture?.(event.pointerId)) {
+          canvas.releasePointerCapture?.(event.pointerId);
+        }
+      } catch {
+        // The browser may release capture before pointercancel or pointerleave runs.
+      }
     };
 
     return (
@@ -108,13 +157,13 @@ export const ScratchCanvas = forwardRef<ScratchCanvasHandle, ScratchCanvasProps>
           <canvas
             ref={canvasRef}
             className="w-full h-full bg-white dark:bg-gray-700 cursor-crosshair"
-            onMouseDown={startDrawing}
-            onMouseMove={draw}
-            onMouseUp={stopDrawing}
-            onMouseLeave={stopDrawing}
-            onTouchStart={startDrawing}
-            onTouchMove={draw}
-            onTouchEnd={stopDrawing}
+            aria-label="Scratch work area"
+            style={{ touchAction: 'none' }}
+            onPointerDown={startDrawing}
+            onPointerMove={draw}
+            onPointerUp={stopDrawing}
+            onPointerCancel={stopDrawing}
+            onPointerLeave={stopDrawing}
           />
           {children}
         </div>
