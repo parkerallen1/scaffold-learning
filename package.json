@@ -18,7 +18,7 @@
     "preview": "vite preview",
     "emulators:start": "npm run build --workspace functions && firebase emulators:start --project demo-quiz-master --only auth,firestore,functions,hosting",
     "emulators:exec": "npm run build --workspace functions && firebase emulators:exec --project demo-quiz-master --only auth,firestore,functions",
-    "firebase:validate": "firebase emulators:exec --project demo-quiz-master --only firestore \"node -e 'process.exit(0)'\"",
+    "firebase:validate": "firebase emulators:exec --project demo-quiz-master --only firestore \"npm run test:firestore:rules\"",
     "domain:clean": "npm run clean --workspace @quiz-master/domain",
     "domain:check": "npm run check --workspace @quiz-master/domain",
     "functions:clean": "npm run clean --workspace functions",
@@ -28,8 +28,9 @@
     "lint": "eslint . --max-warnings 0",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test": "vitest",
-    "test:run": "vitest run",
+    "test": "vitest --exclude tests/firestore/**",
+    "test:run": "vitest run --exclude tests/firestore/**",
+    "test:firestore:rules": "vitest run tests/firestore",
     "check": "npm run functions:clean && npm run domain:clean && npm run format:check && npm run lint && npm run typecheck && npm run domain:check && npm run functions:check && npm run test:run && npm run build && npm run check:client"
   },
   "dependencies": {
@@ -40,6 +41,7 @@
   },
   "devDependencies": {
     "@eslint/js": "9.39.5",
+    "@firebase/rules-unit-testing": "^5.0.1",
     "@tailwindcss/vite": "4.3.3",
     "@testing-library/jest-dom": "6.9.1",
     "@testing-library/react": "16.3.2",

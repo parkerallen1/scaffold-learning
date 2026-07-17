@@ -2,6 +2,199 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isTeacher() {
+      return isSignedIn() && request.auth.token.role == 'teacher';
+    }
+
+    function isStudent() {
+      return isSignedIn() && request.auth.token.role == 'student';
+    }
+
+    function classroomPath(classroomId) {
+      return /databases/$(database)/documents/classrooms/$(classroomId);
+    }
+
+    function studentPath(classroomId, studentId) {
+      return /databases/$(database)/documents/classrooms/$(classroomId)/students/$(studentId);
+    }
+
+    function assignmentPath(classroomId, assignmentId) {
+      return /databases/$(database)/documents/classrooms/$(classroomId)/assignments/$(assignmentId);
+    }
+
+    function targetPath(classroomId, assignmentId, studentId) {
+      let targetId = assignmentId + '_' + studentId;
+      return /databases/$(database)/documents/classrooms/$(classroomId)/assignmentTargets/$(targetId);
+    }
+
+    function sessionPath(classroomId, sessionId) {
+      return /databases/$(database)/documents/classrooms/$(classroomId)/sessions/$(sessionId);
+    }
+
+    function teacherOwnsClassroom(classroomId) {
+      return isTeacher()
+        && exists(classroomPath(classroomId))
+        && get(classroomPath(classroomId)).data.teacherId == request.auth.uid;
+    }
+
+    function activeStudentInClassroom(classroomId) {
+      let claimedStudentId = request.auth.token.studentId;
+      let recordPath = studentPath(classroomId, claimedStudentId);
+      return isStudent()
+        && request.auth.uid == claimedStudentId
+        && request.auth.token.classroomId == classroomId
+        && exists(recordPath)
+        && get(recordPath).data.id == claimedStudentId
+        && get(recordPath).data.classroomId == classroomId
+        && get(recordPath).data.status == 'active'
+        && get(recordPath).data.authVersion == request.auth.token.authVersion;
+    }
+
+    function activeStudentIs(classroomId, studentId) {
+      return activeStudentInClassroom(classroomId)
+        && request.auth.uid == studentId;
+    }
+
+    function studentCanReadAssignment(classroomId, assignmentId) {
+      let publicAssignmentPath = assignmentPath(classroomId, assignmentId);
+      let studentTargetPath = targetPath(classroomId, assignmentId, request.auth.uid);
+      return activeStudentInClassroom(classroomId)
+        && exists(publicAssignmentPath)
+        && get(publicAssignmentPath).data.classroomId == classroomId
+        && get(publicAssignmentPath).data.status == 'published'
+        && exists(studentTargetPath)
+        && get(studentTargetPath).data.classroomId == classroomId
+        && get(studentTargetPath).data.assignmentId == assignmentId
+        && get(studentTargetPath).data.studentId == request.auth.uid;
+    }
+
+    function studentOwnsSession(classroomId, sessionId) {
+      let canonicalSessionPath = sessionPath(classroomId, sessionId);
+      return activeStudentInClassroom(classroomId)
+        && exists(canonicalSessionPath)
+        && get(canonicalSessionPath).data.classroomId == classroomId
+        && get(canonicalSessionPath).data.studentId == request.auth.uid;
+    }
+
+    match /teachers/{teacherId} {
+      allow get: if isTeacher() && request.auth.uid == teacherId;
+      allow create: if isTeacher()
+        && request.auth.uid == teacherId
+        && request.resource.data.id == teacherId;
+      allow update: if isTeacher()
+        && request.auth.uid == teacherId
+        && resource.data.id == teacherId
+        && request.resource.data.id == teacherId;
+      allow delete, list: if false;
+    }
+
+    match /classrooms/{classroomId} {
+      allow get: if (isTeacher() && resource.data.teacherId == request.auth.uid)
+        || activeStudentInClassroom(classroomId);
+      allow list: if isTeacher() && resource.data.teacherId == request.auth.uid;
+      allow create: if isTeacher()
+        && request.resource.data.id == classroomId
+        && request.resource.data.teacherId == request.auth.uid;
+      allow update: if isTeacher()
+        && resource.data.teacherId == request.auth.uid
+        && request.resource.data.id == classroomId
+        && request.resource.data.teacherId == request.auth.uid;
+      allow delete: if isTeacher() && resource.data.teacherId == request.auth.uid;
+
+      // Safe identity only. Observations and recommendation rationale live in
+      // separate teacher-only collections below.
+      match /students/{studentId} {
+        allow get: if teacherOwnsClassroom(classroomId)
+          || activeStudentIs(classroomId, studentId);
+        allow list: if teacherOwnsClassroom(classroomId);
+        allow create: if teacherOwnsClassroom(classroomId)
+          && request.resource.data.id == studentId
+          && request.resource.data.classroomId == classroomId;
+        allow update: if teacherOwnsClassroom(classroomId)
+          && resource.data.id == studentId
+          && resource.data.classroomId == classroomId
+          && request.resource.data.id == studentId
+          && request.resource.data.classroomId == classroomId;
+        allow delete: if teacherOwnsClassroom(classroomId);
+      }
+
+      match /studentProfiles/{profileId} {
+        allow read: if teacherOwnsClassroom(classroomId);
+        allow create, update: if teacherOwnsClassroom(classroomId)
+          && request.resource.data.classroomId == classroomId;
+        allow delete: if teacherOwnsClassroom(classroomId);
+      }
+
+      // Server-generated drafts and audit output are readable only by the
+      // owning teacher. Admin SDK callables own every write.
+      match /recommendations/{recommendationId} {
+        allow read: if teacherOwnsClassroom(classroomId);
+        allow write: if false;
+      }
+
+      match /audits/{auditId} {
+        allow read: if teacherOwnsClassroom(classroomId);
+        allow write: if false;
+      }
+
+      match /assignments/{assignmentId} {
+        allow read, write: if teacherOwnsClassroom(classroomId);
+        allow get: if studentCanReadAssignment(classroomId, assignmentId);
+        allow list: if false;
+
+        match /questions/{questionId} {
+          allow read, write: if teacherOwnsClassroom(classroomId);
+          allow get, list: if studentCanReadAssignment(classroomId, assignmentId);
+        }
+
+        // Answer keys are server-only, including for teachers. Teacher clients
+        // use authorized callables for preview and grading workflows.
+        match /answerKeys/{answerKeyId} {
+          allow read, write: if false;
+        }
+      }
+
+      // Target IDs are deterministic: `${assignmentId}_${studentId}`. This
+      // gives rules a concrete path to verify before exposing an assignment.
+      match /assignmentTargets/{targetId} {
+        allow read, write: if teacherOwnsClassroom(classroomId);
+        allow get: if activeStudentInClassroom(classroomId)
+          && resource.data.classroomId == classroomId
+          && resource.data.studentId == request.auth.uid
+          && targetId == resource.data.assignmentId + '_' + request.auth.uid;
+        allow list: if activeStudentInClassroom(classroomId)
+          && resource.data.studentId == request.auth.uid;
+      }
+
+      // Sessions and events are canonical server records. Clients can read
+      // only scoped records and cannot write them directly.
+      match /sessions/{sessionId} {
+        allow read: if teacherOwnsClassroom(classroomId);
+        allow get: if activeStudentInClassroom(classroomId)
+          && resource.data.classroomId == classroomId
+          && resource.data.studentId == request.auth.uid;
+        allow list: if activeStudentInClassroom(classroomId)
+          && resource.data.studentId == request.auth.uid;
+        allow write: if false;
+
+        match /attemptEvents/{eventId} {
+          allow read: if teacherOwnsClassroom(classroomId)
+            || studentOwnsSession(classroomId, sessionId);
+          allow write: if false;
+        }
+
+        match /supportEvents/{eventId} {
+          allow read: if teacherOwnsClassroom(classroomId)
+            || studentOwnsSession(classroomId, sessionId);
+          allow write: if false;
+        }
+      }
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }
