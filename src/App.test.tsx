@@ -2,7 +2,7 @@ import { act, fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
-import App from './App';
+import App from './app/App';
 import { speak } from './services/speech';
 
 vi.mock('./services/speech', () => ({
