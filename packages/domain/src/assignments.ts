@@ -140,4 +140,5 @@ export const assignmentTargetSchema = z
 export type PublicAssignment = z.infer<typeof publicAssignmentSchema>;
 export type PublicQuestion = z.infer<typeof publicQuestionSchema>;
 export type AssignmentAnswerKey = z.infer<typeof assignmentAnswerKeySchema>;
+export type QuestionAnswerKey = z.infer<typeof questionAnswerKeySchema>;
 export type AssignmentTarget = z.infer<typeof assignmentTargetSchema>;
