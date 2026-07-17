@@ -4,6 +4,8 @@ import { z } from 'zod';
 
 import { fakeAiProvider } from './ai/fakeAiProvider.js';
 
+export { exchangeStudentCredentials } from './auth/studentCredentialExchange.js';
+
 setGlobalOptions({ maxInstances: 10, region: 'us-central1' });
 
 const healthcheckResultSchema = z.object({
