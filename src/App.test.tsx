@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -28,5 +28,28 @@ describe('App', () => {
 
     expect(screen.getByText('Question 2 of 12')).toBeInTheDocument();
     expect(answerInput).toHaveValue('');
+  });
+
+  it('stops the visual timer at zero without advancing or clearing work', () => {
+    vi.useFakeTimers();
+
+    render(<App />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Prototype Settings' }));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Visual Timer' }));
+    fireEvent.change(screen.getByRole('spinbutton'), { target: { value: '1' } });
+
+    const answerInput = screen.getByLabelText('Your Final Answer');
+    fireEvent.change(answerInput, { target: { value: 'work in progress' } });
+
+    act(() => {
+      vi.advanceTimersByTime(1000);
+    });
+
+    expect(screen.getByText('0:00')).toBeInTheDocument();
+    expect(screen.getByText('Question 1 of 12')).toBeInTheDocument();
+    expect(answerInput).toHaveValue('work in progress');
+
+    vi.useRealTimers();
   });
 });

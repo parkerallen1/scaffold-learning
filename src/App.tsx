@@ -58,7 +58,7 @@ const App: React.FC = () => {
     }
   }, [currentQuestionIndex, questions.length, clearCanvas]);
 
-  // Effect for Urgency Timer countdown
+  // Effect for visual timer countdown
   useEffect(() => {
     if (isUrgencyEnabled && !isFinished && !isCorrect) {
       const timer = setInterval(() => {
@@ -67,14 +67,13 @@ const App: React.FC = () => {
             return prev - 1;
           } else {
             clearInterval(timer);
-            handleNextQuestion();
             return 0;
           }
         });
       }, 1000);
       return () => clearInterval(timer);
     }
-  }, [isUrgencyEnabled, currentQuestionIndex, isFinished, isCorrect, handleNextQuestion]);
+  }, [isUrgencyEnabled, currentQuestionIndex, isFinished, isCorrect]);
 
   // Effect to reset timer value when question changes or urgency settings change
   useEffect(() => {
@@ -326,7 +325,7 @@ const App: React.FC = () => {
 
                 <hr className="dark:border-gray-600" />
 
-                {/* Urgency Timer Setting */}
+                {/* Visual Timer Setting */}
                 <div>
                   <label className="flex items-center gap-3 mb-3 font-semibold text-gray-700 dark:text-gray-300">
                     <input
@@ -335,10 +334,11 @@ const App: React.FC = () => {
                       onChange={(e) => setIsUrgencyEnabled(e.target.checked)}
                       className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                     />
-                    Urgency Timer
+                    Visual Timer
                   </label>
                   <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
-                    Set a countdown timer for each question.
+                    Set a countdown timer for each question. Reaching zero does not submit your
+                    answer or move to the next question.
                   </p>
                   <div className="flex items-center gap-2">
                     <input
