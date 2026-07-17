@@ -95,7 +95,7 @@ export const SUPPORT_CATALOG = Object.freeze({
       skippable: true,
     },
   },
-} satisfies Readonly<
+} as const satisfies Readonly<
   Record<
     SupportKey,
     Readonly<{
