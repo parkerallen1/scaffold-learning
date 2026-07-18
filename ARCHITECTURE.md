@@ -1,576 +1,136 @@
-# Quiz Master Architecture
+# Architecture
 
-This document provides a comprehensive overview of the Quiz Master application architecture, design decisions, data flow, and system components.
+## Context
 
-## Table of Contents
+Quiz Master is a React/Firebase application with two trust levels: a teacher controls classroom data and approvals; a student receives a narrowly scoped identity for one classroom and student record. Firestore is authoritative. Browser storage is only a resilience cache for the active answer.
 
-- [System Overview](#system-overview)
-- [Architecture Diagram](#architecture-diagram)
-- [Technology Stack](#technology-stack)
-- [Project Structure](#project-structure)
-- [Data Flow](#data-flow)
-- [State Management](#state-management)
-- [Core Systems](#core-systems)
-- [Design Decisions](#design-decisions)
-- [Performance Considerations](#performance-considerations)
-- [Security](#security)
+The design optimizes for a safe Build Week vertical slice, not for district-scale deployment.
 
-## System Overview
+## System view
 
-Quiz Master is a single-page application (SPA) built with React and TypeScript that provides an interactive quiz experience enhanced with AI capabilities. The application integrates with Google's Gemini API for text-to-speech and intelligent question generation from images and PDFs.
-
-### Key Characteristics
-
-- **Client-Side Rendering**: All logic runs in the browser
-- **AI-Powered**: Leverages Gemini API for TTS and vision capabilities
-- **Stateful**: Manages complex state for quiz progress, UI, and gamification
-- **Real-Time Feedback**: Immediate answer validation and visual feedback
-- **Responsive**: Adapts to desktop, tablet, and mobile devices
-
-## Architecture Diagram
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                         Browser                              │
-│  ┌───────────────────────────────────────────────────────┐  │
-│  │                    React App                          │  │
-│  │  ┌─────────────────────────────────────────────────┐  │  │
-│  │  │           App Component (App.tsx)               │  │  │
-│  │  │                                                 │  │  │
-│  │  │  • Quiz State Management                        │  │  │
-│  │  │  • User Interaction Handling                    │  │  │
-│  │  │  • Canvas Drawing Logic                         │  │  │
-│  │  │  • Admin Panel Control                          │  │  │
-│  │  │  • Gamification Features                        │  │  │
-│  │  └─────────────────────────────────────────────────┘  │  │
-│  │           │                │                           │  │
-│  │           ▼                ▼                           │  │
-│  │  ┌────────────────┐  ┌────────────────┐              │  │
-│  │  │ SpeakerIcon    │  │  Constants     │              │  │
-│  │  │  Component     │  │  (Questions)   │              │  │
-│  │  └────────────────┘  └────────────────┘              │  │
-│  │           │                                            │  │
-│  │           ▼                                            │  │
-│  │  ┌─────────────────────────────────────────────────┐  │  │
-│  │  │       Gemini Service (geminiService.ts)         │  │  │
-│  │  │                                                 │  │  │
-│  │  │  • speak(text)                                  │  │  │
-│  │  │  • generateQuestionsFromImage(file)             │  │  │
-│  │  └─────────────────────────────────────────────────┘  │  │
-│  │           │                                            │  │
-│  └───────────┼────────────────────────────────────────────┘  │
-│              │                                               │
-└──────────────┼───────────────────────────────────────────────┘
-               │ HTTPS
-               ▼
-    ┌──────────────────────┐
-    │   Google Gemini API  │
-    │                      │
-    │  • TTS Model         │
-    │  • Vision Model      │
-    └──────────────────────┘
+```mermaid
+flowchart LR
+  T["Teacher browser"] --> A["Firebase Authentication"]
+  S["Student browser"] --> X["Credential exchange callable"]
+  X --> A
+  T --> C["App Check callables"]
+  S --> C
+  C --> F["Firestore"]
+  C --> O["OpenAI Responses API"]
+  O --> C
+  F --> R["Deny-first Firestore rules"]
+  D["Deterministic fake providers"] --> C
 ```
 
-## Technology Stack
+OpenAI is server-only. The emulator forces deterministic fake providers. Browser read-aloud uses `speechSynthesis` and remains optional.
 
-### Frontend Framework
-- **React 19.2.0**: Component-based UI framework
-  - Hooks for state management (useState, useEffect, useCallback, useRef)
-  - No external state management library (Redux, Zustand, etc.)
-  - Functional components only
+## Trust boundaries
 
-### Language
-- **TypeScript 5.8.2**: Static typing for better developer experience
-  - Strict type checking enabled
-  - Type definitions in `types.ts`
-  - Interface-based design
+### Teacher identity
 
-### Build Tool
-- **Vite 6.2.0**: Fast development server and optimized production builds
-  - Hot Module Replacement (HMR)
-  - ESNext module support
-  - Environment variable handling
-  - Path alias support (`@/`)
+Teachers use Firebase Google sign-in in production. The bootstrap callable grants the `teacher` claim and creates the canonical teacher record. Anonymous teacher bootstrap is accepted only in the emulator.
 
-### Styling
-- **Tailwind CSS**: Utility-first CSS framework
-  - Loaded via CDN (development convenience)
-  - Dark mode support
-  - Responsive design utilities
-  - Custom color schemes
+Teacher callables verify:
 
-### AI Integration
-- **Google Gemini SDK 1.27.0**: Client-side AI API access
-  - `gemini-2.5-flash-preview-tts`: Text-to-speech generation
-  - `gemini-2.5-pro`: Vision and question extraction
+- authenticated `role=teacher`;
+- App Check outside the emulator;
+- active teacher record;
+- classroom ownership and active state;
+- strict runtime input schemas.
 
-### Audio
-- **Web Audio API**: Native browser audio playback
-  - PCM audio decoding
-  - AudioContext for playback control
+### Student identity
 
-### Canvas
-- **HTML5 Canvas API**: Drawing workspace
-  - Mouse and touch event support
-  - 2D rendering context
+The client submits class code, student handle, and PIN to an App Check-protected callable. The server applies throttling, compares an `scrypt` hash using a per-student salt and server pepper, and returns a Firebase custom token containing `role`, `classroomId`, `studentId`, and `authVersion`.
 
-## Project Structure
+Every student session callable re-reads the current classroom and student record. Archiving a class, disabling a student, or incrementing `authVersion` invalidates access.
 
-```
-quiz-master/
-├── src/                          # Source code (implicit - files at root)
-│   ├── App.tsx                   # Main application component (507 lines)
-│   ├── index.tsx                 # React entry point
-│   ├── types.ts                  # TypeScript type definitions
-│   ├── constants.ts              # Question data and constants
-│   ├── components/
-│   │   └── SpeakerIcon.tsx      # Audio indicator component
-│   └── services/
-│       └── geminiService.ts     # Gemini API integration layer
-│
-├── config/                       # Configuration files
-│   ├── tsconfig.json            # TypeScript compiler options
-│   ├── vite.config.ts           # Vite build configuration
-│   └── .env.local               # Environment variables (not in repo)
-│
-├── public/                       # Static assets (served as-is)
-│   └── index.html               # HTML template with import maps
-│
-├── docs/                         # Documentation
-│   ├── README.md                # Getting started guide
-│   ├── ARCHITECTURE.md          # This file
-│   ├── COMPONENTS.md            # Component documentation
-│   └── API.md                   # API integration details
-│
-└── package.json                 # Dependencies and scripts
+Raw class codes and PINs are display-once values. They are not stored in the client after exchange.
+
+## Data layout
+
+```text
+teachers/{teacherId}
+classrooms/{classroomId}
+  students/{studentId}                 safe identity; hashes are isolated server fields
+  studentProfiles/{studentId}          teacher-only structured observations
+  recommendations/{proposalId}         append-only AI proposal
+  assignments/{assignmentId}
+    questions/{questionId}             student-visible published content
+    revisions/{revisionId}             safe revision metadata
+    answerKeys/{revisionId}             server-only
+  assignmentTargets/{assignmentId.studentId}
+  sessionTargets/{targetId}             server-only one-session pointer
+  sessions/{sessionId}
+    attemptEvents/{eventId}
+    supportEvents/{eventId}
+    idempotency/{requestHash}            server-only
+    questionProgress/{questionId}        server-only
+  audits/{auditId}
+    decisions/final_decision             immutable teacher decision
+  demoEvidenceSeeds/{seedId}             emulator-only seed manifest
+supportPlans/{studentId}
+  versions/{planId}                      server-only immutable history
 ```
 
-## Data Flow
-
-### Quiz Flow
-
-```
-1. App Initialization
-   └─> Load questions from constants.ts or localStorage
-   └─> Initialize state (currentQuestionIndex = 0)
-   └─> Set appBackgroundColor from localStorage
-   └─> Render first question
-
-2. User Interaction
-   ├─> Click Speaker Icon
-   │   └─> geminiService.speak(question)
-   │   └─> Generate audio via Gemini TTS API
-   │   └─> Decode base64 PCM audio
-   │   └─> Play audio through Web Audio API
-   │
-   ├─> Draw on Canvas
-   │   └─> Handle mouse/touch events
-   │   └─> Update canvas context with strokes
-   │
-   └─> Type Answer
-       └─> Update userAnswer state
-       └─> Validate answer in real-time
-       └─> Update isCorrect state
-       └─> Apply border color based on validation
-
-3. Answer Submission
-   └─> If correct:
-       ├─> Show "Next Question" button
-       ├─> Display interest reward (if enabled)
-       └─> Wait for user to click "Next"
-   └─> If incorrect:
-       └─> Keep red border, allow retry
-
-4. Next Question
-   └─> Increment currentQuestionIndex
-   └─> Reset userAnswer, isCorrect states
-   └─> Clear canvas
-   └─> Stop timer and restart (if enabled)
-
-5. Quiz Completion
-   └─> currentQuestionIndex === questions.length
-   └─> Set isFinished = true
-   └─> Show completion screen with "Start Over" button
-```
-
-### Admin Panel Flow
-
-```
-1. Password Entry
-   └─> Listen for keydown events
-   └─> Append to passwordInput state
-   └─> If passwordInput === "admin":
-       └─> Set showAdminPanel = true
-       └─> Reset passwordInput
-
-2. Admin Actions
-   ├─> Change Background Color
-   │   └─> Update appBackgroundColor state
-   │   └─> Save to localStorage
-   │
-   ├─> Enable Interest Rewards
-   │   └─> Set isInterestEnabled = true
-   │   └─> Upload interest file
-   │   └─> Store file URL in interestFileUrl
-   │
-   ├─> Enable Urgency Timer
-   │   └─> Set isUrgencyEnabled = true
-   │   └─> Set timerValue (default 180s)
-   │   └─> Start countdown interval
-   │
-   └─> Generate Questions
-       └─> Upload image/PDF file
-       └─> Convert to base64
-       └─> Call geminiService.generateQuestionsFromImage()
-       └─> Parse JSON response
-       └─> Replace questions state with generated questions
-       └─> Reset quiz to question 0
-```
-
-### AI Integration Flow
-
-```
-Text-to-Speech:
-User Click → speak(text) → Gemini API (TTS model)
-             → Base64 PCM audio → AudioContext.decodeAudioData()
-             → AudioBufferSourceNode → Play
-
-Question Generation:
-File Upload → Convert to base64 → generateQuestionsFromImage()
-            → Gemini API (Vision model) → JSON schema validation
-            → Parse questions → Update app state
-```
-
-## State Management
-
-The application uses React's built-in `useState` hook for all state management. No external state management library is used.
-
-### Core State Variables
-
-| State Variable | Type | Purpose |
-|----------------|------|---------|
-| `currentQuestionIndex` | number | Tracks current question position (0-based) |
-| `questions` | Question[] | Array of all quiz questions |
-| `userAnswer` | string | User's typed answer for current question |
-| `isCorrect` | boolean \| null | Answer validation result |
-| `isFinished` | boolean | Whether quiz is complete |
-| `appBackgroundColor` | string | Current background color theme |
-| `isDrawing` | boolean | Canvas drawing state |
-| `showAdminPanel` | boolean | Admin panel visibility |
-| `isPasswordMode` | boolean | Password entry mode |
-| `passwordInput` | string | Accumulated password characters |
-| `isInterestEnabled` | boolean | Interest reward feature toggle |
-| `isUrgencyEnabled` | boolean | Timer feature toggle |
-| `timerValue` | number | Countdown timer value (seconds) |
-| `selectedFile` | File \| null | Question generation file upload |
-| `interestFile` | File \| null | Interest reward file |
-| `interestFileUrl` | string | URL for reward media |
-| `ttsError` | string \| null | TTS error message |
-| `generationError` | string \| null | Question generation error |
-
-### State Persistence
-
-- **localStorage** is used for:
-  - `appBackgroundColor`: Persists theme preference across sessions
-  - Generated questions (implicit - could be added)
-
-- **No database**: All state is client-side and ephemeral
-
-## Core Systems
-
-### 1. Quiz Engine
-
-**Location**: `App.tsx` (lines 1-507)
-
-**Responsibilities**:
-- Question sequencing
-- Answer validation
-- Progress tracking
-- Completion detection
-
-**Key Functions**:
-- `normalizeAnswer(answer: string)`: Removes whitespace and converts to lowercase
-- Answer validation logic (inline in component)
-
-**Validation Rules**:
-- Case-insensitive comparison
-- Whitespace trimming
-- Special handling for question 12 (accepts both orders of addition)
-
-### 2. Canvas Drawing System
-
-**Location**: `App.tsx` (canvas event handlers)
-
-**Features**:
-- Mouse event support: `mousedown`, `mousemove`, `mouseup`
-- Touch event support: `touchstart`, `touchmove`, `touchend`
-- Continuous stroke rendering
-- Canvas resize on window resize
-- Clear functionality
-
-**Implementation Details**:
-```typescript
-// Canvas context stored in useRef
-const canvasRef = useRef<HTMLCanvasElement>(null);
-
-// Drawing state
-const [isDrawing, setIsDrawing] = useState(false);
-
-// Event handlers calculate positions relative to canvas
-const rect = canvas.getBoundingClientRect();
-const x = e.clientX - rect.left;
-const y = e.clientY - rect.top;
-```
-
-### 3. Text-to-Speech System
-
-**Location**: `services/geminiService.ts:speak()`
-
-**Flow**:
-1. Call Gemini TTS API with question text
-2. Receive base64-encoded PCM audio
-3. Decode base64 to binary
-4. Use Web Audio API to decode PCM
-5. Play audio through AudioBufferSourceNode
-
-**Error Handling**:
-- API errors caught and logged
-- User-friendly error messages displayed
-- Graceful degradation (quiz continues without audio)
-
-**Audio Format**:
-- Sample rate: 24000 Hz
-- Channels: Mono (1)
-- Encoding: PCM 16-bit
-
-### 4. AI Question Generation
-
-**Location**: `services/geminiService.ts:generateQuestionsFromImage()`
-
-**Process**:
-1. Accept file (image or PDF) as base64
-2. Send to Gemini Vision API with extraction prompt
-3. Use structured output (JSON schema) for consistent parsing
-4. Extract questions, answers, and optional table data
-5. Return typed Question[] array
-
-**Schema Validation**:
-```typescript
-{
-  type: "ARRAY",
-  items: {
-    type: "OBJECT",
-    properties: {
-      id: { type: "INTEGER" },
-      question: { type: "STRING" },
-      answer: { type: "STRING" },
-      data: { type: "OBJECT", nullable: true }
-    }
-  }
-}
-```
-
-### 5. Gamification System
-
-#### Interest Rewards
-- **Purpose**: Motivate correct answers with media rewards
-- **Supported Formats**: Images, videos, audio
-- **Display**: Shown after correct answer before "Next Question"
-- **Storage**: File stored as blob URL in state
-
-#### Urgency Timer
-- **Purpose**: Add time pressure to quiz
-- **Implementation**: `setInterval` with 1-second countdown
-- **Visual Feedback**: Color changes based on time remaining
-  - Green: > 50% time left
-  - Yellow: 20-50% time left
-  - Red: < 20% time left
-- **Auto-advance**: Moves to next question when timer reaches 0
-
-### 6. Admin System
-
-**Access Control**: Password-based (password: "admin")
-**Entry Method**: Keyboard listener accumulates characters
-**Features**:
-- Background color picker (4 presets)
-- Interest reward file upload
-- Timer configuration
-- Question generation from files
-
-**Security Note**: This is a simple client-side password. For production, use proper authentication.
-
-## Design Decisions
-
-### Why React Without State Management Library?
-
-**Decision**: Use built-in `useState` instead of Redux, Zustand, etc.
-
-**Rationale**:
-- State is mostly local to App component
-- No complex state sharing across deeply nested components
-- Simpler mental model for educational application
-- Reduced bundle size and dependencies
-- Easier to understand for beginners
-
-### Why Vite Over Create React App?
-
-**Decision**: Use Vite as build tool
-
-**Rationale**:
-- Faster development server startup
-- Near-instant HMR
-- Modern ESNext support
-- Smaller, more maintainable config
-- Better performance for TypeScript
-
-### Why CDN for Tailwind and React?
-
-**Decision**: Load Tailwind and React via CDN using import maps
-
-**Rationale**:
-- Faster initial development setup
-- Reduced npm install time
-- Browser caching benefits
-- Smaller git repository
-- Trade-off: Slightly larger initial page load
-
-### Why Client-Side API Key?
-
-**Decision**: Store Gemini API key in environment variable accessible to client
-
-**Rationale**:
-- Simplifies architecture (no backend server)
-- Suitable for personal/educational use
-- Quick deployment
-- **Warning**: Not suitable for production with billing concerns
-
-**Production Alternative**: Use a backend proxy to secure API key
-
-### Why localStorage for Persistence?
-
-**Decision**: Use localStorage instead of database
-
-**Rationale**:
-- No backend required
-- Instant reads/writes
-- Sufficient for user preferences
-- No server costs
-
-**Limitation**: Data is per-browser, not per-user across devices
-
-## Performance Considerations
-
-### Optimization Strategies
-
-1. **Canvas Rendering**
-   - Only redraw on mouse/touch move while drawing
-   - Use `requestAnimationFrame` for smooth rendering
-   - Clear canvas efficiently with `clearRect()`
-
-2. **Audio Playback**
-   - Decode audio asynchronously
-   - Reuse AudioContext instance
-   - Clean up audio sources after playback
-
-3. **Re-render Optimization**
-   - Minimal state updates
-   - Event handlers use `useCallback` where appropriate
-   - Canvas ref to avoid re-renders
-
-4. **API Calls**
-   - Error handling prevents infinite retries
-   - Loading states prevent duplicate requests
-   - Timeouts for long-running requests (could be added)
-
-### Bundle Size
-
-- React (CDN): ~135 KB (gzipped)
-- Gemini SDK (CDN): ~50 KB (gzipped)
-- Tailwind (CDN): ~80 KB (gzipped)
-- Application code: ~15 KB (gzipped)
-
-**Total**: ~280 KB initial load (with CDN caching benefits)
-
-## Security
-
-### Current Security Posture
-
-**Strengths**:
-- No user authentication or personal data storage
-- No server-side vulnerabilities
-- TypeScript provides type safety
-- No SQL injection (no database)
-- No XSS vulnerabilities in React (JSX escaping)
-
-**Weaknesses**:
-- API key exposed to client (visible in DevTools)
-- No rate limiting on API calls
-- No input sanitization on question generation
-- Password stored in plaintext in code
-
-### Security Recommendations for Production
-
-1. **API Key Protection**
-   - Implement backend proxy for Gemini API calls
-   - Use server-side authentication
-   - Implement rate limiting
-
-2. **Input Validation**
-   - Sanitize file uploads
-   - Validate file types and sizes
-   - Limit upload frequency
-
-3. **Authentication**
-   - Replace hardcoded password with proper auth
-   - Use JWT or session-based authentication
-   - Implement role-based access control
-
-4. **Content Security Policy**
-   - Add CSP headers to prevent XSS
-   - Restrict inline scripts
-   - Whitelist allowed domains
-
-5. **HTTPS**
-   - Always serve over HTTPS in production
-   - Use secure cookies if authentication is added
-
-## Future Architecture Considerations
-
-### Scalability
-
-To scale this application:
-
-1. **Add Backend**
-   - Node.js/Express or Next.js API routes
-   - Secure API key storage
-   - User authentication and session management
-   - Question database (PostgreSQL, MongoDB)
-
-2. **Multi-User Support**
-   - User accounts with progress tracking
-   - Leaderboards and analytics
-   - Question sharing between users
-
-3. **Real-Time Features**
-   - WebSocket for live multiplayer quizzes
-   - Real-time leaderboard updates
-   - Live quiz sessions with multiple participants
-
-4. **Mobile Apps**
-   - React Native version for iOS/Android
-   - Shared business logic
-   - Native drawing performance
-
-### Extensibility
-
-The architecture supports:
-- Custom question types (multiple choice, fill-in-blank, etc.)
-- Plugin system for different subjects (math, science, history)
-- Theme system for custom branding
-- Analytics and progress tracking
-- Social features (sharing, challenges)
-
----
-
-**Last Updated**: 2026-01-06
-**Version**: 1.0.0
+Firestore rules allow only the owning teacher or scoped student to read the minimum required records. Canonical identity, assignment, plan, session, event, recommendation, and audit writes go through callables. Answer keys and support-plan versions are never directly readable by clients.
+
+## Core flows
+
+### Onboarding and plans
+
+1. The teacher answers nine optional structured questions.
+2. The server stores structured observations, not a chat transcript.
+3. A fake or OpenAI provider returns catalog-constrained proposed supports.
+4. The server rejects invented evidence, diagnoses, invalid settings, unsafe timer behavior, malformed output, refusal, and timeout.
+5. The teacher edits and approves supports.
+6. A callable creates an immutable plan version and atomically moves the active pointer.
+7. Revert creates a new version; history is never rewritten.
+
+### Assignment publication
+
+1. The teacher creates a strict draft containing public question material and protected keys.
+2. The server generates IDs and writes assignment metadata, questions, revision, and answer key atomically.
+3. Publication is a one-way draft-to-published transition.
+4. Targeting snapshots the student’s active plan ID/version.
+
+Public questions and answer keys are physically separate. The client never receives the protected key.
+
+### Student work
+
+1. The student lists only targets carrying their student ID.
+2. `startOrResumeStudentSession` verifies target, published revision, and pinned plan, then returns student-safe plan settings.
+3. Attempts are graded server-side using deterministic code and recorded with server IDs/timestamps.
+4. Idempotency keys make exact retries stable and reject changed reuse.
+5. A student may advance after at least one recorded attempt, regardless of correctness.
+6. Support events accept only enabled supports from the pinned plan.
+7. The active typed answer and retry key are cached locally and cleared on advance, completion, or sign-out.
+
+### Evidence audit
+
+1. The server loads at most 50 sessions, 50 attempts, and 50 support events.
+2. Deterministic code calculates canonical metrics and applies the default 2-session/10-response threshold.
+3. AI receives bounded metrics and exact event facts; it cannot calculate canonical values.
+4. Post-validation requires exact event IDs/text, at most two suggestions, valid action/support state, and conservative language.
+5. The audit is append-only and cannot change a plan.
+6. A separate teacher decision callable rejects stale plans and duplicate decisions; an approved change creates a new plan version with source `audit`.
+
+## Shared contracts
+
+`packages/domain` is the contract source for both client and Functions. It provides branded IDs, strict Zod schemas, fixtures, support catalog settings, assignment materialization, answer checking, plan transitions, evidence metrics, and AI safety checks.
+
+The root typecheck intentionally compiles consumers against these source contracts; the Functions workspace also checks against the built package.
+
+## Failure behavior
+
+- OpenAI failure produces manual setup/review, never a blocked student flow.
+- Network failure preserves the current typed answer and exact retry key locally.
+- Incorrect answers do not create an infinite gate.
+- Countdown timers are off or non-expiring and cannot submit work.
+- Stale ownership, auth versions, plan pointers, revisions, or audit sources fail closed.
+- Logs use stable error codes and avoid student observations, submitted answers, PINs, and provider error bodies.
+
+## Deployment posture
+
+Production requires Firebase Auth, Firestore, Functions, Hosting, App Check with reCAPTCHA Enterprise, server secrets, indexes, and a reviewed `AI_PROVIDER` setting. The current app has not completed its real-school privacy/security readiness gate. Use the emulator and synthetic data for development and demonstrations.
+
+Architecture decisions are recorded in [docs/adr](./docs/adr/README.md).

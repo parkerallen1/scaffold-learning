@@ -1,783 +1,126 @@
-# Component Documentation
+# Client components
 
-This document provides detailed documentation for all React components in the Quiz Master application.
+The React client is organized by route and feature. Firebase and domain operations live in service modules so components do not construct authorization rules or trust raw callable responses.
 
-## Table of Contents
+## Route tree
 
-- [App Component](#app-component)
-- [SpeakerIcon Component](#speakericon-component)
-- [Component Tree](#component-tree)
-- [Props and State](#props-and-state)
-- [Event Handlers](#event-handlers)
-- [Hooks Usage](#hooks-usage)
-
----
-
-## App Component
-
-**File**: `App.tsx` (507 lines)
-**Type**: Functional Component (React.FC)
-**Purpose**: Main application component that manages the entire quiz experience
-
-### Overview
-
-The App component is the root component of the Quiz Master application. It handles all quiz logic, state management, user interactions, admin features, and gamification systems.
-
-### State Management
-
-The App component manages 21 state variables using React's `useState` hook:
-
-#### Quiz State
-
-| State Variable | Type | Initial Value | Purpose |
-|----------------|------|---------------|---------|
-| `questions` | `Question[]` | `QUESTIONS` | Array of all quiz questions |
-| `currentQuestionIndex` | `number` | `0` | Current question position (0-based) |
-| `userAnswer` | `string` | `''` | User's typed answer |
-| `isCorrect` | `boolean` | `false` | Whether current answer is correct |
-| `isFinished` | `boolean` | `false` | Whether quiz is complete |
-
-#### UI/UX State
-
-| State Variable | Type | Initial Value | Purpose |
-|----------------|------|---------------|---------|
-| `isLoadingTTS` | `boolean` | `false` | TTS audio generation loading state |
-| `ttsError` | `string \| null` | `null` | TTS error message |
-| `isDrawing` | `boolean` | `false` | Canvas drawing state |
-| `appBackgroundColor` | `string` | `'bg-gray-100 dark:bg-gray-900'` | Current background theme |
-
-#### Admin State
-
-| State Variable | Type | Initial Value | Purpose |
-|----------------|------|---------------|---------|
-| `isPasswordMode` | `boolean` | `false` | Password entry mode active |
-| `passwordInput` | `string` | `''` | Accumulated password characters |
-| `showAdminPanel` | `boolean` | `false` | Admin panel visibility |
-| `selectedFile` | `File \| null` | `null` | Uploaded file for question generation |
-| `isGenerating` | `boolean` | `false` | Question generation loading state |
-| `generationError` | `string \| null` | `null` | Question generation error message |
-
-#### Gamification State
-
-| State Variable | Type | Initial Value | Purpose |
-|----------------|------|---------------|---------|
-| `isInterestEnabled` | `boolean` | `false` | Interest reward feature enabled |
-| `interestFile` | `File \| null` | `null` | Uploaded reward media file |
-| `interestFileUrl` | `string \| null` | `null` | URL for reward media display |
-| `showInterestReward` | `boolean` | `false` | Show reward screen |
-| `isUrgencyEnabled` | `boolean` | `false` | Timer feature enabled |
-| `urgencyTime` | `number` | `180` | Timer duration in seconds |
-| `timerValue` | `number` | `180` | Current countdown value |
-
-### Refs
-
-| Ref | Type | Purpose |
-|-----|------|---------|
-| `canvasRef` | `React.RefObject<HTMLCanvasElement>` | Reference to canvas element for drawing |
-
-### Key Functions
-
-#### `fileToBase64(file: File): Promise<string>`
-
-**Purpose**: Converts a File object to base64 string
-**Location**: `App.tsx:7-18`
-**Returns**: Base64-encoded file content (without MIME type prefix)
-**Usage**: Used for uploading files to Gemini API
-
-```typescript
-const base64 = await fileToBase64(uploadedFile);
-```
-
-#### `clearCanvas()`
-
-**Purpose**: Clears all drawings from the canvas
-**Location**: `App.tsx:55-63`
-**Type**: `useCallback` hook
-**Dependencies**: None
-
-```typescript
-const clearCanvas = useCallback(() => {
-  const canvas = canvasRef.current;
-  if (canvas) {
-    const context = canvas.getContext('2d');
-    if (context) {
-      context.clearRect(0, 0, canvas.width, canvas.height);
-    }
-  }
-}, []);
-```
-
-#### `resetQuiz(newQuestions: Question[])`
-
-**Purpose**: Reset quiz to initial state with new questions
-**Location**: `App.tsx:65-72`
-**Parameters**:
-  - `newQuestions`: Array of Question objects to use
-
-**Side Effects**:
-- Resets question index to 0
-- Clears user answer and correctness state
-- Clears canvas drawing
-
-#### `handleNextQuestion()`
-
-**Purpose**: Advance to next question or finish quiz
-**Location**: `App.tsx:74-84`
-**Type**: `useCallback` hook
-**Dependencies**: `currentQuestionIndex`, `questions.length`, `clearCanvas`
-
-**Logic**:
-- Hides interest reward if shown
-- If more questions exist, increment index and reset state
-- If last question, set `isFinished` to true
-
-#### `normalizeAnswer(answer: string): string`
-
-**Purpose**: Normalize answer for comparison
-**Location**: Inline in component (around line 200)
-**Returns**: Lowercase string with whitespace removed
-
-```typescript
-const normalizeAnswer = (answer: string) =>
-  answer.toLowerCase().replace(/\s+/g, '');
-```
-
-#### `handleAnswerChange(e: React.ChangeEvent<HTMLInputElement>)`
-
-**Purpose**: Handle answer input changes and validate
-**Location**: Inline event handler
-
-**Logic**:
-1. Update `userAnswer` state with input value
-2. Normalize both user answer and correct answer
-3. Special case for question 12 (accepts both addition orders)
-4. Set `isCorrect` based on comparison
-5. Show interest reward if enabled and answer is correct
-
-#### `handleSpeak()`
-
-**Purpose**: Trigger text-to-speech for current question
-**Location**: Inline event handler
-
-**Flow**:
-1. Set `isLoadingTTS` to true
-2. Call `speak(currentQuestion.question)`
-3. Handle success or error
-4. Set `isLoadingTTS` to false
-
-#### `handleFileUpload(event: React.ChangeEvent<HTMLInputElement>)`
-
-**Purpose**: Handle file selection for question generation
-**Location**: Inline event handler
-
-**Flow**:
-1. Extract file from input event
-2. Store in `selectedFile` state
-3. Clear any previous generation errors
-
-#### `handleGenerateQuestions()`
-
-**Purpose**: Generate questions from uploaded file using Gemini API
-**Location**: Inline event handler
-
-**Flow**:
-1. Validate file is selected
-2. Convert file to base64
-3. Call `generateQuestionsFromImage(base64, mimeType)`
-4. Parse response and update questions
-5. Reset quiz to question 0
-6. Handle errors
-
-#### Canvas Event Handlers
-
-**Mouse Events**:
-- `handleMouseDown`: Start drawing on mouse press
-- `handleMouseMove`: Draw continuous line while mouse is pressed
-- `handleMouseUp`: Stop drawing on mouse release
-
-**Touch Events**:
-- `handleTouchStart`: Start drawing on touch
-- `handleTouchMove`: Draw continuous line while touching
-- `handleTouchEnd`: Stop drawing on touch end
-
-**Implementation Pattern**:
-```typescript
-const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
-  const canvas = canvasRef.current;
-  if (!canvas) return;
-
-  const rect = canvas.getBoundingClientRect();
-  const x = e.clientX - rect.left;
-  const y = e.clientY - rect.top;
-
-  const context = canvas.getContext('2d');
-  if (context) {
-    context.beginPath();
-    context.moveTo(x, y);
-    setIsDrawing(true);
-  }
-};
-```
-
-### Effects (useEffect)
-
-#### Timer Countdown Effect
-
-**Purpose**: Countdown urgency timer and auto-advance
-**Location**: `App.tsx:87-103`
-**Dependencies**: `isUrgencyEnabled`, `isFinished`, `isCorrect`
-
-**Logic**:
-- Only runs if urgency is enabled and question is active
-- Decrements `timerValue` every second
-- Calls `handleNextQuestion()` when timer reaches 0
-- Cleanup: Clears interval on unmount or dependency change
-
-#### Timer Reset Effect
-
-**Purpose**: Reset timer when moving to new question
-**Location**: `App.tsx:105-109`
-**Dependencies**: `currentQuestionIndex`, `urgencyTime`
-
-**Logic**:
-- Resets `timerValue` to `urgencyTime` when question changes
-
-#### Canvas Resize Effect
-
-**Purpose**: Adjust canvas size when window resizes
-**Location**: `App.tsx:111-124`
-**Dependencies**: None
-
-**Logic**:
-- Sets canvas dimensions to match parent container
-- Adds event listener for window resize
-- Cleanup: Removes event listener on unmount
-
-#### Background Color Persistence Effect
-
-**Purpose**: Save/load background color from localStorage
-**Location**: `App.tsx:126-137`
-**Dependencies**: `appBackgroundColor`
-
-**Logic**:
-- On mount: Load saved color from localStorage
-- On change: Save color to localStorage
-
-#### Interest File URL Effect
-
-**Purpose**: Create blob URL for uploaded interest file
-**Location**: `App.tsx:139-149`
-**Dependencies**: `interestFile`
-
-**Logic**:
-- Creates URL using `URL.createObjectURL()`
-- Cleanup: Revokes URL to prevent memory leaks
-
-#### Password Entry Effect
-
-**Purpose**: Listen for keyboard input to enter admin password
-**Location**: `App.tsx:151-175`
-**Dependencies**: None
-
-**Logic**:
-- Listens for `keydown` events
-- Accumulates characters in `passwordInput`
-- If "admin" is typed, shows admin panel
-- Resets password input after timeout
-- Cleanup: Removes event listener on unmount
-
-### Render Structure
-
-```jsx
-<div className={appBackgroundColor}>
-  {/* Main Quiz Interface */}
-  {!isFinished && (
-    <div className="quiz-container">
-      {/* Question Header */}
-      <div className="question-header">
-        {/* Question text */}
-        {/* Speaker icon for TTS */}
-        {/* Progress indicator */}
-      </div>
-
-      {/* Table (if question has data) */}
-      {currentQuestion.data && <table>...</table>}
-
-      {/* Drawing Canvas */}
-      <canvas ref={canvasRef} />
-      <button onClick={clearCanvas}>Clear Canvas</button>
-
-      {/* Answer Input */}
-      <input
-        value={userAnswer}
-        onChange={handleAnswerChange}
-        className={/* color based on isCorrect */}
-      />
-
-      {/* Next Button (if correct) */}
-      {isCorrect && <button onClick={handleNextQuestion}>Next</button>}
-
-      {/* Interest Reward Display */}
-      {showInterestReward && <div>{/* Media display */}</div>}
-
-      {/* Urgency Timer */}
-      {isUrgencyEnabled && <div>{/* Timer display */}</div>}
-    </div>
-  )}
-
-  {/* Completion Screen */}
-  {isFinished && (
-    <div>
-      <h1>Congratulations!</h1>
-      <button onClick={() => resetQuiz(QUESTIONS)}>Start Over</button>
-    </div>
-  )}
-
-  {/* Admin Panel Modal */}
-  {showAdminPanel && (
-    <div className="admin-panel">
-      {/* Background color options */}
-      {/* Interest reward settings */}
-      {/* Urgency timer settings */}
-      {/* Question generation */}
-    </div>
-  )}
-</div>
-```
-
-### Styling Approach
-
-The component uses:
-- **Tailwind CSS utility classes** for all styling
-- **Dynamic classes** based on state (e.g., border color for answer validation)
-- **Dark mode support** via Tailwind's `dark:` prefix
-- **Responsive design** with Tailwind breakpoints
-
-### Answer Validation Logic
-
-**Location**: Inline in `handleAnswerChange`
-
-```typescript
-const normalized = normalizeAnswer(userAnswer);
-const correctAnswer = normalizeAnswer(currentQuestion.answer);
-
-// Special case for question 12
-if (currentQuestion.id === 12) {
-  const isCorrect =
-    normalized === correctAnswer ||
-    normalized === normalizeAnswer("76.38 + 25.14");
-  setIsCorrect(isCorrect);
-} else {
-  setIsCorrect(normalized === correctAnswer);
-}
-```
-
-**Features**:
-- Case-insensitive comparison
-- Whitespace-insensitive
-- Special handling for commutative addition (question 12)
-
-### Background Color Options
-
-Available themes (set in admin panel):
-
-```typescript
-const colorOptions = [
-  'bg-gray-100 dark:bg-gray-900',    // Default gray
-  'bg-blue-100 dark:bg-blue-900',    // Blue
-  'bg-green-100 dark:bg-green-900',  // Green
-  'bg-purple-100 dark:bg-purple-900' // Purple
-];
-```
-
-### Timer Color Coding
-
-```typescript
-const getTimerColor = () => {
-  const percentRemaining = (timerValue / urgencyTime) * 100;
-  if (percentRemaining > 50) return 'text-green-500';
-  if (percentRemaining > 20) return 'text-yellow-500';
-  return 'text-red-500';
-};
-```
-
----
-
-## SpeakerIcon Component
-
-**File**: `components/SpeakerIcon.tsx` (25 lines)
-**Type**: Functional Component (React.FC)
-**Purpose**: Display audio/speaker icon with loading state
-
-### Overview
-
-A simple presentational component that renders either a spinning loader (during TTS generation) or a static speaker icon (when ready to play).
-
-### Props
-
-```typescript
-interface SpeakerIconProps {
-  isLoading: boolean;   // Whether TTS is currently loading
-  className?: string;   // Optional CSS classes for sizing/styling
-}
-```
-
-### Default Props
-
-```typescript
-{
-  className: "w-6 h-6"  // Default size: 24x24 pixels
-}
-```
-
-### Behavior
-
-#### Loading State (`isLoading = true`)
-
-Renders an animated spinning circle:
-
-```jsx
-<svg className={`${className} animate-spin text-blue-500`}>
-  {/* Spinner SVG paths */}
-</svg>
-```
-
-**Visual**: Blue spinning loader indicating audio generation in progress
-
-#### Ready State (`isLoading = false`)
-
-Renders a static speaker icon with sound waves:
-
-```jsx
-<svg className={className}>
-  {/* Speaker with sound waves SVG path */}
-</svg>
-```
-
-**Visual**: Speaker icon indicating ready to play audio
-
-### Usage Example
-
-```typescript
-// In App component
-<button onClick={handleSpeak}>
-  <SpeakerIcon isLoading={isLoadingTTS} className="w-8 h-8" />
-</button>
-```
-
-### Styling
-
-- Uses Tailwind's `animate-spin` for loading animation
-- Blue color (`text-blue-500`) for loading state
-- Inherits text color for ready state (customizable via parent)
-- SVG viewBox: `0 0 24 24` for proper scaling
-
-### Accessibility Considerations
-
-**Current State**: No ARIA labels or accessibility features
-
-**Recommended Improvements**:
-```jsx
-<button
-  onClick={handleSpeak}
-  aria-label={isLoadingTTS ? "Generating audio..." : "Play question audio"}
->
-  <SpeakerIcon isLoading={isLoadingTTS} />
-</button>
-```
-
----
-
-## Component Tree
-
-```
+```text
 App
-├── Quiz Interface (conditional: !isFinished)
-│   ├── Question Header
-│   │   ├── Question Text
-│   │   ├── SpeakerIcon (button)
-│   │   └── Progress Text
-│   ├── Table (conditional: currentQuestion.data exists)
-│   ├── Canvas (drawing workspace)
-│   ├── Clear Button
-│   ├── Answer Input
-│   ├── Next Button (conditional: isCorrect)
-│   ├── Interest Reward (conditional: showInterestReward)
-│   │   ├── Image (for image files)
-│   │   ├── Video (for video files)
-│   │   └── Audio (for audio files)
-│   └── Timer Display (conditional: isUrgencyEnabled)
-├── Completion Screen (conditional: isFinished)
-│   ├── Congratulations Message
-│   └── Start Over Button
-└── Admin Panel Modal (conditional: showAdminPanel)
-    ├── Close Button
-    ├── Background Color Selector
-    ├── Interest Reward Settings
-    │   ├── Enable Toggle
-    │   └── File Upload
-    ├── Urgency Timer Settings
-    │   ├── Enable Toggle
-    │   └── Time Input
-    └── Question Generation
-        ├── File Upload
-        ├── Generate Button
-        └── Error Display
+├── HomePage                         /
+├── DemoQuizPage                     /demo (legacy visual prototype)
+├── StudentRoute                     /student
+│   └── AuthProvider
+│       └── StudentEntryPage
+│           └── StudentWorkspace
+├── TeacherHomeRoute                 /teacher
+│   └── TeacherAccessBoundary
+│       └── TeacherHomePage
+│           └── ClassroomWorkspace
+├── TeacherPlanningRoute             /teacher/planning?classroomId&studentId
+│   └── TeacherStudentPlanningPage
+│       ├── OnboardingInterview
+│       ├── SupportPlanReview
+│       └── AuditReviewPanel
+├── TeacherAssignmentRoute           /teacher/assignments
+│   └── TeacherAssignmentsPage
+│       └── AssignmentAuthoringForm
+└── TeacherPreviewRoute              /teacher/preview
 ```
 
----
+Teacher routes are lazy-loaded and wrapped by `AuthProvider` plus `TeacherAccessBoundary`. The student route verifies the custom-token role before rendering assigned work.
 
-## Props and State
+## Identity and classroom components
 
-### Global State Flow
+### `AuthProvider`
 
-```
-QUESTIONS (constants.ts)
-    ↓
-App.questions state
-    ↓
-currentQuestionIndex
-    ↓
-currentQuestion (derived)
-    ↓
-Render question UI
-    ↓
-User interaction
-    ↓
-State updates
-    ↓
-Re-render
-```
+Owns Firebase auth observation and exposes safe teacher/student users, loading/error/working state, teacher sign-in, student credential exchange, and sign-out. It rejects tokens with missing or inconsistent roles.
 
-### State Update Patterns
+### `TeacherAccessBoundary`
 
-#### Quiz Progression
+Renders loading, sign-in, invalid-role, or protected teacher content. Production teacher access uses Google; emulator mode exposes a synthetic anonymous teacher path.
 
-```
-User types answer
-    → handleAnswerChange()
-    → setUserAnswer()
-    → Validate answer
-    → setIsCorrect()
-    → (if correct) Show Next button
-    → handleNextQuestion()
-    → setCurrentQuestionIndex()
-    → Reset states
-```
+### `ClassroomWorkspace`
 
-#### Admin Panel
+Lists only classrooms owned by the teacher, manages the selected roster, and calls server lifecycle operations. Class codes and PINs are passed immediately to `CredentialReveal` and are never stored in local storage.
 
-```
-User types "admin"
-    → keydown listener
-    → Accumulate in passwordInput
-    → Match "admin"
-    → setShowAdminPanel(true)
-    → Render modal
-    → User makes changes
-    → Update relevant states
-    → Click outside
-    → setShowAdminPanel(false)
-```
+### `CredentialReveal`
 
----
+A modal acknowledgement boundary for display-once credentials. The accessibility hardening pass owns its dialog focus, Escape, and focus-return behavior. Closing the modal removes the raw secret from React state.
 
-## Event Handlers
+## Planning components
 
-### Summary Table
+### `OnboardingInterview`
 
-| Handler Name | Event Type | Purpose |
-|--------------|------------|---------|
-| `handleAnswerChange` | `onChange` (input) | Update and validate answer |
-| `handleNextQuestion` | `onClick` (button) | Advance to next question |
-| `handleSpeak` | `onClick` (button) | Trigger TTS |
-| `handleFileUpload` | `onChange` (file input) | Store uploaded file |
-| `handleGenerateQuestions` | `onClick` (button) | Generate questions from file |
-| `handleMouseDown` | `onMouseDown` (canvas) | Start drawing |
-| `handleMouseMove` | `onMouseMove` (canvas) | Continue drawing stroke |
-| `handleMouseUp` | `onMouseUp` (canvas) | Stop drawing |
-| `handleTouchStart` | `onTouchStart` (canvas) | Start touch drawing |
-| `handleTouchMove` | `onTouchMove` (canvas) | Continue touch drawing |
-| `handleTouchEnd` | `onTouchEnd` (canvas) | Stop touch drawing |
-| `clearCanvas` | `onClick` (button) | Clear canvas |
-| Password listener | `keydown` (window) | Detect admin password |
-| Window resize | `resize` (window) | Adjust canvas size |
+Presents nine teacher questions one at a time with skip, back, edit, and review behavior. It outputs strict structured observations and an optional teacher summary; it never produces or persists a raw chat transcript.
 
----
+### `SupportPlanReview`
 
-## Hooks Usage
+The approval boundary for onboarding recommendations and manual configuration. Every recommendation begins proposed. The teacher can approve/reject item by item, edit typed settings, add supports manually, and preview plain-language student behavior.
 
-### useState
+`SettingsEditor` is shared with audit review so both paths use the same catalog-valid controls.
 
-**Count**: 21 state variables
-**Purpose**: Manage all application state
-**Pattern**: Simple state updates with setter functions
+### `TeacherStudentPlanningPage`
 
-### useEffect
+Coordinates profile load/save, recommendation generation, manual fallback, explicit plan creation, history, and confirmed revert. Disabled students remain read-only.
 
-**Count**: 6 effects
-**Purposes**:
-1. Timer countdown
-2. Timer reset on question change
-3. Canvas resize on window resize
-4. Background color persistence
-5. Interest file URL creation
-6. Password entry listener
+### `AuditReviewPanel`
 
-**Cleanup**: All effects with event listeners or intervals properly clean up
+Runs the server audit and shows canonical counts, evidence threshold, exact event citations, confidence, and alternative explanations. It requires an approve/reject/observe decision for every recommendation and confirmation before submitting a final review. It reloads planning data after a new audit-sourced plan version is created.
 
-### useCallback
+## Assignment components
 
-**Count**: 2 callbacks
-**Functions**:
-1. `clearCanvas` - No dependencies, stable reference
-2. `handleNextQuestion` - Depends on `currentQuestionIndex`, `questions.length`, `clearCanvas`
+### `AssignmentAuthoringForm`
 
-**Purpose**: Prevent unnecessary re-renders and maintain stable function references
+Builds strict numeric, multiple-choice, and short-text drafts. It validates required answers, unique IDs, valid choice keys, answer bounds, and approved hints before calling its publish handler. The component contains teacher-only draft answers but never receives a persisted answer key.
 
-### useRef
+### `TeacherAssignmentsPage`
 
-**Count**: 1 ref
-**Usage**: `canvasRef` for direct canvas DOM manipulation
-**Pattern**: Access current canvas element for drawing operations
+Loads active classrooms/students, requires at least one active recipient, and runs create → publish → target after explicit confirmation. Published questions cannot be edited in place.
 
----
+## Student work components
 
-## Performance Considerations
+### `StudentWorkspace`
 
-### Optimization Techniques
+Lists the signed-in student’s targets, opens or resumes one canonical session, and renders one question at a time.
 
-1. **useCallback for Stable References**
-   - Prevents re-creation of functions on every render
-   - Important for effects that depend on functions
+The question runner provides:
 
-2. **Canvas Ref for Direct Manipulation**
-   - Avoids triggering React re-renders for drawing operations
-   - Direct DOM manipulation for performance-critical drawing
+- numeric, multiple-choice, and short-text inputs;
+- neutral correct/incorrect/teacher-review feedback;
+- retry or review-later progression after a recorded attempt;
+- pause/resume and confirmed early completion;
+- approved read-aloud, reading chunks, focus view, and hint ladder;
+- support-event logging and active-support attempt context;
+- local typed-answer and idempotency-key recovery;
+- the Pointer Events scratch canvas, kept local and not uploaded.
 
-3. **Conditional Rendering**
-   - Only renders active UI sections
-   - Admin panel, interest rewards, timer only when needed
+`studentWorkService` strictly parses every Firestore document and callable response. `studentDraftStorage` scopes records by student/session/question and clears them on advance, completion, or sign-out.
 
-4. **Cleanup in Effects**
-   - Prevents memory leaks
-   - Removes event listeners and clears intervals
+## Shared/legacy quiz components
 
-### Potential Improvements
+`DemoQuizPage` and `features/quiz` preserve the original visual prototype for comparison and a known seed activity. `ScratchCanvas` is reused by the real student runner. The production classroom path does not use the prototype password/settings controls.
 
-1. **Memoization**
-   - Use `useMemo` for expensive calculations (e.g., timer color)
-   - Use `React.memo` for SpeakerIcon if props change frequently
+## Service boundary
 
-2. **Debouncing**
-   - Debounce answer validation if performance issues arise
-   - Throttle canvas drawing for smoother performance
+| Service | Responsibility |
+|---|---|
+| `authService` | Firebase auth, role parsing, credential exchange |
+| `classroomService` | teacher lifecycle callables and constrained roster reads |
+| `planningService` | profiles, recommendation, plans, history, revert |
+| `assignmentService` | assignment create/publish/target contract |
+| `studentWorkService` | target/question reads and session callables |
+| `auditService` | evidence audit and immutable teacher decision |
+| `speech` | optional browser `speechSynthesis` read-aloud |
 
-3. **Code Splitting**
-   - Lazy load admin panel component
-   - Lazy load Gemini service for smaller initial bundle
+Services convert all errors to generic user-safe messages. Components should not display raw Firebase/OpenAI errors or log student answers, observations, PINs, class codes, or answer keys.
 
----
+## Component rules
 
-## Testing Recommendations
-
-### Unit Tests
-
-**App Component**:
-- [ ] Quiz progression (next question, completion)
-- [ ] Answer validation (correct, incorrect, special cases)
-- [ ] Canvas operations (draw, clear)
-- [ ] Timer countdown and auto-advance
-- [ ] Admin panel access and controls
-- [ ] File upload and question generation
-
-**SpeakerIcon Component**:
-- [ ] Renders loading state correctly
-- [ ] Renders ready state correctly
-- [ ] Applies custom className
-
-### Integration Tests
-
-- [ ] Full quiz flow (start to finish)
-- [ ] Admin panel workflow (enable features, generate questions)
-- [ ] TTS integration (mock Gemini API)
-- [ ] Question generation integration (mock Gemini API)
-
-### E2E Tests
-
-- [ ] User completes quiz
-- [ ] User accesses admin panel
-- [ ] User generates questions from file
-- [ ] Timer expires and auto-advances
-- [ ] Interest reward displays after correct answer
-
----
-
-## Accessibility
-
-### Current Accessibility Features
-
-- Semantic HTML (headings, buttons, inputs)
-- Focus management on interactive elements
-- Keyboard navigation (implicit via native elements)
-
-### Accessibility Gaps
-
-1. **Missing ARIA Labels**
-   - Speaker icon button needs `aria-label`
-   - Canvas needs `aria-label` or alternative description
-   - Timer needs `aria-live` for screen reader announcements
-
-2. **Keyboard Navigation**
-   - Admin panel should support Escape key to close
-   - Canvas drawing not accessible (inherent limitation)
-
-3. **Focus Management**
-   - Focus should move to next question button when answer is correct
-   - Focus should return to trigger when closing admin panel
-
-4. **Screen Reader Support**
-   - Question progress not announced
-   - Timer countdown not announced
-   - Correct/incorrect feedback not announced
-
-### Recommended Improvements
-
-```jsx
-// Speaker button
-<button
-  onClick={handleSpeak}
-  aria-label={isLoadingTTS ? "Generating audio..." : "Play question audio"}
-  aria-live="polite"
->
-  <SpeakerIcon isLoading={isLoadingTTS} />
-</button>
-
-// Timer
-<div
-  className={getTimerColor()}
-  aria-live="polite"
-  aria-atomic="true"
->
-  Time: {formatTime(timerValue)}
-</div>
-
-// Answer input
-<input
-  value={userAnswer}
-  onChange={handleAnswerChange}
-  aria-label="Your answer"
-  aria-invalid={isCorrect === false}
-  aria-describedby="answer-feedback"
-/>
-<div id="answer-feedback" aria-live="polite">
-  {isCorrect === true && "Correct!"}
-  {isCorrect === false && "Incorrect, try again"}
-</div>
-```
-
----
-
-**Last Updated**: 2026-01-06
-**Component Count**: 2
-**Total Lines**: ~532
+- Use semantic buttons/labels/fieldsets instead of clickable containers.
+- Provide visible status and error regions without relying on color alone.
+- Preserve a 44×44 CSS-pixel target for primary student controls.
+- Keep focus visible and restore focus after modals.
+- No automatic audio, submit, question advance, or expiring countdown behavior.
+- Student supports come only from the session’s pinned plan.
+- AI suggestions remain inactive until an authorized teacher action succeeds.
+- Add a focused Testing Library test for each critical state transition.
