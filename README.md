@@ -42,14 +42,16 @@ Prerequisites:
 git clone https://github.com/parkerallen1/quiz-master.git
 cd quiz-master
 npm ci
-cp .env.example .env.local
-cp functions/.secret.local.example functions/.secret.local
+npm run setup:local
 npm run emulators:start
 ```
 
 Open the Hosting emulator at `http://127.0.0.1:5000`. The Emulator UI is at `http://127.0.0.1:4000`.
 
-The checked-in environment template is locked to `demo-quiz-master`; the client refuses to mix a demo project with production mode. The emulator uses deterministic fake AI and does not send observations to OpenAI.
+`setup:local` creates missing ignored emulator configuration and a local-only student PIN pepper; it
+never overwrites existing values. The checked-in environment template is locked to
+`demo-quiz-master`; the client refuses to mix a demo project with production mode. The emulator uses
+deterministic fake AI and does not send observations to OpenAI.
 
 ## Demo flow
 
@@ -102,6 +104,7 @@ Useful commands:
 | Command | Purpose |
 |---|---|
 | `npm run dev` | Vite client only |
+| `npm run setup:local` | Safely prepare missing ignored emulator configuration |
 | `npm run emulators:start` | Auth, Firestore, Functions, and Hosting emulators |
 | `npm run test:run` | Unit/component tests except Firestore rules |
 | `npm run firebase:validate` | Firestore rules tests |

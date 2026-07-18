@@ -24,7 +24,10 @@ export default defineConfig({
     : [
         {
           command: 'npm run e2e:emulators',
-          url: `http://127.0.0.1:9099/emulator/v1/projects/demo-quiz-master/config`,
+          // Auth and Firestore can accept traffic before callable discovery finishes.
+          // Gate the browser on an initialized Function so the first teacher bootstrap
+          // cannot race the Functions emulator startup.
+          url: 'http://127.0.0.1:5001/demo-quiz-master/us-central1/healthcheck',
           reuseExistingServer: false,
           timeout: 120_000,
           stdout: 'pipe',

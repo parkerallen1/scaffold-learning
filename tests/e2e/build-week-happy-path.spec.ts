@@ -144,7 +144,9 @@ test.describe('Build Week teacher-guided learning loop', () => {
       teacherPage.getByRole('heading', { name: 'Review recorded student work' }),
     ).toBeVisible();
     await teacherPage.getByLabel('Active classroom').selectOption({ label: classroomName });
-    await teacherPage.getByLabel('Student').selectOption({ label: studentName });
+    await teacherPage
+      .getByRole('combobox', { name: 'Student', exact: true })
+      .selectOption({ label: studentName });
     await expect(teacherPage.getByRole('heading', { name: 'Recent sessions' })).toBeVisible();
     await teacherPage.getByRole('button', { name: new RegExp(assignmentTitle) }).click();
     await expect(teacherPage.getByRole('heading', { name: assignmentTitle })).toBeVisible();
