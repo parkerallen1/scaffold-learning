@@ -5,6 +5,7 @@ export * from './checking.js';
 export * from './fixtures.js';
 export * from './identity.js';
 export * from './ids.js';
+export * from './metrics.js';
 export * from './onboarding.js';
 export * from './sessions.js';
 export * from './supports.js';
