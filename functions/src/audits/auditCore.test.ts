@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import {
   attemptEventSchema,
+  eventIdSchema,
   sessionStateSchema,
   syntheticDomainFixtures,
   syntheticIds,
@@ -160,7 +161,7 @@ describe('audit grounding and fallback', () => {
           {
             metric: 'supportUse',
             observation: 'The student benefited from chunking.',
-            sourceEventIds: ['event_invented_01'],
+            sourceEventIds: [eventIdSchema.parse('event_invented_01')],
           },
         ],
         alternativeExplanations: ['The item may have been easier.'],
@@ -186,7 +187,7 @@ describe('audit grounding and fallback', () => {
           {
             metric: fact.metric,
             observation: fact.observation,
-            sourceEventIds: [fact.eventId],
+            sourceEventIds: [eventIdSchema.parse(fact.eventId)],
           },
         ],
         alternativeExplanations: ['This may be caused by ADHD compared with peers.'],

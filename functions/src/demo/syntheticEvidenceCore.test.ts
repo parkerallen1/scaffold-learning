@@ -12,7 +12,7 @@ import {
   assertSyntheticEvidenceWriteAvailable,
   buildSyntheticEvidencePacket,
   syntheticEvidenceSummary,
-  SyntheticEvidenceError,
+  type SyntheticEvidenceError,
 } from './syntheticEvidenceCore.js';
 
 const target = assignmentTargetSchema.parse(syntheticDomainFixtures.assignmentTarget);

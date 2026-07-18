@@ -22,13 +22,14 @@ import {
   sessionIdempotencyRecordSchema,
   startOrResumeStudentSessionState,
   StudentSessionError,
+  submitStudentAttemptInputSchema,
   transitionStudentSessionState,
 } from './studentSessionLifecycleCore.js';
 
 const { assignmentTarget, publicQuestion, supportPlan } = syntheticDomainFixtures;
 const nowMs = 1_750_000_000_000;
 
-const attemptInput = {
+const attemptInput = submitStudentAttemptInputSchema.parse({
   sessionId: 'session_core_01',
   questionId: publicQuestion.id,
   idempotencyKey: 'attempt_core_key_01',
@@ -36,7 +37,7 @@ const attemptInput = {
   activeSupports: ['readingChunks' as const],
   clientOccurredAt: nowMs,
   elapsedMs: 12_000,
-};
+});
 
 const makeSession = () =>
   createStudentSession({
@@ -232,10 +233,12 @@ describe('submission idempotency', () => {
 
   it('rejects reuse of an idempotency key for a changed submission', () => {
     const originalFingerprint = attemptRequestFingerprint(attemptInput);
-    const changedFingerprint = attemptRequestFingerprint({
-      ...attemptInput,
-      submittedAnswer: { kind: 'choice', choiceId: 'choice_demo_a' },
-    });
+    const changedFingerprint = attemptRequestFingerprint(
+      submitStudentAttemptInputSchema.parse({
+        ...attemptInput,
+        submittedAnswer: { kind: 'choice', choiceId: 'choice_demo_a' },
+      }),
+    );
     const record = sessionIdempotencyRecordSchema.parse({
       kind: 'attempt',
       fingerprint: originalFingerprint,
