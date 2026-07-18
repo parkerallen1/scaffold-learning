@@ -12,6 +12,7 @@ import {
 import {
   advanceStudentSessionState,
   assertMatchingIdempotencyRecord,
+  assertQuestionAttemptedBeforeAdvance,
   attemptRequestFingerprint,
   buildAttemptEvent,
   createStudentSession,
@@ -91,6 +92,18 @@ describe('student session state transitions', () => {
       currentQuestionId: null,
       completedAt: nowMs + 1_000,
     });
+  });
+
+  it('requires an attempt before the student can move on for later review', () => {
+    expect(() => assertQuestionAttemptedBeforeAdvance(undefined, publicQuestion.id)).toThrowError(
+      new StudentSessionError('invalid-transition'),
+    );
+    expect(
+      assertQuestionAttemptedBeforeAdvance(
+        { questionId: publicQuestion.id, attemptCount: 1, updatedAt: nowMs },
+        publicQuestion.id,
+      ).attemptCount,
+    ).toBe(1);
   });
 
   it('advances to later work after an incorrect attempt without a correctness gate', () => {

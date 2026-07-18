@@ -264,6 +264,21 @@ export const advanceStudentSessionState = (
   });
 };
 
+export const assertQuestionAttemptedBeforeAdvance = (
+  rawProgress: unknown,
+  expectedQuestionId: QuestionId,
+): z.infer<typeof sessionQuestionProgressSchema> => {
+  const progress = sessionQuestionProgressSchema.safeParse(rawProgress);
+  if (
+    !progress.success ||
+    progress.data.questionId !== expectedQuestionId ||
+    progress.data.attemptCount < 1
+  ) {
+    throw new StudentSessionError('invalid-transition');
+  }
+  return progress.data;
+};
+
 const assertClientOccurredAt = (clientOccurredAt: number, nowMs: number): void => {
   if (
     clientOccurredAt < nowMs - MAX_CLIENT_EVENT_AGE_MS ||

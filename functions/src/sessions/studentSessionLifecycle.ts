@@ -38,6 +38,7 @@ import {
 import {
   advanceStudentSessionInputSchema,
   advanceStudentSessionState,
+  assertQuestionAttemptedBeforeAdvance,
   assertMatchingIdempotencyRecord,
   assertSessionIdentity,
   attemptRequestFingerprint,
@@ -621,7 +622,12 @@ const advanceSessionRecord = async (
       .collection('assignments')
       .doc(existing.assignmentId)
       .collection('questions');
-    const currentSnapshot = await transaction.get(questionsRef.doc(input.currentQuestionId));
+    const progressRef = sessionRef.collection('questionProgress').doc(input.currentQuestionId);
+    const [currentSnapshot, progressSnapshot] = await Promise.all([
+      transaction.get(questionsRef.doc(input.currentQuestionId)),
+      transaction.get(progressRef),
+    ]);
+    assertQuestionAttemptedBeforeAdvance(progressSnapshot.data(), input.currentQuestionId);
     const current = publicQuestionSchema.safeParse(currentSnapshot.data());
     if (
       !currentSnapshot.exists ||
