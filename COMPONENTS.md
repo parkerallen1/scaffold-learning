@@ -24,6 +24,9 @@ App
 ├── TeacherAssignmentRoute           /teacher/assignments
 │   └── TeacherAssignmentsPage
 │       └── AssignmentAuthoringForm
+├── TeacherEvidenceRoute             /teacher/evidence
+│   └── TeacherEvidencePage
+│       └── SessionEvidenceDetail
 └── TeacherPreviewRoute              /teacher/preview
 ```
 
@@ -96,6 +99,21 @@ The question runner provides:
 
 `studentWorkService` strictly parses every Firestore document and callable response. `studentDraftStorage` scopes records by student/session/question and clears them on advance, completion, or sign-out.
 
+## Teacher evidence components
+
+### `TeacherEvidencePage`
+
+Lets an authenticated teacher choose an owned classroom, student, and one of the 20 most recently
+updated sessions. It provides explicit loading, empty, error, and truncation states and never exposes
+an answer key or a record-changing control.
+
+### `SessionEvidenceDetail`
+
+Shows the assignment prompt, submitted response, server-owned outcome, elapsed time, active supports,
+and support-use events for each question. Reads are capped at 200 attempts and 200 support events per
+session. `teacherEvidenceService` strictly validates every teacher/classroom/student/session/
+assignment/question/event binding before returning content.
+
 ## Shared/legacy quiz components
 
 `DemoQuizPage` and `features/quiz` preserve the original visual prototype for comparison and a known seed activity. `ScratchCanvas` is reused by the real student runner. The production classroom path does not use the prototype password/settings controls.
@@ -109,6 +127,7 @@ The question runner provides:
 | `planningService` | profiles, recommendation, plans, history, revert |
 | `assignmentService` | assignment create/publish/target contract |
 | `studentWorkService` | target/question reads and session callables |
+| `teacherEvidenceService` | bounded, read-only teacher session evidence |
 | `auditService` | evidence audit and immutable teacher decision |
 | `speech` | optional browser `speechSynthesis` read-aloud |
 

@@ -14,6 +14,7 @@ This repository is the OpenAI Build Week education-pathway project and a synthet
 - Teacher-authored numeric, multiple-choice, and short-text assignments.
 - Server-owned publication, protected answer keys, and student targeting pinned to a plan version.
 - Student assignment resume, deterministic checking, neutral retries, review-later escape, approved supports, scratch canvas, and local answer recovery.
+- Read-only teacher session review for submitted responses, outcomes, timing, active supports, and support-use events.
 - Deterministic evidence metrics, threshold-gated support audits, grounded suggestions, and immutable teacher decisions.
 - Emulator-only synthetic evidence seeding for the Build Week audit demonstration.
 
@@ -59,7 +60,8 @@ The checked-in environment template is locked to `demo-quiz-master`; the client 
 5. Complete the structured interview, review suggestions, and approve a plan.
 6. Open `/teacher/assignments`, author an activity, publish it, and assign the student.
 7. In another browser profile, open `/student`, sign in, and complete the activity.
-8. Return to the teacher planning screen and run the evidence audit after enough work exists.
+8. Open `/teacher/evidence` to inspect the completed session without exposing its answer key.
+9. Return to the teacher planning screen and run the evidence audit after enough work exists.
 
 `seedSyntheticStudentEvidence` can create the 2-session/10-response threshold history in the emulator for a targeted published assignment. It is hard-disabled outside the Functions emulator and a `demo-*` project. A small teacher UI for this callable is not yet included.
 
@@ -82,9 +84,14 @@ Live recommendation and audit calls share a transactional per-teacher ceiling of
 ```bash
 npm run check
 npm run firebase:validate
+npm run e2e
 ```
 
 `npm run check` runs formatting, lint, root/domain/Functions typechecks, the unit and component test suite, all builds, and the client-boundary secret scan. `npm run firebase:validate` runs deny-first Firestore rules tests and requires Java. CI supplies Java 21.
+
+`npm run e2e` builds the demo and runs the two system-Chrome Playwright paths against isolated Auth,
+Firestore, and Functions emulators. It requires Java 21 and Google Chrome; CI installs Java and keeps
+failure traces/screenshots. See [tests/e2e/README.md](./tests/e2e/README.md).
 
 Useful commands:
 
@@ -94,6 +101,7 @@ Useful commands:
 | `npm run emulators:start` | Auth, Firestore, Functions, and Hosting emulators |
 | `npm run test:run` | Unit/component tests except Firestore rules |
 | `npm run firebase:validate` | Firestore rules tests |
+| `npm run e2e` | Emulator-backed Playwright route and cross-role demo paths |
 | `npm run build` | Domain, client, and Functions production builds |
 | `npm run check` | Required local quality gate |
 
@@ -104,6 +112,7 @@ src/                    React routes and feature UI
 functions/src/          Authorized callables and AI providers
 packages/domain/src/    Shared strict schemas and deterministic logic
 tests/firestore/        Firestore authorization tests
+tests/e2e/              Emulator-backed Playwright demo paths
 docs/adr/               Architecture decisions
 PLAN.md                 Product, safety, pilot, and milestone contract
 IMPLEMENTATION.md       Agent-sized execution roadmap
@@ -119,6 +128,6 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md), [API.md](./API.md), and [COMPONENTS.md
 - Add background offline event reconciliation; current typed answers and retry keys persist locally, but the student explicitly retries submission.
 - Persist scratch work only through a future explicit opt-in evidence flow.
 - Complete manual VoiceOver/ChromeVox, 200% zoom, contrast, and touch/stylus qualification.
-- Add deterministic end-to-end demo reset and Playwright coverage.
+- Add a teacher-facing synthetic seed/reset control; Playwright resets only its isolated emulator state programmatically.
 
 Do not use real student data until those gates are complete.
