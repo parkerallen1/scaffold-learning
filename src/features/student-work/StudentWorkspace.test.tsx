@@ -214,4 +214,23 @@ describe('StudentWorkspace', () => {
       expect(stored).not.toMatch(/pin|classCode|studentHandle/i);
     });
   });
+
+  it('requires confirmation before turning in unfinished work', async () => {
+    const user = userEvent.setup();
+    vi.spyOn(window, 'confirm').mockReturnValue(false);
+    render(
+      <StudentWorkspace
+        classroomId={classroomId}
+        isSigningOut={false}
+        onSignOut={vi.fn()}
+        studentId={studentId}
+      />,
+    );
+
+    await user.click(await screen.findByRole('button', { name: 'Open assignment' }));
+    await user.click(await screen.findByRole('button', { name: 'Finish assignment' }));
+
+    expect(window.confirm).toHaveBeenCalled();
+    expect(harness.transition).not.toHaveBeenCalled();
+  });
 });

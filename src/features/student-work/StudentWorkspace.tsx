@@ -535,6 +535,14 @@ const SessionRunner = ({ onBack, studentAssignment, studentId }: SessionRunnerPr
     setBundle((current) => current && { ...current, session: nextSession });
   };
   const runTransition = async (action: 'complete' | 'pause' | 'resume') => {
+    if (
+      action === 'complete' &&
+      !window.confirm(
+        'Finish and turn in this assignment now? Your saved attempts will be available to your teacher.',
+      )
+    ) {
+      return;
+    }
     setIsTransitioning(true);
     setError(null);
     try {
