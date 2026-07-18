@@ -1,22 +1,32 @@
 import {
   recommendationInputSchema,
-  recommendationResultSchema,
   type RecommendationInput,
   type RecommendationResult,
 } from '@quiz-master/domain';
-import { fakeRecommendationFixture } from './fixtures.js';
 
-export interface AiProvider {
-  readonly name: string;
-  recommendSupports(input: RecommendationInput): Promise<RecommendationResult>;
-}
+import type { AiProvider } from './contracts.js';
+import { fakeRecommendationFixture } from './fixtures.js';
+import { validateProviderRecommendationResult } from './providerSafety.js';
 
 export class FakeAiProvider implements AiProvider {
   readonly name = 'fake';
 
   async recommendSupports(input: RecommendationInput): Promise<RecommendationResult> {
-    recommendationInputSchema.parse(input);
-    return recommendationResultSchema.parse(structuredClone(fakeRecommendationFixture));
+    const parsedInput = recommendationInputSchema.parse(input);
+    const groundedResult = {
+      ...structuredClone(fakeRecommendationFixture),
+      recommendations: fakeRecommendationFixture.recommendations.map((recommendation, index) => ({
+        ...structuredClone(recommendation),
+        basedOn: [parsedInput.observations[index % parsedInput.observations.length]!],
+      })),
+    };
+
+    return validateProviderRecommendationResult(
+      parsedInput,
+      groundedResult,
+      'fake',
+      fakeRecommendationFixture.promptVersion,
+    );
   }
 }
 
