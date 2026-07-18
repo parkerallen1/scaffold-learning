@@ -15,11 +15,11 @@ import {
 } from './auditContracts.js';
 import {
   AUDIT_MANUAL_REVIEW_SUMMARY,
-  AuditEvidenceError,
   buildAuditEvidence,
   MAX_AUDIT_ATTEMPTS,
   runEvidenceAudit,
 } from './auditCore.js';
+import type { AuditEvidenceError } from './auditCore.js';
 import { FakeAuditProvider } from './fakeAuditProvider.js';
 
 const sessions = ['session_audit_01', 'session_audit_02'].map((id, index) =>

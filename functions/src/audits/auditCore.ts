@@ -25,7 +25,6 @@ import {
   type EvidenceSummary,
   type SessionState,
   type SupportEvent,
-  type SupportSettings,
   type TeacherId,
 } from '@quiz-master/domain';
 
