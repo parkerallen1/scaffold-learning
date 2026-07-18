@@ -17,11 +17,37 @@ The core product loop is:
 
 That complete loop—not the number of accessibility toggles—is the Build Week product.
 
+### Implementation status (July 17, 2026)
+
+The Build Week vertical slice is implemented locally with synthetic data:
+
+- Teacher and student identity, classroom ownership, scoped student sessions, App Check, and
+  deny-first Firestore rules.
+- Structured teacher observations, catalog-constrained AI recommendations, explicit approval,
+  immutable support-plan history, and revert.
+- Teacher-authored numeric, multiple-choice, and short-text assignments with protected answer keys
+  and immutable publication/targeting.
+- A resumable one-question-at-a-time student runner with deterministic server grading, draft
+  recovery, read-aloud, chunking, focus mode, hints, and a non-correctness-gated escape path.
+- Bounded evidence audits with deterministic metrics, exact event citations, teacher decisions,
+  immutable plan changes, and emulator-only synthetic evidence.
+- Production AI kill switch, per-teacher quotas, content-free telemetry, accessible critical flows,
+  and CI/browser-test coverage.
+
+The remaining work is qualification rather than expansion: run the Firestore and full browser suites
+in a Java 21 environment, complete the listed manual assistive-technology checks, rehearse twice on a
+managed Chromebook, and obtain the school/privacy approvals in section 12 before entering real
+student data. Worksheet extraction, scratch-image persistence, grading overrides, and a durable
+offline event queue remain explicitly outside the Build Week cut line.
+
 ---
 
-## 2. Current repository assessment
+## 2. Baseline repository assessment
 
-The existing app is a useful visual and interaction prototype:
+This was the repository state when the plan was written. It is retained to explain the architecture
+and prioritization decisions; the dated status above describes the current implementation.
+
+The original app was a useful visual and interaction prototype:
 
 - React 19 + Vite + TypeScript, deployed as a static Firebase Hosting app.
 - One-question-at-a-time runner with a scratch canvas.
@@ -30,7 +56,7 @@ The existing app is a useful visual and interaction prototype:
 - A hidden settings panel with a timer, background choice, and uploaded reward media.
 - A student-facing password gate.
 
-It is not yet a safe foundation for a classroom product:
+It was not yet a safe foundation for a classroom product:
 
 - Most behavior lives in a single 509-line `App.tsx`.
 - The Gemini API key is compiled into the browser bundle.
@@ -519,9 +545,10 @@ Do not enter real student data until all items below have an accountable owner a
 
 ---
 
-## 13. Blocking product decisions
+## 13. Pilot and operating decisions still requiring owners
 
-Answer these before implementation moves past Milestone 0:
+These no longer block the synthetic local demo. They do block production deployment or a real-school
+pilot:
 
 1. What is the Build Week submission deadline and required demo format?
 2. What student age/grade range and first subject should the demo target?

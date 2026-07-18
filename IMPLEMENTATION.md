@@ -2,6 +2,21 @@
 
 This document turns the product contract in `PLAN.md` into small, dependency-ordered work packets. One packet should normally equal one agent assignment and one logical commit.
 
+## Current delivery status (July 17, 2026)
+
+| Area | Status | Qualification or deliberate deferral |
+|---|---|---|
+| M0 foundation | Complete | Local toolchain, CI, Firebase scaffold, secret scan, and ADRs are in place. |
+| M1 identity and tenancy | Complete | Rules changes require the Java 21 emulator suite locally or in CI. |
+| M2 onboarding and plans | Complete | Live OpenAI remains opt-in; the manual path and deterministic fake provider are first-class fallbacks. |
+| M3 assignments and runner | Complete for the Build Week cut | Active typed answers recover locally; scratch drawings and background event queues are intentionally not durable. |
+| M4 evidence and audit | Complete for the Build Week cut | Session response/event review is included; accepted-answer overrides, teacher notes on individual sessions, and artifact uploads are deferred. |
+| M5 hardening | Code complete, qualification pending | CI has Java 21; manual VoiceOver/ChromeOS/zoom checks, two managed-device rehearsals, and preview deployment still require the target environment and explicit deployment approval. |
+| Worksheet extraction | Deferred stretch | Teacher-authored and seeded assignments are the reliable demo sources. |
+
+The roadmap below remains the dependency and acceptance record. Where its original packet describes a
+deferred subfeature, this status table is the controlling Build Week cut decision.
+
 ## Working assumptions
 
 - Build Week demo targets grades 5–8 math and uses synthetic student data only.
@@ -10,7 +25,9 @@ This document turns the product contract in `PLAN.md` into small, dependency-ord
 - The server exchanges student credentials for a Firebase custom token scoped to one classroom and student.
 - Resetting a student PIN increments an `authVersion` and revokes refresh tokens; rules compare the token version with the current student record.
 - QR login is not P0. If added later, the QR contains a short-lived opaque exchange token, never a reusable raw PIN.
-- Firestore is authoritative. Offline P0 protects the active answer/canvas and queues known events; it does not promise full offline classroom operation or conflict-free multi-device editing.
+- Firestore is authoritative. Offline P0 protects the active typed answer and its exact retry key; it
+  does not queue new events in the background or promise canvas recovery, full offline classroom
+  operation, or conflict-free multi-device editing.
 - P0 supports are read-aloud, reading chunks, focus view, and hint ladder. Flexible response is question rendering; safe non-expiring timer behavior is global. Break prompts are the first support cut.
 - Published assignments, active support plans, and audit evidence windows are immutable/versioned.
 - The P0 AI story is support recommendation plus evidence audit. Worksheet extraction is stretch.
