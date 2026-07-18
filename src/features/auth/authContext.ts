@@ -1,6 +1,6 @@
 import { createContext, useContext } from 'react';
 
-import type { AuthUser } from './authService';
+import type { AuthUser, StudentCredentials } from './authService';
 
 export interface AuthContextValue {
   clearError: () => void;
@@ -9,6 +9,7 @@ export interface AuthContextValue {
   isLoading: boolean;
   isWorking: boolean;
   signInAsDemoTeacher: () => Promise<void>;
+  signInAsStudent: (credentials: StudentCredentials) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
   user: AuthUser | null;

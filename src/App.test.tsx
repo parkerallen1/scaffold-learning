@@ -16,6 +16,7 @@ vi.mock('./features/auth/authService', () => ({
     return vi.fn();
   }),
   signInDemoTeacher: vi.fn(),
+  signInStudent: vi.fn(),
   signInTeacherWithGoogle: vi.fn(),
   signOutCurrentUser: vi.fn(),
 }));

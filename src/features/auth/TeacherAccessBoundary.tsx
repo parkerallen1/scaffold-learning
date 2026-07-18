@@ -68,7 +68,7 @@ const TeacherSignIn = () => {
 };
 
 export const TeacherAccessBoundary = ({ children }: { children: ReactNode }) => {
-  const { error, isLoading, user } = useAuth();
+  const { error, isLoading, isWorking, signOut, user } = useAuth();
 
   if (isLoading) {
     return (
@@ -82,6 +82,37 @@ export const TeacherAccessBoundary = ({ children }: { children: ReactNode }) => 
 
   if (!user) {
     return <TeacherSignIn />;
+  }
+
+  if (user.role !== 'teacher') {
+    if (isWorking) {
+      return (
+        <main className="flex min-h-screen items-center justify-center bg-slate-50 p-6">
+          <p role="status" className="text-lg font-medium text-slate-700">
+            Verifying teacher access…
+          </p>
+        </main>
+      );
+    }
+
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-slate-50 p-6 text-slate-900">
+        <section className="w-full max-w-lg rounded-2xl bg-white p-8 shadow-xl">
+          <h1 className="text-3xl font-bold">Teacher access unavailable</h1>
+          <p className="mt-3 text-slate-600">
+            This signed-in account does not have a verified teacher role.
+          </p>
+          {error && <AuthError message={error} />}
+          <button
+            type="button"
+            onClick={() => void signOut()}
+            className="mt-6 w-full rounded-lg border border-slate-300 px-4 py-3 font-semibold hover:bg-slate-100"
+          >
+            Sign out
+          </button>
+        </section>
+      </main>
+    );
   }
 
   return (

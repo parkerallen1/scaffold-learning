@@ -1,55 +1,178 @@
-export const StudentEntryPage = () => (
-  <main className="min-h-screen bg-slate-50 p-6 text-slate-900">
-    <div className="mx-auto flex min-h-[80vh] max-w-lg items-center">
-      <section
-        className="w-full rounded-2xl bg-white p-8 shadow-xl"
-        aria-labelledby="student-title"
-      >
-        <p className="mb-2 text-sm font-semibold uppercase tracking-wide text-emerald-700">
-          Student access
-        </p>
-        <h1 id="student-title" className="text-3xl font-bold">
-          Join your class
-        </h1>
-        <p className="mt-3 text-slate-600">
-          Class-code and student-PIN access is being connected next. No assignment or student data
-          is available without a verified classroom credential.
-        </p>
+import { useState } from 'react';
+import type { FormEvent } from 'react';
 
-        <div className="mt-6 space-y-4" aria-disabled="true">
-          <label className="block text-sm font-semibold text-slate-700">
-            Class code
-            <input
-              disabled
-              className="mt-1 block w-full rounded-lg border border-slate-300 bg-slate-100 px-3 py-2"
-              placeholder="Coming next"
-            />
-          </label>
-          <label className="block text-sm font-semibold text-slate-700">
-            Student PIN
-            <input
-              disabled
-              className="mt-1 block w-full rounded-lg border border-slate-300 bg-slate-100 px-3 py-2"
-              placeholder="Coming next"
-              type="password"
-            />
-          </label>
+import { useAuth } from '../../features/auth/authContext';
+
+const StudentAuthError = ({ message }: { message: string }) => (
+  <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700">
+    {message}
+  </p>
+);
+
+const StudentSession = () => {
+  const { isWorking, signOut, user } = useAuth();
+
+  if (!user || user.role !== 'student' || !user.classroomId || !user.studentId) {
+    return null;
+  }
+
+  return (
+    <main className="min-h-screen bg-slate-50 p-6 text-slate-900">
+      <div className="mx-auto max-w-3xl">
+        <header className="rounded-2xl bg-white p-6 shadow-md">
+          <p className="text-sm font-semibold uppercase tracking-wide text-emerald-700">
+            Student session
+          </p>
+          <h1 className="mt-1 text-3xl font-bold">You are signed in</h1>
+          <p className="mt-3 text-slate-600">
+            Assigned work and approved supports will appear here in the next student-session packet.
+          </p>
           <button
             type="button"
-            disabled
-            className="w-full rounded-lg bg-slate-300 px-4 py-3 font-semibold text-slate-600"
+            onClick={() => void signOut()}
+            disabled={isWorking}
+            className="mt-5 rounded-lg border border-slate-300 px-4 py-2 font-semibold hover:bg-slate-100 disabled:opacity-60"
           >
-            Student sign-in coming next
+            {isWorking ? 'Signing out…' : 'Sign out'}
           </button>
-        </div>
+        </header>
 
-        <a
-          className="mt-6 inline-block text-sm font-semibold text-blue-700 hover:underline"
-          href="/"
+        <dl className="mt-6 grid gap-4 rounded-2xl bg-white p-6 shadow-md sm:grid-cols-3">
+          <div>
+            <dt className="text-sm font-semibold text-slate-500">Classroom</dt>
+            <dd className="mt-1 break-all font-mono text-sm">{user.classroomId}</dd>
+          </div>
+          <div>
+            <dt className="text-sm font-semibold text-slate-500">Student</dt>
+            <dd className="mt-1 break-all font-mono text-sm">{user.studentId}</dd>
+          </div>
+          <div>
+            <dt className="text-sm font-semibold text-slate-500">Session version</dt>
+            <dd className="mt-1 font-mono text-sm">{user.authVersion}</dd>
+          </div>
+        </dl>
+      </div>
+    </main>
+  );
+};
+
+export const StudentEntryPage = () => {
+  const { error, isLoading, isWorking, signInAsStudent, signOut, user } = useAuth();
+  const [classCode, setClassCode] = useState('');
+  const [studentHandle, setStudentHandle] = useState('');
+  const [pin, setPin] = useState('');
+
+  if (isLoading) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-slate-50 p-6">
+        <p role="status" className="text-lg font-medium text-slate-700">
+          Checking student access…
+        </p>
+      </main>
+    );
+  }
+
+  if (user?.role === 'student') {
+    return <StudentSession />;
+  }
+
+  if (user) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-slate-50 p-6 text-slate-900">
+        <section className="w-full max-w-lg rounded-2xl bg-white p-8 shadow-xl">
+          <h1 className="text-3xl font-bold">Student access unavailable</h1>
+          <p className="mt-3 text-slate-600">
+            This signed-in account does not have a verified student role.
+          </p>
+          <button
+            type="button"
+            onClick={() => void signOut()}
+            className="mt-6 w-full rounded-lg border border-slate-300 px-4 py-3 font-semibold hover:bg-slate-100"
+          >
+            Sign out
+          </button>
+        </section>
+      </main>
+    );
+  }
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const submittedPin = pin;
+    setPin('');
+    await signInAsStudent({ classCode, pin: submittedPin, studentHandle });
+  };
+
+  return (
+    <main className="min-h-screen bg-slate-50 p-6 text-slate-900">
+      <div className="mx-auto flex min-h-[80vh] max-w-lg items-center">
+        <section
+          className="w-full rounded-2xl bg-white p-8 shadow-xl"
+          aria-labelledby="student-title"
         >
-          Back to role selection
-        </a>
-      </section>
-    </div>
-  </main>
-);
+          <p className="mb-2 text-sm font-semibold uppercase tracking-wide text-emerald-700">
+            Student access
+          </p>
+          <h1 id="student-title" className="text-3xl font-bold">
+            Join your class
+          </h1>
+          <p className="mt-3 text-slate-600">
+            Enter the class code, student handle, and PIN provided by your teacher.
+          </p>
+
+          <form className="mt-6 space-y-4" onSubmit={(event) => void handleSubmit(event)}>
+            {error && <StudentAuthError message={error} />}
+            <label className="block text-sm font-semibold text-slate-700">
+              Class code
+              <input
+                required
+                autoComplete="off"
+                value={classCode}
+                onChange={(event) => setClassCode(event.target.value)}
+                className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 uppercase"
+                maxLength={12}
+              />
+            </label>
+            <label className="block text-sm font-semibold text-slate-700">
+              Student handle
+              <input
+                required
+                autoComplete="username"
+                value={studentHandle}
+                onChange={(event) => setStudentHandle(event.target.value)}
+                className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2"
+                maxLength={32}
+              />
+            </label>
+            <label className="block text-sm font-semibold text-slate-700">
+              Student PIN
+              <input
+                required
+                autoComplete="off"
+                inputMode="numeric"
+                value={pin}
+                onChange={(event) => setPin(event.target.value)}
+                className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2"
+                maxLength={12}
+                minLength={4}
+                pattern="[0-9]*"
+                type="password"
+              />
+            </label>
+            <button
+              type="submit"
+              disabled={isWorking}
+              className="w-full rounded-lg bg-emerald-700 px-4 py-3 font-semibold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {isWorking ? 'Signing in…' : 'Sign in'}
+            </button>
+          </form>
+
+          <p className="mt-4 text-xs text-slate-500">
+            Quiz Master does not save your PIN in this browser.
+          </p>
+        </section>
+      </div>
+    </main>
+  );
+};

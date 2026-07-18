@@ -5,6 +5,7 @@ import {
   authRuntime,
   observeAuthState,
   signInDemoTeacher,
+  signInStudent,
   signInTeacherWithGoogle,
   signOutCurrentUser,
 } from './authService';
@@ -47,6 +48,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
+  const runSignInAction = useCallback(async (action: () => Promise<AuthUser>) => {
+    setError(null);
+    setIsWorking(true);
+    try {
+      setUser(await action());
+    } catch (authError) {
+      setError(getErrorMessage(authError));
+    } finally {
+      setIsWorking(false);
+    }
+  }, []);
+
   const value = useMemo<AuthContextValue>(
     () => ({
       clearError: () => setError(null),
@@ -54,12 +67,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       error,
       isLoading,
       isWorking,
-      signInAsDemoTeacher: () => runAuthAction(signInDemoTeacher),
-      signInWithGoogle: () => runAuthAction(signInTeacherWithGoogle),
+      signInAsDemoTeacher: () => runSignInAction(signInDemoTeacher),
+      signInAsStudent: (credentials) => runSignInAction(() => signInStudent(credentials)),
+      signInWithGoogle: () => runSignInAction(signInTeacherWithGoogle),
       signOut: () => runAuthAction(signOutCurrentUser),
       user,
     }),
-    [error, isLoading, isWorking, runAuthAction, user],
+    [error, isLoading, isWorking, runAuthAction, runSignInAction, user],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
