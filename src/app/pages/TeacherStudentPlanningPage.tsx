@@ -102,7 +102,10 @@ export const TeacherStudentPlanningPage = ({
           <p role="alert" className="mt-3 text-slate-700">
             Return to the roster and choose a student to open a valid planning workspace.
           </p>
-          <a className="mt-5 inline-block font-semibold text-blue-700" href="/teacher">
+          <a
+            className="mt-5 inline-flex min-h-11 items-center font-semibold text-blue-700"
+            href="/teacher"
+          >
             Return to teacher workspace
           </a>
         </div>
@@ -193,7 +196,10 @@ export const TeacherStudentPlanningPage = ({
               Try again
             </button>
           )}
-          <a className="mt-4 block font-semibold text-blue-700" href="/teacher">
+          <a
+            className="mt-4 inline-flex min-h-11 items-center font-semibold text-blue-700"
+            href="/teacher"
+          >
             Return to roster
           </a>
         </div>
@@ -277,7 +283,10 @@ export const TeacherStudentPlanningPage = ({
     <main className="min-h-screen bg-slate-50 p-6 text-slate-900">
       <div className="mx-auto max-w-4xl space-y-6">
         <header className="rounded-2xl bg-white p-6 shadow-md">
-          <a className="font-semibold text-blue-700" href="/teacher">
+          <a
+            className="inline-flex min-h-11 items-center font-semibold text-blue-700"
+            href="/teacher"
+          >
             ← Return to roster
           </a>
           <p className="mt-5 text-sm font-semibold uppercase tracking-wide text-blue-700">

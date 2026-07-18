@@ -7,6 +7,10 @@
     min-height: 2.75rem;
   }
 
+  button {
+    min-width: 2.75rem;
+  }
+
   :where(a[href], button, input, select, textarea, [tabindex]):focus-visible {
     outline: 3px solid #2563eb;
     outline-offset: 3px;
@@ -15,6 +19,10 @@
   :where(p, li, dd, dt, label, legend, h1, h2, h3, h4) {
     overflow-wrap: anywhere;
   }
+}
+
+:where(input, select, textarea)[class~='border-slate-300'] {
+  border-color: #64748b;
 }
 
 @media (prefers-reduced-motion: reduce) {

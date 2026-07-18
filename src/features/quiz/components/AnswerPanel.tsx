@@ -7,9 +7,9 @@ interface AnswerPanelProps {
 }
 
 const getAnswerBorderColor = (answer: string, isCorrect: boolean): string => {
-  if (isCorrect) return 'border-green-500 focus:ring-green-500';
-  if (answer.length > 0) return 'border-red-500 focus:ring-red-500';
-  return 'border-gray-300 dark:border-gray-600 focus:ring-blue-500';
+  if (isCorrect) return 'border-green-700 focus:ring-green-700';
+  if (answer.length > 0) return 'border-red-700 focus:ring-red-700';
+  return 'border-gray-500 dark:border-gray-400 focus:ring-blue-500';
 };
 
 export const AnswerPanel = ({

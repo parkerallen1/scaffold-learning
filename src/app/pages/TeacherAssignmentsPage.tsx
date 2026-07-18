@@ -103,7 +103,10 @@ export const TeacherAssignmentsPage = () => {
     <main className="min-h-screen bg-slate-50 p-6 text-slate-900">
       <div className="mx-auto max-w-5xl space-y-6">
         <header className="rounded-2xl bg-white p-6 shadow-md">
-          <a className="font-semibold text-blue-700" href="/teacher">
+          <a
+            className="inline-flex min-h-11 items-center font-semibold text-blue-700"
+            href="/teacher"
+          >
             ← Return to teacher workspace
           </a>
           <p className="mt-5 text-sm font-semibold uppercase tracking-wide text-blue-700">
@@ -173,7 +176,6 @@ export const TeacherAssignmentsPage = () => {
                       <li key={student.id}>
                         <label
                           htmlFor={checkboxId}
-                          aria-label={`Select ${student.displayName} (${student.status})`}
                           className={`flex items-center gap-3 rounded-xl border p-3 ${
                             isActive ? 'border-slate-200' : 'border-slate-100 bg-slate-50'
                           }`}
@@ -181,11 +183,11 @@ export const TeacherAssignmentsPage = () => {
                           <input
                             id={checkboxId}
                             type="checkbox"
-                            aria-label={`${student.displayName} (${student.status})`}
                             checked={isActive && selectedStudentIds.includes(student.id)}
                             onChange={() => toggleStudent(student.id)}
                             disabled={isWorking || !isActive}
                           />
+                          <span className="sr-only">Select student:</span>
                           <span>
                             <span className="block font-semibold">{student.displayName}</span>
                             <span className="block text-xs capitalize text-slate-500">

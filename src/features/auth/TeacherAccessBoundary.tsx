@@ -56,7 +56,7 @@ const TeacherSignIn = () => {
             </p>
           )}
           <a
-            className="mt-6 inline-block text-sm font-semibold text-blue-700 hover:underline"
+            className="mt-6 inline-flex min-h-11 items-center text-sm font-semibold text-blue-700 hover:underline"
             href="/"
           >
             Back to role selection

@@ -24,20 +24,20 @@ export const QuestionCard = ({
         Question {currentIndex + 1} of {totalQuestions}
       </span>
     </div>
-    <h2 className="mt-2 text-2xl font-semibold">
+    <div className="mt-2 flex items-start gap-3">
       <button
         type="button"
-        aria-label={`Read question aloud: ${question.question}`}
-        className="group flex w-full cursor-pointer items-start gap-3 text-left"
+        aria-label="Read question aloud"
+        className="group flex shrink-0 items-center justify-center"
         onClick={onSpeak}
       >
         <SpeakerIcon
           isLoading={isLoadingSpeech}
-          className="w-7 h-7 mt-1 text-gray-500 dark:text-gray-400 group-hover:text-blue-500 transition-colors flex-shrink-0"
+          className="h-7 w-7 text-gray-600 transition-colors group-hover:text-blue-700 dark:text-gray-300 dark:group-hover:text-blue-300"
         />
-        <span>{question.question}</span>
       </button>
-    </h2>
+      <h2 className="text-2xl font-semibold">{question.question}</h2>
+    </div>
     {speechError && (
       <p role="alert" className="text-red-700 dark:text-red-300 text-sm mt-2">
         {speechError}

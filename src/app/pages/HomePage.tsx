@@ -33,7 +33,10 @@ export const HomePage = () => (
         </div>
 
         <div className="mt-8 border-t border-slate-200 pt-6">
-          <a className="font-semibold text-blue-700 hover:underline" href="/demo">
+          <a
+            className="inline-flex min-h-11 items-center font-semibold text-blue-700 hover:underline"
+            href="/demo"
+          >
             Open the synthetic quiz demo
           </a>
           <p className="mt-1 text-sm text-slate-500">
