@@ -50,6 +50,14 @@ vi.mock('../features/classrooms/ClassroomWorkspace', () => ({
   ClassroomWorkspace: () => <section aria-label="Classroom workspace" />,
 }));
 
+vi.mock('./pages/TeacherAssignmentsPage', () => ({
+  TeacherAssignmentsPage: () => (
+    <main>
+      <h1>Create and assign student work</h1>
+    </main>
+  ),
+}));
+
 const teacherUser: TestUser = {
   authVersion: null,
   classroomId: null,
@@ -72,7 +80,9 @@ const studentUser: TestUser = {
   uid: 'student-auth-1',
 };
 
-const loadAuthRoute = async (pathname: '/student' | '/teacher' | '/teacher/preview') => {
+const loadAuthRoute = async (
+  pathname: '/student' | '/teacher' | '/teacher/assignments' | '/teacher/preview',
+) => {
   render(<App pathname={pathname} />);
   await waitFor(() => expect(authHarness.onUserChange).not.toBeNull());
 };
@@ -137,6 +147,10 @@ describe('authentication shell', () => {
     act(() => authHarness.onUserChange?.(teacherUser));
 
     expect(screen.getByRole('heading', { name: 'Welcome, Ada Teacher' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Create assignment' })).toHaveAttribute(
+      'href',
+      '/teacher/assignments',
+    );
     await user.click(screen.getByRole('button', { name: 'Sign out' }));
     expect(authHarness.signOutCurrentUser).toHaveBeenCalledOnce();
   });
@@ -148,6 +162,17 @@ describe('authentication shell', () => {
 
     expect(screen.getByRole('heading', { name: 'Teacher access unavailable' })).toBeInTheDocument();
     expect(screen.queryByText('Question 1 of 12')).not.toBeInTheDocument();
+  });
+
+  it('protects assignment authoring from signed-in students', async () => {
+    await loadAuthRoute('/teacher/assignments');
+
+    act(() => authHarness.onUserChange?.(studentUser));
+
+    expect(screen.getByRole('heading', { name: 'Teacher access unavailable' })).toBeInTheDocument();
+    expect(
+      screen.queryByRole('heading', { name: 'Create and assign student work' }),
+    ).not.toBeInTheDocument();
   });
 
   it('shows authentication listener errors without exposing teacher content', async () => {

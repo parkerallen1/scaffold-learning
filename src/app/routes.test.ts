@@ -8,6 +8,8 @@ describe('resolveAppRoute', () => {
     ['/demo', 'demo'],
     ['/student', 'student'],
     ['/teacher', 'teacher-home'],
+    ['/teacher/assignments', 'teacher-assignments'],
+    ['/teacher/assignments/', 'teacher-assignments'],
     ['/teacher/planning', 'teacher-planning'],
     ['/teacher/planning/', 'teacher-planning'],
     ['/teacher/preview', 'teacher-preview'],

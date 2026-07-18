@@ -15,6 +15,11 @@ const TeacherHomeRoute = lazy(async () => {
   return { default: routes.TeacherHomeRoute };
 });
 
+const TeacherAssignmentsRoute = lazy(async () => {
+  const route = await import('./TeacherAssignmentRoute');
+  return { default: route.TeacherAssignmentRoute };
+});
+
 const TeacherPreviewRoute = lazy(async () => {
   const routes = await import('./TeacherRoutes');
   return { default: routes.TeacherPreviewRoute };
@@ -51,6 +56,12 @@ const AppContent = ({ pathname }: { pathname: string }) => {
       return (
         <Suspense fallback={<IdentityRouteLoading />}>
           <TeacherHomeRoute />
+        </Suspense>
+      );
+    case 'teacher-assignments':
+      return (
+        <Suspense fallback={<IdentityRouteLoading />}>
+          <TeacherAssignmentsRoute />
         </Suspense>
       );
     case 'teacher-planning':
