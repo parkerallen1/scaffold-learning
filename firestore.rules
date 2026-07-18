@@ -106,9 +106,19 @@ service cloud.firestore {
 
       match /studentProfiles/{profileId} {
         allow read: if teacherOwnsClassroom(classroomId);
-        allow create, update: if teacherOwnsClassroom(classroomId)
-          && request.resource.data.classroomId == classroomId;
-        allow delete: if teacherOwnsClassroom(classroomId);
+        allow write: if false;
+      }
+
+      // Immutable plan history and its active pointer are written atomically by
+      // callables. Students receive only the snapshot attached to an assignment.
+      match /supportPlans/{studentId} {
+        allow read: if teacherOwnsClassroom(classroomId);
+        allow write: if false;
+
+        match /versions/{versionId} {
+          allow read: if teacherOwnsClassroom(classroomId);
+          allow write: if false;
+        }
       }
 
       // Server-generated drafts and audit output are readable only by the
