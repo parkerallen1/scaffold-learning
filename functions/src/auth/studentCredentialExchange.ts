@@ -2,7 +2,6 @@ import { getApps, initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { type DocumentReference, type Firestore, getFirestore } from 'firebase-admin/firestore';
 import { logger } from 'firebase-functions';
-import { defineSecret } from 'firebase-functions/params';
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
 import { z } from 'zod';
 
@@ -14,12 +13,19 @@ import {
   consumeDummyPinCheck,
   CredentialFormatError,
   normalizeStudentLogin,
-  PIN_HASH_ALGORITHM,
   studentCredentialLookupKey,
   verifyStudentPin,
   type NormalizedStudentLogin,
   type StoredPinCredential,
 } from './credentialCrypto.js';
+import { studentPinPepper } from './authSecrets.js';
+import {
+  CLASS_CODE_INDEX,
+  classCodeIndexSchema,
+  STUDENT_AUTH_THROTTLES,
+  STUDENT_CREDENTIALS,
+  studentCredentialDocumentSchema,
+} from './authStorage.js';
 import {
   createThrottleState,
   recordAuthOutcome,
@@ -27,39 +33,9 @@ import {
   type AuthThrottleState,
 } from './throttle.js';
 
-const CLASS_CODE_INDEX = 'classCodeIndex';
-const STUDENT_CREDENTIALS = 'studentCredentials';
-const STUDENT_AUTH_THROTTLES = 'studentAuthThrottles';
-
 const GENERIC_AUTH_MESSAGE = 'Unable to sign in with those credentials.';
 const GENERIC_INTERNAL_MESSAGE = 'Unable to complete sign-in. Please try again.';
-
-const studentPinPepper = defineSecret('STUDENT_PIN_PEPPER');
-
-const classCodeIndexSchema = z
-  .object({
-    classroomId: classroomIdSchema,
-    status: z.enum(['active', 'archived']),
-  })
-  .strict();
-
-const storedPinCredentialSchema = z
-  .object({
-    algorithm: z.literal(PIN_HASH_ALGORITHM),
-    saltBase64: z.string().min(1).max(128),
-    hashBase64: z.string().min(1).max(128),
-  })
-  .strict();
-
-const studentCredentialDocumentSchema = z
-  .object({
-    classroomId: classroomIdSchema,
-    studentId: studentIdSchema,
-    normalizedHandle: z.string().min(3).max(32),
-    status: z.enum(['active', 'disabled']),
-    pin: storedPinCredentialSchema,
-  })
-  .strict();
+const IS_EMULATOR = process.env.FUNCTIONS_EMULATOR === 'true';
 
 const authThrottleStateSchema = z
   .object({
@@ -279,8 +255,8 @@ const authenticateStudent = async (
 
 export const exchangeStudentCredentials = onCall(
   {
-    consumeAppCheckToken: true,
-    enforceAppCheck: true,
+    consumeAppCheckToken: !IS_EMULATOR,
+    enforceAppCheck: !IS_EMULATOR,
     maxInstances: 20,
     secrets: [studentPinPepper],
   },

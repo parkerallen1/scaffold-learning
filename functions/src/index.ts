@@ -5,6 +5,15 @@ import { z } from 'zod';
 import { fakeAiProvider } from './ai/fakeAiProvider.js';
 
 export { exchangeStudentCredentials } from './auth/studentCredentialExchange.js';
+export {
+  archiveClassroom,
+  bootstrapTeacher,
+  createClassroom,
+  createStudent,
+  disableStudent,
+  resetStudentPin,
+  rotateClassCode,
+} from './auth/teacherLifecycle.js';
 
 setGlobalOptions({ maxInstances: 10, region: 'us-central1' });
 
