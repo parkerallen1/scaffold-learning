@@ -19,6 +19,7 @@ import {
   type StoredPinCredential,
 } from './credentialCrypto.js';
 import { studentPinPepper } from './authSecrets.js';
+import { applyStudentClaims } from './studentAuthPrincipal.js';
 import {
   CLASS_CODE_INDEX,
   classCodeIndexSchema,
@@ -248,7 +249,7 @@ const authenticateStudent = async (
     throw new AuthenticationRejectedError();
   }
 
-  await firebaseAuth.setCustomUserClaims(claims.studentId, claims);
+  await applyStudentClaims(firebaseAuth, claims);
   const customToken = await firebaseAuth.createCustomToken(claims.studentId, claims);
   return responseSchema.parse({ customToken });
 };
