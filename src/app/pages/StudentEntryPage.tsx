@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { FormEvent } from 'react';
 
 import { useAuth } from '../../features/auth/authContext';
+import { StudentWorkspace } from '../../features/student-work/StudentWorkspace';
 
 const StudentAuthError = ({ message }: { message: string }) => (
   <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700">
@@ -17,42 +18,12 @@ const StudentSession = () => {
   }
 
   return (
-    <main className="min-h-screen bg-slate-50 p-6 text-slate-900">
-      <div className="mx-auto max-w-3xl">
-        <header className="rounded-2xl bg-white p-6 shadow-md">
-          <p className="text-sm font-semibold uppercase tracking-wide text-emerald-700">
-            Student session
-          </p>
-          <h1 className="mt-1 text-3xl font-bold">You are signed in</h1>
-          <p className="mt-3 text-slate-600">
-            Assigned work and approved supports will appear here in the next student-session packet.
-          </p>
-          <button
-            type="button"
-            onClick={() => void signOut()}
-            disabled={isWorking}
-            className="mt-5 rounded-lg border border-slate-300 px-4 py-2 font-semibold hover:bg-slate-100 disabled:opacity-60"
-          >
-            {isWorking ? 'Signing out…' : 'Sign out'}
-          </button>
-        </header>
-
-        <dl className="mt-6 grid gap-4 rounded-2xl bg-white p-6 shadow-md sm:grid-cols-3">
-          <div>
-            <dt className="text-sm font-semibold text-slate-500">Classroom</dt>
-            <dd className="mt-1 break-all font-mono text-sm">{user.classroomId}</dd>
-          </div>
-          <div>
-            <dt className="text-sm font-semibold text-slate-500">Student</dt>
-            <dd className="mt-1 break-all font-mono text-sm">{user.studentId}</dd>
-          </div>
-          <div>
-            <dt className="text-sm font-semibold text-slate-500">Session version</dt>
-            <dd className="mt-1 font-mono text-sm">{user.authVersion}</dd>
-          </div>
-        </dl>
-      </div>
-    </main>
+    <StudentWorkspace
+      classroomId={user.classroomId}
+      isSigningOut={isWorking}
+      onSignOut={() => void signOut()}
+      studentId={user.studentId}
+    />
   );
 };
 

@@ -50,6 +50,16 @@ vi.mock('../features/classrooms/ClassroomWorkspace', () => ({
   ClassroomWorkspace: () => <section aria-label="Classroom workspace" />,
 }));
 
+vi.mock('../features/student-work/StudentWorkspace', () => ({
+  StudentWorkspace: ({ classroomId, studentId }: { classroomId: string; studentId: string }) => (
+    <main>
+      <h1>You are signed in</h1>
+      <p>{classroomId}</p>
+      <p>{studentId}</p>
+    </main>
+  ),
+}));
+
 vi.mock('./pages/TeacherAssignmentsPage', () => ({
   TeacherAssignmentsPage: () => (
     <main>

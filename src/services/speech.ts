@@ -1,4 +1,4 @@
-export const speak = (text: string): Promise<void> => {
+export const speak = (text: string, rate = 1): Promise<void> => {
   if (!('speechSynthesis' in window) || typeof SpeechSynthesisUtterance === 'undefined') {
     return Promise.reject(new Error('Speech synthesis is not supported in this browser.'));
   }
@@ -7,6 +7,7 @@ export const speak = (text: string): Promise<void> => {
 
   return new Promise((resolve, reject) => {
     const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = Math.min(2, Math.max(0.5, rate));
 
     utterance.onend = () => resolve();
     utterance.onerror = () => reject(new Error('The browser could not read this question aloud.'));

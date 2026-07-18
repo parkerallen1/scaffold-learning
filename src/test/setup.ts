@@ -21,7 +21,29 @@ Object.defineProperty(HTMLCanvasElement.prototype, 'getContext', {
   value: vi.fn(() => canvasContext),
 });
 
+const storageData = new Map<string, string>();
+const testLocalStorage: Storage = {
+  get length() {
+    return storageData.size;
+  },
+  clear: () => storageData.clear(),
+  getItem: (key) => storageData.get(key) ?? null,
+  key: (index) => [...storageData.keys()][index] ?? null,
+  removeItem: (key) => {
+    storageData.delete(key);
+  },
+  setItem: (key, value) => {
+    storageData.set(key, String(value));
+  },
+};
+
+Object.defineProperty(globalThis, 'localStorage', {
+  configurable: true,
+  value: testLocalStorage,
+});
+
 afterEach(() => {
   cleanup();
+  localStorage.clear();
   vi.clearAllMocks();
 });
