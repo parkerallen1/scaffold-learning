@@ -100,9 +100,14 @@ The recommendation and audit adapters use the OpenAI Responses API structured-ou
 ```text
 AI_PROVIDER=fake       default and forced in emulator
 AI_PROVIDER=openai     live provider outside emulator
+AI_FEATURES_ENABLED=true     required production kill switch for live OpenAI
 OPENAI_API_KEY         Firebase secret
 OPENAI_RECOMMENDATION_MODEL  optional server override
 OPENAI_AUDIT_MODEL           optional server override
 ```
 
 Post-response validation is authoritative. A schema-valid model response can still be rejected for invented evidence, invalid catalog state, unsafe timer settings, diagnostic/causal language, peer comparison, or unsupported confidence/action combinations.
+
+Both live operations share a transactionally enforced per-teacher quota of 5 calls per minute and 50 calls per UTC day. The emulator and fake providers bypass the production kill switch and live-call quota. A disabled switch, exhausted quota, provider fallback, or unsafe output leaves the teacher in the stable manual configuration/review path and never changes a support plan automatically.
+
+Sanitized operational telemetry is log-only and allowlists exactly: provider, operation, prompt version, model, status category, and latency. Request content, prompt bodies, observations, answers, identities, provider error text, PINs, and secrets must never be added to these records. Quota documents in `_aiOperationalUsage` contain counters and window timestamps only and are server-only under the deny-first Firestore rules.

@@ -188,11 +188,16 @@ const isTimeoutError = (error: unknown) =>
 
 export class OpenAiRecommendationProvider implements AiProvider {
   readonly name = 'openai';
+  readonly model: string;
+  readonly promptVersion: string;
 
   constructor(
     private readonly requester: OpenAiRecommendationRequester,
     private readonly config: OpenAiRecommendationConfig = readOpenAiRecommendationConfig(),
-  ) {}
+  ) {
+    this.model = config.model;
+    this.promptVersion = config.promptVersion;
+  }
 
   async recommendSupports(input: RecommendationInput): Promise<RecommendationResult> {
     const parsedInput = recommendationInputSchema.parse(input);

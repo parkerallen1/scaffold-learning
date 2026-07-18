@@ -2,6 +2,8 @@ import type { RecommendationInput, RecommendationResult } from '@quiz-master/dom
 
 export interface AiProvider {
   readonly name: 'fake' | 'openai';
+  readonly model: string;
+  readonly promptVersion: string;
   recommendSupports(input: RecommendationInput): Promise<RecommendationResult>;
 }
 

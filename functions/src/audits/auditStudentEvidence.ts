@@ -22,6 +22,12 @@ import {
 } from '@quiz-master/domain';
 
 import { openAiApiKey } from '../ai/openAiRecommendationProvider.js';
+import { AiOperationalControlError, runControlledAiOperation } from '../ai/operationalControls.js';
+import {
+  AuditManualFallbackError,
+  type AuditEvidencePacket,
+  type AuditProvider,
+} from './auditContracts.js';
 import {
   executeTeacherOperation,
   LifecycleNotFoundError,
@@ -50,6 +56,28 @@ const app = getApps()[0] ?? initializeApp();
 const firestore = getFirestore(app);
 
 type AuditStudentInput = z.infer<typeof auditStudentInputSchema>;
+
+const controlledAuditProvider = (teacherId: TeacherId, provider: AuditProvider): AuditProvider =>
+  Object.freeze({
+    name: provider.name,
+    model: provider.model,
+    promptVersion: provider.promptVersion,
+    async auditSupports(input: AuditEvidencePacket) {
+      try {
+        return await runControlledAiOperation({
+          teacherId,
+          operation: 'auditStudentEvidence',
+          provider,
+          invoke: () => provider.auditSupports(input),
+        });
+      } catch (error) {
+        if (error instanceof AiOperationalControlError) {
+          throw new AuditManualFallbackError('provider_unavailable');
+        }
+        throw error;
+      }
+    },
+  });
 
 const parseActiveStudent = (
   snapshot: DocumentSnapshot,
@@ -256,7 +284,7 @@ const auditStudentRecord = async (teacherId: TeacherId, input: AuditStudentInput
     activeSupportPlanId: activeSupportPlan.id,
     activeSupportPlanVersion: activeSupportPlan.version,
     evidence,
-    provider: createAuditProvider(),
+    provider: controlledAuditProvider(teacherId, createAuditProvider()),
     createdAt: Date.now(),
   });
 

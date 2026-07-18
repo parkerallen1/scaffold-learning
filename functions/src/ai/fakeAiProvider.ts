@@ -10,6 +10,8 @@ import { validateProviderRecommendationResult } from './providerSafety.js';
 
 export class FakeAiProvider implements AiProvider {
   readonly name = 'fake';
+  readonly model = 'deterministic-recommendation-fixture';
+  readonly promptVersion = fakeRecommendationFixture.promptVersion;
 
   async recommendSupports(input: RecommendationInput): Promise<RecommendationResult> {
     const parsedInput = recommendationInputSchema.parse(input);

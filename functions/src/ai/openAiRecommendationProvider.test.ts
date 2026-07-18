@@ -245,8 +245,27 @@ describe('deterministic provider selection', () => {
     expect(createAiProvider({ createOpenAi }).name).toBe('fake');
     expect(createAiProvider({ mode: 'openai', isEmulator: true, createOpenAi }).name).toBe('fake');
     expect(createOpenAi).not.toHaveBeenCalled();
-    expect(createAiProvider({ mode: 'openai', isEmulator: false, createOpenAi }).name).toBe(
-      'openai',
-    );
+    expect(
+      createAiProvider({
+        mode: 'openai',
+        isEmulator: false,
+        featuresEnabled: 'true',
+        createOpenAi,
+      }).name,
+    ).toBe('openai');
+  });
+
+  it('does not construct the live client while the production kill switch is off', () => {
+    const createOpenAi = vi.fn();
+
+    const provider = createAiProvider({
+      mode: 'openai',
+      isEmulator: false,
+      featuresEnabled: undefined,
+      createOpenAi,
+    });
+
+    expect(provider.name).toBe('openai');
+    expect(createOpenAi).not.toHaveBeenCalled();
   });
 });

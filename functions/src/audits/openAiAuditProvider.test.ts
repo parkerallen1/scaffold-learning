@@ -168,8 +168,27 @@ describe('deterministic audit provider selection', () => {
       'fake',
     );
     expect(createOpenAi).not.toHaveBeenCalled();
-    expect(createAuditProvider({ mode: 'openai', isEmulator: false, createOpenAi }).name).toBe(
-      'openai',
-    );
+    expect(
+      createAuditProvider({
+        mode: 'openai',
+        isEmulator: false,
+        featuresEnabled: 'true',
+        createOpenAi,
+      }).name,
+    ).toBe('openai');
+  });
+
+  it('does not construct the live client while the production kill switch is off', () => {
+    const createOpenAi = vi.fn();
+
+    const provider = createAuditProvider({
+      mode: 'openai',
+      isEmulator: false,
+      featuresEnabled: undefined,
+      createOpenAi,
+    });
+
+    expect(provider.name).toBe('openai');
+    expect(createOpenAi).not.toHaveBeenCalled();
   });
 });

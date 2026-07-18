@@ -71,9 +71,11 @@ Local development always selects the fake providers. For a reviewed production d
 firebase functions:secrets:set OPENAI_API_KEY
 ```
 
-Set the Functions runtime variable `AI_PROVIDER=openai`. Optional overrides are `OPENAI_RECOMMENDATION_MODEL` and `OPENAI_AUDIT_MODEL`; the documented default is centralized in the server provider files.
+Set the Functions runtime variables `AI_PROVIDER=openai` and `AI_FEATURES_ENABLED=true`. The second variable is a production kill switch: live OpenAI calls remain disabled unless its value is exactly `true`. Optional overrides are `OPENAI_RECOMMENDATION_MODEL` and `OPENAI_AUDIT_MODEL`; the documented default is centralized in the server provider files.
 
 Never put `OPENAI_API_KEY` in `.env.local`, a `VITE_*` variable, or client source. OpenAI requests use structured outputs, `store: false`, bounded timeouts, no retries, and post-response safety validation.
+
+Live recommendation and audit calls share a transactional per-teacher ceiling of 5 calls per minute and 50 calls per UTC day. Disabled or exhausted automation returns the existing manual teacher workflow without calling OpenAI. Operational logs contain only provider, operation, prompt version, model, status category, and latency; they exclude prompts, observations, answers, identities, provider error text, PINs, and secrets.
 
 ## Verification
 
@@ -113,7 +115,7 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md), [API.md](./API.md), and [COMPONENTS.md
 
 - Complete the school’s privacy, consent, retention, legal, and security review.
 - Test managed Google Workspace sign-in, Chromebooks, filters, and browser speech on the school network.
-- Add data deletion/export, operational telemetry, budget controls, and incident procedures.
+- Add data deletion/export and incident procedures; review the initial AI quotas against pilot usage before changing them.
 - Add background offline event reconciliation; current typed answers and retry keys persist locally, but the student explicitly retries submission.
 - Persist scratch work only through a future explicit opt-in evidence flow.
 - Complete manual VoiceOver/ChromeVox, 200% zoom, contrast, and touch/stylus qualification.

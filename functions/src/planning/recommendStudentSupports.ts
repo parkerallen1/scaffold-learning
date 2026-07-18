@@ -18,6 +18,7 @@ import {
 
 import { createAiProvider } from '../ai/providerFactory.js';
 import { openAiApiKey } from '../ai/openAiRecommendationProvider.js';
+import { AiOperationalControlError, runControlledAiOperation } from '../ai/operationalControls.js';
 import {
   executeTeacherOperation,
   LifecycleNotFoundError,
@@ -175,8 +176,19 @@ const generateRecommendation = async (
   const provider = createAiProvider();
   let recommendationResult;
   try {
-    recommendationResult = await provider.recommendSupports(recommendationInput);
+    recommendationResult = await runControlledAiOperation({
+      teacherId,
+      operation: 'recommendStudentSupports',
+      provider,
+      invoke: () => provider.recommendSupports(recommendationInput),
+    });
   } catch (error) {
+    if (error instanceof AiOperationalControlError) {
+      throw new HttpsError(
+        error.reason === 'rate_limited' ? 'resource-exhausted' : 'unavailable',
+        RECOMMENDATION_UNAVAILABLE_MESSAGE,
+      );
+    }
     if (recommendationFallbackCode(error) !== null) {
       throw new HttpsError('unavailable', RECOMMENDATION_UNAVAILABLE_MESSAGE);
     }
