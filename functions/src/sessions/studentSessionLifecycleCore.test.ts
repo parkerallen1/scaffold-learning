@@ -15,6 +15,7 @@ import {
   assertQuestionAttemptedBeforeAdvance,
   attemptRequestFingerprint,
   buildAttemptEvent,
+  buildStudentSessionStartResult,
   createStudentSession,
   idempotencyDocumentId,
   requireStudentClaims,
@@ -59,6 +60,22 @@ describe('student session state transitions', () => {
     const resumed = startOrResumeStudentSessionState(paused, nowMs + 2_000);
     expect(resumed.status).toBe('inProgress');
     expect(resumed.updatedAt).toBe(nowMs + 2_000);
+  });
+
+  it('returns only the support plan pinned to the session', () => {
+    const session = makeSession();
+    expect(buildStudentSessionStartResult(session, supportPlan, false)).toMatchObject({
+      session,
+      supportPlan,
+      resumed: false,
+    });
+    expect(() =>
+      buildStudentSessionStartResult(
+        session,
+        supportPlanVersionSchema.parse({ ...supportPlan, version: supportPlan.version + 1 }),
+        false,
+      ),
+    ).toThrowError(new StudentSessionError('identity-mismatch'));
   });
 
   it('makes repeated pause, resume, and complete requests stable', () => {

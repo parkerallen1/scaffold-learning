@@ -192,6 +192,24 @@ export const createStudentSession = ({
     completedAt: null,
   });
 
+export const buildStudentSessionStartResult = (
+  sessionInput: SessionState,
+  supportPlanInput: SupportPlanVersion,
+  resumed: boolean,
+): Readonly<{ session: SessionState; supportPlan: SupportPlanVersion; resumed: boolean }> => {
+  const session = sessionStateSchema.parse(sessionInput);
+  const supportPlan = supportPlanVersionSchema.parse(supportPlanInput);
+  if (
+    supportPlan.id !== session.supportPlanId ||
+    supportPlan.version !== session.supportPlanVersion ||
+    supportPlan.classroomId !== session.classroomId ||
+    supportPlan.studentId !== session.studentId
+  ) {
+    throw new StudentSessionError('identity-mismatch');
+  }
+  return Object.freeze({ session, supportPlan, resumed });
+};
+
 export const startOrResumeStudentSessionState = (
   sessionInput: SessionState,
   nowMs: number,

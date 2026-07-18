@@ -43,6 +43,7 @@ import {
   assertSessionIdentity,
   attemptRequestFingerprint,
   buildAttemptEvent,
+  buildStudentSessionStartResult,
   buildSupportEvent,
   createStudentSession,
   idempotencyDocumentId,
@@ -284,7 +285,11 @@ const startOrResumeSessionRecord = async (
   claims: StudentSessionClaims,
   targetId: z.infer<typeof startOrResumeStudentSessionInputSchema>['targetId'],
   nowMs: number,
-): Promise<{ session: SessionState; resumed: boolean }> => {
+): Promise<{
+  session: SessionState;
+  supportPlan: SupportPlanVersion;
+  resumed: boolean;
+}> => {
   const classroomRef = firestore.collection('classrooms').doc(claims.classroomId);
   const targetRef = classroomRef.collection('assignmentTargets').doc(targetId);
   const pointerRef = classroomRef.collection('sessionTargets').doc(targetId);
@@ -329,10 +334,10 @@ const startOrResumeSessionRecord = async (
         transaction.get(planRef),
       ]);
       requirePublishedTargetAssignment(parseAssignment(assignmentSnapshot), target);
-      parseSupportPlan(planSnapshot, target);
+      const supportPlan = parseSupportPlan(planSnapshot, target);
       const session = startOrResumeStudentSessionState(existing, nowMs);
       if (session !== existing) transaction.set(sessionRef, session);
-      return { session, resumed: true };
+      return buildStudentSessionStartResult(session, supportPlan, true);
     }
 
     const assignmentRef = classroomRef.collection('assignments').doc(target.assignmentId);
@@ -348,7 +353,7 @@ const startOrResumeSessionRecord = async (
       transaction.get(firstQuestionQuery),
     ]);
     const assignment = parseAssignment(assignmentSnapshot);
-    parseSupportPlan(planSnapshot, target);
+    const supportPlan = parseSupportPlan(planSnapshot, target);
     const firstQuestionDocument = questionSnapshot.docs[0];
     const firstQuestion = publicQuestionSchema.safeParse(firstQuestionDocument?.data());
     if (
@@ -379,7 +384,7 @@ const startOrResumeSessionRecord = async (
         createdAt: nowMs,
       }),
     );
-    return { session, resumed: false };
+    return buildStudentSessionStartResult(session, supportPlan, false);
   });
 };
 
