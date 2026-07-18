@@ -20,6 +20,11 @@ const TeacherPreviewRoute = lazy(async () => {
   return { default: routes.TeacherPreviewRoute };
 });
 
+const TeacherPlanningRoute = lazy(async () => {
+  const route = await import('./TeacherPlanningRoute');
+  return { default: route.TeacherPlanningRoute };
+});
+
 const IdentityRouteLoading = () => (
   <main className="flex min-h-screen items-center justify-center bg-slate-50 p-6">
     <p role="status" className="text-lg font-medium text-slate-700">
@@ -46,6 +51,12 @@ const AppContent = ({ pathname }: { pathname: string }) => {
       return (
         <Suspense fallback={<IdentityRouteLoading />}>
           <TeacherHomeRoute />
+        </Suspense>
+      );
+    case 'teacher-planning':
+      return (
+        <Suspense fallback={<IdentityRouteLoading />}>
+          <TeacherPlanningRoute />
         </Suspense>
       );
     case 'teacher-preview':

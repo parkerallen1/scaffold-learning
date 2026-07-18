@@ -1,5 +1,11 @@
 export type AppRoute =
-  'demo' | 'home' | 'not-found' | 'student' | 'teacher-home' | 'teacher-preview';
+  | 'demo'
+  | 'home'
+  | 'not-found'
+  | 'student'
+  | 'teacher-home'
+  | 'teacher-planning'
+  | 'teacher-preview';
 
 export const resolveAppRoute = (pathname: string): AppRoute => {
   const normalizedPath = pathname.length > 1 ? pathname.replace(/\/+$/, '') : pathname;
@@ -13,6 +19,8 @@ export const resolveAppRoute = (pathname: string): AppRoute => {
       return 'student';
     case '/teacher':
       return 'teacher-home';
+    case '/teacher/planning':
+      return 'teacher-planning';
     case '/teacher/preview':
       return 'teacher-preview';
     default:

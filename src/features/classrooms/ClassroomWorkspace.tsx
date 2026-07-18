@@ -76,26 +76,35 @@ const StudentRow = ({
         <span className="capitalize">{student.status}</span> · Access version {student.authVersion}
       </p>
     </div>
-    {classroom.status === 'active' && (
-      <div className="flex flex-wrap gap-2">
-        <button
-          type="button"
-          onClick={() => onResetPin(student)}
-          disabled={isWorking}
-          className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold hover:bg-slate-50 disabled:opacity-50"
-        >
-          {student.status === 'disabled' ? 'Reset PIN & enable' : 'Reset PIN'}
-        </button>
-        <button
-          type="button"
-          onClick={() => onDisable(student)}
-          disabled={isWorking || student.status === 'disabled'}
-          className="rounded-lg border border-red-300 px-3 py-2 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50"
-        >
-          Disable access
-        </button>
-      </div>
-    )}
+    <div className="flex flex-wrap gap-2">
+      <a
+        href={`/teacher/planning?classroomId=${encodeURIComponent(classroom.id)}&studentId=${encodeURIComponent(student.id)}`}
+        className="rounded-lg bg-blue-700 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-800"
+        aria-label={`Plan supports for ${student.displayName}`}
+      >
+        Plan supports
+      </a>
+      {classroom.status === 'active' && (
+        <>
+          <button
+            type="button"
+            onClick={() => onResetPin(student)}
+            disabled={isWorking}
+            className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold hover:bg-slate-50 disabled:opacity-50"
+          >
+            {student.status === 'disabled' ? 'Reset PIN & enable' : 'Reset PIN'}
+          </button>
+          <button
+            type="button"
+            onClick={() => onDisable(student)}
+            disabled={isWorking || student.status === 'disabled'}
+            className="rounded-lg border border-red-300 px-3 py-2 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50"
+          >
+            Disable access
+          </button>
+        </>
+      )}
+    </div>
   </li>
 );
 

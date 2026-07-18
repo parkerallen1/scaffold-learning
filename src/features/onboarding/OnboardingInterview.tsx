@@ -10,6 +10,7 @@ export interface OnboardingProfileDraft {
 }
 
 interface OnboardingInterviewProps {
+  initialTeacherSummary?: string;
   studentName?: string;
   initialObservations?: Partial<StructuredObservations>;
   onComplete: (draft: OnboardingProfileDraft) => void;
@@ -61,6 +62,7 @@ const clearQuestion = (
 };
 
 export function OnboardingInterview({
+  initialTeacherSummary = '',
   studentName = 'this student',
   initialObservations,
   onComplete,
@@ -75,7 +77,7 @@ export function OnboardingInterview({
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isReviewing, setIsReviewing] = useState(false);
   const [returnToReview, setReturnToReview] = useState(false);
-  const [teacherSummary, setTeacherSummary] = useState('');
+  const [teacherSummary, setTeacherSummary] = useState(initialTeacherSummary);
   const [error, setError] = useState<string | null>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
 

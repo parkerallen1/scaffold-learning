@@ -135,6 +135,14 @@ describe('ClassroomWorkspace', () => {
     expect(screen.queryByText('482901')).not.toBeInTheDocument();
   });
 
+  it('links every roster student to the protected planning workspace', async () => {
+    render(<ClassroomWorkspace teacherId="teacher-1" />);
+
+    expect(
+      await screen.findByRole('link', { name: 'Plan supports for Alex Student' }),
+    ).toHaveAttribute('href', '/teacher/planning?classroomId=classroom-1&studentId=student-1');
+  });
+
   it('confirms rotation, PIN reset, disable, and archive actions', async () => {
     const user = userEvent.setup();
     const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
