@@ -46,7 +46,7 @@ npm run setup:local
 npm run emulators:start
 ```
 
-Open the Hosting emulator at `http://127.0.0.1:5000`. The Emulator UI is at `http://127.0.0.1:4000`.
+Open the Hosting emulator at `http://127.0.0.1:5002`. The Emulator UI is at `http://127.0.0.1:4000`.
 
 `setup:local` creates missing ignored emulator configuration and a local-only student PIN pepper; it
 never overwrites existing values. The checked-in environment template is locked to
