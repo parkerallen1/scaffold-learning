@@ -38,16 +38,14 @@ This document turns the product contract in `PLAN.md` into small, dependency-ord
 ## Standard verification ladder
 
 ```sh
-npm run format:check
-npm run lint
-npm run typecheck
-npm test -- --run
-npm run test:rules
-npm run build
-npm run test:e2e
+npm run check
+npm run firebase:validate # Firestore rules suite; requires Java 21 locally
 ```
 
-Scripts are added progressively. Live OpenAI calls are never part of ordinary unit or CI runs.
+`npm run check` is the required local gate and includes formatting, lint, typechecks, unit/component
+tests, all builds, and client-boundary scanning. `firebase:validate` is also required before merging a
+rules change; CI supplies Java when it is unavailable locally. End-to-end scripts are added in M5-01.
+Live OpenAI calls are never part of ordinary unit or CI runs.
 
 ---
 
