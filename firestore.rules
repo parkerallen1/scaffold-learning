@@ -27,7 +27,7 @@ service cloud.firestore {
     }
 
     function targetPath(classroomId, assignmentId, studentId) {
-      let targetId = assignmentId + '_' + studentId;
+      let targetId = assignmentId + '.' + studentId;
       return /databases/$(database)/documents/classrooms/$(classroomId)/assignmentTargets/$(targetId);
     }
 
@@ -158,14 +158,15 @@ service cloud.firestore {
         }
       }
 
-      // Target IDs are deterministic: `${assignmentId}_${studentId}`. This
+      // Target IDs are deterministic: `${assignmentId}.${studentId}`. The dot
+      // is not legal inside domain IDs, which prevents concatenation collisions. This
       // gives rules a concrete path to verify before exposing an assignment.
       match /assignmentTargets/{targetId} {
         allow read, write: if teacherOwnsClassroom(classroomId);
         allow get: if activeStudentInClassroom(classroomId)
           && resource.data.classroomId == classroomId
           && resource.data.studentId == request.auth.uid
-          && targetId == resource.data.assignmentId + '_' + request.auth.uid;
+          && targetId == resource.data.assignmentId + '.' + request.auth.uid;
         allow list: if activeStudentInClassroom(classroomId)
           && resource.data.studentId == request.auth.uid;
       }

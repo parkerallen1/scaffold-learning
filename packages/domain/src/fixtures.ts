@@ -7,7 +7,7 @@ import {
 import { auditResultSchema, auditTraceSchema } from './audits.js';
 import {
   assignmentIdSchema,
-  assignmentTargetIdSchema,
+  assignmentTargetIdFor,
   auditResultIdSchema,
   auditTraceIdSchema,
   choiceIdSchema,
@@ -40,7 +40,10 @@ export const syntheticIds = Object.freeze({
   questionId: questionIdSchema.parse('question_demo_01'),
   choiceAId: choiceIdSchema.parse('choice_demo_a'),
   choiceBId: choiceIdSchema.parse('choice_demo_b'),
-  targetId: assignmentTargetIdSchema.parse('target_demo_01'),
+  targetId: assignmentTargetIdFor(
+    assignmentIdSchema.parse('assignment_demo_01'),
+    studentIdSchema.parse('student_demo_01'),
+  ),
   sessionId: sessionIdSchema.parse('session_demo_01'),
   attemptEventId: eventIdSchema.parse('event_attempt_01'),
   supportEventId: eventIdSchema.parse('event_support_01'),

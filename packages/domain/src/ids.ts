@@ -15,7 +15,11 @@ export const supportPlanIdSchema = idSchema<'SupportPlanId'>();
 export const assignmentIdSchema = idSchema<'AssignmentId'>();
 export const questionIdSchema = idSchema<'QuestionId'>();
 export const choiceIdSchema = idSchema<'ChoiceId'>();
-export const assignmentTargetIdSchema = idSchema<'AssignmentTargetId'>();
+export const assignmentTargetIdSchema = z
+  .string()
+  .trim()
+  .regex(/^[A-Za-z0-9_-]{8,64}\.[A-Za-z0-9_-]{8,64}$/)
+  .brand<'AssignmentTargetId'>();
 export const sessionIdSchema = idSchema<'SessionId'>();
 export const eventIdSchema = idSchema<'EventId'>();
 export const auditTraceIdSchema = idSchema<'AuditTraceId'>();
@@ -44,3 +48,8 @@ export type AuditTraceId = z.infer<typeof auditTraceIdSchema>;
 export type AuditResultId = z.infer<typeof auditResultIdSchema>;
 export type IdempotencyKey = z.infer<typeof idempotencyKeySchema>;
 export type EpochMillis = z.infer<typeof epochMillisSchema>;
+
+export const assignmentTargetIdFor = (
+  assignmentId: AssignmentId,
+  studentId: StudentId,
+): AssignmentTargetId => assignmentTargetIdSchema.parse(`${assignmentId}.${studentId}`);

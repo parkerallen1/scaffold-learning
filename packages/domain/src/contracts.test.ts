@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { publicQuestionSchema } from './assignments.js';
 import { syntheticDomainFixtures } from './fixtures.js';
 import { studentSafeIdentitySchema } from './identity.js';
+import { assignmentTargetIdFor, assignmentTargetIdSchema } from './ids.js';
 import {
   CORE_SUPPORT_KEYS,
   SUPPORT_CATALOG,
@@ -123,5 +124,18 @@ describe('sensitive-field isolation', () => {
     expect(studentReadable).not.toMatch(
       /teacherSummary|teacherNotes|rationale|answerKey|correctChoiceId|rubric/i,
     );
+  });
+});
+
+describe('deterministic storage identifiers', () => {
+  it('uses a separator that cannot appear inside assignment or student IDs', () => {
+    const { assignment, studentSafeIdentity } = syntheticDomainFixtures;
+    const targetId = assignmentTargetIdFor(assignment.id, studentSafeIdentity.id);
+
+    expect(targetId).toBe(`${assignment.id}.${studentSafeIdentity.id}`);
+    expect(assignmentTargetIdSchema.parse(targetId)).toBe(targetId);
+    expect(() =>
+      assignmentTargetIdSchema.parse(`${assignment.id}_${studentSafeIdentity.id}`),
+    ).toThrow();
   });
 });

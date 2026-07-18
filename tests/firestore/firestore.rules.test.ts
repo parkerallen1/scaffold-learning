@@ -116,18 +116,18 @@ async function seedFirestore() {
         { assignmentId: 'assignment-a', expectedValue: 4 },
       ],
       [
-        `${classroomPath('class-a')}/assignmentTargets/assignment-a_student-a`,
+        `${classroomPath('class-a')}/assignmentTargets/assignment-a.student-a`,
         {
-          id: 'assignment-a_student-a',
+          id: 'assignment-a.student-a',
           classroomId: 'class-a',
           assignmentId: 'assignment-a',
           studentId: 'student-a',
         },
       ],
       [
-        `${classroomPath('class-a')}/assignmentTargets/assignment-draft_student-a`,
+        `${classroomPath('class-a')}/assignmentTargets/assignment-draft.student-a`,
         {
-          id: 'assignment-draft_student-a',
+          id: 'assignment-draft.student-a',
           classroomId: 'class-a',
           assignmentId: 'assignment-draft',
           studentId: 'student-a',
