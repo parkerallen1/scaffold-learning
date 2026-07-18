@@ -1,5 +1,7 @@
 import { useState } from 'react';
 
+import { useDialogFocus } from '@/shared/hooks/useDialogFocus';
+
 type CredentialDetail = {
   label: string;
   value: string;
@@ -19,6 +21,7 @@ export const CredentialReveal = ({
   title,
 }: CredentialRevealProps) => {
   const [copyStatus, setCopyStatus] = useState<string | null>(null);
+  const dialogRef = useDialogFocus<HTMLElement>({ isOpen: true, onDismiss: onAcknowledge });
 
   const copyDetail = async (detail: CredentialDetail) => {
     try {
@@ -32,6 +35,7 @@ export const CredentialReveal = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4">
       <section
+        ref={dialogRef}
         role="alertdialog"
         aria-modal="true"
         aria-labelledby="credential-reveal-title"
@@ -41,7 +45,12 @@ export const CredentialReveal = ({
         <p className="text-sm font-semibold uppercase tracking-wide text-amber-700">
           Displayed once
         </p>
-        <h2 id="credential-reveal-title" className="mt-1 text-2xl font-bold text-slate-900">
+        <h2
+          id="credential-reveal-title"
+          data-dialog-initial-focus
+          tabIndex={-1}
+          className="mt-1 text-2xl font-bold text-slate-900"
+        >
           {title}
         </h2>
         <p id="credential-reveal-message" className="mt-3 text-sm text-slate-600">
@@ -66,11 +75,9 @@ export const CredentialReveal = ({
           ))}
         </dl>
 
-        {copyStatus && (
-          <p role="status" className="mt-3 text-sm text-slate-600">
-            {copyStatus}
-          </p>
-        )}
+        <p aria-live="polite" className="mt-3 min-h-5 text-sm text-slate-600">
+          {copyStatus}
+        </p>
         <button
           type="button"
           onClick={onAcknowledge}

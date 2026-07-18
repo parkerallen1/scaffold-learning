@@ -5,7 +5,11 @@ import { useAuth } from '../../features/auth/authContext';
 import { StudentWorkspace } from '../../features/student-work/StudentWorkspace';
 
 const StudentAuthError = ({ message }: { message: string }) => (
-  <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700">
+  <p
+    id="student-sign-in-error"
+    role="alert"
+    className="rounded-lg bg-red-50 p-3 text-sm text-red-700"
+  >
     {message}
   </p>
 );
@@ -91,7 +95,12 @@ export const StudentEntryPage = () => {
             Enter the class code, student handle, and PIN provided by your teacher.
           </p>
 
-          <form className="mt-6 space-y-4" onSubmit={(event) => void handleSubmit(event)}>
+          <form
+            className="mt-6 space-y-4"
+            aria-busy={isWorking}
+            aria-describedby={error ? 'student-sign-in-error' : undefined}
+            onSubmit={(event) => void handleSubmit(event)}
+          >
             {error && <StudentAuthError message={error} />}
             <label className="block text-sm font-semibold text-slate-700">
               Class code
@@ -128,8 +137,12 @@ export const StudentEntryPage = () => {
                 minLength={4}
                 pattern="[0-9]*"
                 type="password"
+                aria-describedby="student-pin-help"
               />
             </label>
+            <p id="student-pin-help" className="text-xs text-slate-600">
+              Enter numbers only. Your PIN is cleared after each sign-in attempt.
+            </p>
             <button
               type="submit"
               disabled={isWorking}
@@ -139,7 +152,7 @@ export const StudentEntryPage = () => {
             </button>
           </form>
 
-          <p className="mt-4 text-xs text-slate-500">
+          <p className="mt-4 text-xs text-slate-600">
             Quiz Master does not save your PIN in this browser.
           </p>
         </section>

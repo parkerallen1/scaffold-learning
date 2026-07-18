@@ -363,7 +363,7 @@ const QuestionWork = ({
             <p className="mb-2 text-sm text-slate-600">
               Scratch work stays on this screen and is not uploaded.
             </p>
-            <div className="h-72 overflow-hidden rounded-xl border border-slate-200">
+            <div className="flex min-h-[32rem] flex-col rounded-xl border border-slate-200">
               <ScratchCanvas questionIndex={question.order}>{null}</ScratchCanvas>
             </div>
           </div>
@@ -371,13 +371,18 @@ const QuestionWork = ({
 
         <form className="mt-6" onSubmit={(event) => void handleSubmit(event)}>
           {question.questionType === 'numeric' && draft.kind === 'numeric' && (
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div
+              className="grid gap-3 sm:grid-cols-2"
+              aria-describedby={answerError ? 'student-answer-error' : undefined}
+            >
               <label className="font-semibold">
                 Your answer
                 <input
                   autoComplete="off"
                   inputMode="decimal"
                   value={draft.value}
+                  aria-invalid={answerError ? true : undefined}
+                  aria-describedby={answerError ? 'student-answer-error' : undefined}
                   onChange={(event) => updateDraft({ ...draft, value: event.target.value })}
                   className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-3"
                 />
@@ -396,7 +401,7 @@ const QuestionWork = ({
             </div>
           )}
           {question.questionType === 'multipleChoice' && draft.kind === 'choice' && (
-            <fieldset>
+            <fieldset aria-describedby={answerError ? 'student-answer-error' : undefined}>
               <legend className="font-semibold">Choose one answer</legend>
               <div className="mt-2 space-y-2">
                 {question.choices.map((choice) => (
@@ -421,6 +426,8 @@ const QuestionWork = ({
               Your answer
               <textarea
                 value={draft.value}
+                aria-invalid={answerError ? true : undefined}
+                aria-describedby={answerError ? 'student-answer-error' : undefined}
                 maxLength={question.maxLength}
                 rows={5}
                 onChange={(event) => updateDraft({ kind: 'shortText', value: event.target.value })}
@@ -430,7 +437,7 @@ const QuestionWork = ({
           )}
 
           {answerError && (
-            <div className="mt-4">
+            <div id="student-answer-error" className="mt-4">
               <ErrorNotice message={answerError} />
             </div>
           )}

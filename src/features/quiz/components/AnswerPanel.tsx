@@ -34,9 +34,22 @@ export const AnswerPanel = ({
       placeholder="Type answer here"
       className={`w-full p-3 border-2 rounded-lg bg-gray-50 dark:bg-gray-700 font-semibold focus:outline-none focus:ring-2 transition-all duration-300 ${getAnswerBorderColor(answer, isCorrect)}`}
       autoComplete="off"
+      aria-describedby={answer.length > 0 ? 'prototype-answer-status' : undefined}
     />
+    {answer.length > 0 && (
+      <p
+        id="prototype-answer-status"
+        role="status"
+        className={`mt-2 text-sm font-semibold ${
+          isCorrect ? 'text-green-700 dark:text-green-300' : 'text-red-700 dark:text-red-300'
+        }`}
+      >
+        {isCorrect ? 'Answer matches.' : 'Not a match yet.'}
+      </p>
+    )}
     {isCorrect && !isRewardVisible && (
       <button
+        type="button"
         onClick={onNext}
         className="w-full mt-3 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-transform transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-green-400/50"
       >

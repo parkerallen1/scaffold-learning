@@ -171,7 +171,9 @@ export const TeacherAssignmentsPage = () => {
                     const checkboxId = `assignment-student-${student.id}`;
                     return (
                       <li key={student.id}>
-                        <div
+                        <label
+                          htmlFor={checkboxId}
+                          aria-label={`Select ${student.displayName} (${student.status})`}
                           className={`flex items-center gap-3 rounded-xl border p-3 ${
                             isActive ? 'border-slate-200' : 'border-slate-100 bg-slate-50'
                           }`}
@@ -190,7 +192,7 @@ export const TeacherAssignmentsPage = () => {
                               {student.status}
                             </span>
                           </span>
-                        </div>
+                        </label>
                       </li>
                     );
                   })}

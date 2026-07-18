@@ -1,4 +1,12 @@
-import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef } from 'react';
+import {
+  forwardRef,
+  useCallback,
+  useEffect,
+  useId,
+  useImperativeHandle,
+  useRef,
+  useState,
+} from 'react';
 import type { PointerEvent, ReactNode } from 'react';
 
 interface ScratchCanvasProps {
@@ -14,6 +22,10 @@ export const ScratchCanvas = forwardRef<ScratchCanvasHandle, ScratchCanvasProps>
   ({ children, questionIndex }, ref) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const activePointerIdRef = useRef<number | null>(null);
+    const instructionsId = useId();
+    const notesId = useId();
+    const [notesState, setNotesState] = useState({ questionIndex, value: '' });
+    const scratchNotes = notesState.questionIndex === questionIndex ? notesState.value : '';
 
     const clearCanvas = useCallback(() => {
       const canvas = canvasRef.current;
@@ -147,6 +159,7 @@ export const ScratchCanvas = forwardRef<ScratchCanvasHandle, ScratchCanvasProps>
         <div className="flex justify-between items-center mb-4 flex-shrink-0">
           <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-300">Show your work</h2>
           <button
+            type="button"
             onClick={clearCanvas}
             className="text-sm bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 px-4 py-2 rounded-md transition-colors"
           >
@@ -157,7 +170,9 @@ export const ScratchCanvas = forwardRef<ScratchCanvasHandle, ScratchCanvasProps>
           <canvas
             ref={canvasRef}
             className="w-full h-full bg-white dark:bg-gray-700 cursor-crosshair"
-            aria-label="Scratch work area"
+            role="img"
+            aria-label="Freehand scratch work area"
+            aria-describedby={instructionsId}
             style={{ touchAction: 'none' }}
             onPointerDown={startDrawing}
             onPointerMove={draw}
@@ -167,6 +182,20 @@ export const ScratchCanvas = forwardRef<ScratchCanvasHandle, ScratchCanvasProps>
           />
           {children}
         </div>
+        <p id={instructionsId} className="mt-3 text-sm text-gray-600 dark:text-gray-300">
+          Draw with a pointer, or use the keyboard-accessible scratch notes below. Scratch work is
+          not submitted.
+        </p>
+        <label htmlFor={notesId} className="mt-2 font-semibold text-gray-700 dark:text-gray-200">
+          Typed scratch notes
+        </label>
+        <textarea
+          id={notesId}
+          rows={3}
+          value={scratchNotes}
+          onChange={(event) => setNotesState({ questionIndex, value: event.target.value })}
+          className="mt-1 w-full rounded-lg border border-gray-300 bg-white p-3 text-gray-900 dark:border-gray-500 dark:bg-gray-700 dark:text-white"
+        />
       </div>
     );
   },

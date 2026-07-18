@@ -215,6 +215,26 @@ describe('StudentWorkspace', () => {
     });
   });
 
+  it('identifies an empty answer error on the critical student response control', async () => {
+    const user = userEvent.setup();
+    render(
+      <StudentWorkspace
+        classroomId={classroomId}
+        isSigningOut={false}
+        onSignOut={vi.fn()}
+        studentId={studentId}
+      />,
+    );
+
+    await user.click(await screen.findByRole('button', { name: 'Open assignment' }));
+    const answer = await screen.findByRole('textbox', { name: 'Your answer' });
+    await user.click(screen.getByRole('button', { name: 'Submit answer' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Enter an answer');
+    expect(answer).toHaveAttribute('aria-invalid', 'true');
+    expect(answer).toHaveAccessibleDescription('Enter an answer before submitting.');
+  });
+
   it('requires confirmation before turning in unfinished work', async () => {
     const user = userEvent.setup();
     vi.spyOn(window, 'confirm').mockReturnValue(false);

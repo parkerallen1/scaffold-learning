@@ -1,3 +1,29 @@
 @import 'tailwindcss';
 
 @custom-variant dark (&:where(.dark, .dark *));
+
+@layer base {
+  :where(button, input:not([type='checkbox']):not([type='radio']), select, textarea) {
+    min-height: 2.75rem;
+  }
+
+  :where(a[href], button, input, select, textarea, [tabindex]):focus-visible {
+    outline: 3px solid #2563eb;
+    outline-offset: 3px;
+  }
+
+  :where(p, li, dd, dt, label, legend, h1, h2, h3, h4) {
+    overflow-wrap: anywhere;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

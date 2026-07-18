@@ -1,4 +1,5 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { createRef } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -14,7 +15,7 @@ describe('ScratchCanvas', () => {
       </ScratchCanvas>,
     );
 
-    const canvas = screen.getByLabelText('Scratch work area') as HTMLCanvasElement;
+    const canvas = screen.getByLabelText('Freehand scratch work area') as HTMLCanvasElement;
     const context = canvas.getContext('2d')!;
     const setPointerCapture = vi.fn();
     const releasePointerCapture = vi.fn();
@@ -81,7 +82,7 @@ describe('ScratchCanvas', () => {
       </ScratchCanvas>,
     );
 
-    const canvas = screen.getByLabelText('Scratch work area') as HTMLCanvasElement;
+    const canvas = screen.getByLabelText('Freehand scratch work area') as HTMLCanvasElement;
     const parent = canvas.parentElement!;
     const context = canvas.getContext('2d')!;
     const originalWidth = canvas.width;
@@ -119,5 +120,25 @@ describe('ScratchCanvas', () => {
     );
 
     expect(context.clearRect).toHaveBeenLastCalledWith(0, 0, 640, 360);
+  });
+
+  it('provides keyboard-accessible scratch notes and starts them blank for a new question', async () => {
+    const user = userEvent.setup();
+    const { rerender } = render(
+      <ScratchCanvas questionIndex={0}>
+        <span>Answer controls</span>
+      </ScratchCanvas>,
+    );
+
+    const notes = screen.getByRole('textbox', { name: 'Typed scratch notes' });
+    await user.type(notes, '12 divided by 3');
+    expect(notes).toHaveValue('12 divided by 3');
+
+    rerender(
+      <ScratchCanvas questionIndex={1}>
+        <span>Answer controls</span>
+      </ScratchCanvas>,
+    );
+    expect(screen.getByRole('textbox', { name: 'Typed scratch notes' })).toHaveValue('');
   });
 });

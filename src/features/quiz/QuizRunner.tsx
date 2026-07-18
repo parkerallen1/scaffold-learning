@@ -128,9 +128,13 @@ export const QuizRunner = () => {
   };
 
   return (
-    <div
+    <section
+      aria-labelledby="quiz-runner-title"
       className={`relative min-h-screen ${appBackgroundColor} text-gray-800 dark:text-gray-200 flex flex-col items-center justify-center p-4 sm:p-6 md:p-8 font-sans transition-colors duration-300`}
     >
+      <h1 id="quiz-runner-title" className="sr-only">
+        Synthetic quiz practice
+      </h1>
       <PrototypeSettingsDialog
         interestFile={interestFile}
         isInterestEnabled={isInterestEnabled}
@@ -177,6 +181,6 @@ export const QuizRunner = () => {
       {isTimerEnabled && !isFinished && (
         <TimerDisplay configuredSeconds={timerSeconds} remainingSeconds={timerValue} />
       )}
-    </div>
+    </section>
   );
 };

@@ -24,19 +24,25 @@ export const QuestionCard = ({
         Question {currentIndex + 1} of {totalQuestions}
       </span>
     </div>
-    <button
-      type="button"
-      aria-label="Read question aloud"
-      className="text-2xl text-left w-full font-semibold mt-2 cursor-pointer group flex items-start gap-3"
-      onClick={onSpeak}
-    >
-      <SpeakerIcon
-        isLoading={isLoadingSpeech}
-        className="w-7 h-7 mt-1 text-gray-500 dark:text-gray-400 group-hover:text-blue-500 transition-colors flex-shrink-0"
-      />
-      <span>{question.question}</span>
-    </button>
-    {speechError && <p className="text-red-500 text-sm mt-2">{speechError}</p>}
+    <h2 className="mt-2 text-2xl font-semibold">
+      <button
+        type="button"
+        aria-label={`Read question aloud: ${question.question}`}
+        className="group flex w-full cursor-pointer items-start gap-3 text-left"
+        onClick={onSpeak}
+      >
+        <SpeakerIcon
+          isLoading={isLoadingSpeech}
+          className="w-7 h-7 mt-1 text-gray-500 dark:text-gray-400 group-hover:text-blue-500 transition-colors flex-shrink-0"
+        />
+        <span>{question.question}</span>
+      </button>
+    </h2>
+    {speechError && (
+      <p role="alert" className="text-red-700 dark:text-red-300 text-sm mt-2">
+        {speechError}
+      </p>
+    )}
     {question.data?.type === 'table' && (
       <div className="mt-4 overflow-x-auto relative shadow-md sm:rounded-lg">
         <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">

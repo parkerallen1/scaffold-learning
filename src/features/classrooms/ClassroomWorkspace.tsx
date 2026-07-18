@@ -79,7 +79,7 @@ const StudentRow = ({
     <div className="flex flex-wrap gap-2">
       <a
         href={`/teacher/planning?classroomId=${encodeURIComponent(classroom.id)}&studentId=${encodeURIComponent(student.id)}`}
-        className="rounded-lg bg-blue-700 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-800"
+        className="inline-flex min-h-11 items-center rounded-lg bg-blue-700 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-800"
         aria-label={`Plan supports for ${student.displayName}`}
       >
         Plan supports
