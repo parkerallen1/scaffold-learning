@@ -20,6 +20,7 @@ export {
   revertSupportPlanVersion,
   saveStudentProfile,
 } from './planning/supportPlanPersistence.js';
+export { recommendStudentSupports } from './planning/recommendStudentSupports.js';
 
 setGlobalOptions({ maxInstances: 10, region: 'us-central1' });
 

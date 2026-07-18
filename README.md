@@ -147,6 +147,22 @@ This app can be deployed to any static hosting service:
 
 ## Configuration
 
+### Server support recommendations
+
+Support recommendations run only in Firebase Functions and always require teacher review. The
+Functions emulator uses the deterministic fake provider, so local development and tests do not
+send student observations to OpenAI.
+
+For a production deployment that should use OpenAI:
+
+1. Set the Functions runtime variable `AI_PROVIDER=openai`.
+2. Create the server-only secret with `firebase functions:secrets:set OPENAI_API_KEY`.
+3. Optionally set `OPENAI_RECOMMENDATION_MODEL` to override the documented default model.
+
+Never put `OPENAI_API_KEY` in a `VITE_*` variable or any client-side file. If the live provider is
+unavailable or its structured result fails validation, the teacher is sent to manual support setup;
+no recommendation is automatically activated.
+
 ### Tailwind CSS
 
 Tailwind is loaded via CDN in `index.html`. For production, consider:
