@@ -102,15 +102,17 @@ describe('student auth-version lifecycle', () => {
     expect(disableStudentIdentity(disabled, 3_000)).toEqual(disabled);
   });
 
-  it('increments authVersion on PIN reset and rejects disabled students', () => {
+  it('increments authVersion on PIN reset and deliberately re-enables a disabled student', () => {
     expect(resetStudentIdentityAuth(activeStudent, 2_000)).toMatchObject({
       status: 'active',
       authVersion: 2,
       updatedAt: 2_000,
     });
     const disabled = disableStudentIdentity(activeStudent, 2_000);
-    expect(() => resetStudentIdentityAuth(disabled, 3_000)).toThrow(
-      'Student lifecycle transition was rejected.',
-    );
+    expect(resetStudentIdentityAuth(disabled, 3_000)).toMatchObject({
+      status: 'active',
+      authVersion: 3,
+      updatedAt: 3_000,
+    });
   });
 });

@@ -48,7 +48,6 @@ import {
   generateStudentPin,
   requireTeacherPrincipal,
   resetStudentIdentityAuth,
-  StudentLifecycleError,
   studentActionInputSchema,
   teacherClaimNeedsRefresh,
   TeacherAuthorizationError,
@@ -122,7 +121,7 @@ const translateLifecycleError = (operation: string, error: unknown): never => {
   if (error instanceof LifecycleConflictError) {
     throw new HttpsError('already-exists', 'That identifier is already in use.');
   }
-  if (error instanceof LifecycleStateError || error instanceof StudentLifecycleError) {
+  if (error instanceof LifecycleStateError) {
     throw new HttpsError('failed-precondition', 'That action is not available right now.');
   }
 

@@ -27,13 +27,6 @@ export class TeacherAuthorizationError extends Error {
   }
 }
 
-export class StudentLifecycleError extends Error {
-  constructor(readonly reason: 'student-disabled') {
-    super('Student lifecycle transition was rejected.');
-    this.name = 'StudentLifecycleError';
-  }
-}
-
 const providerFor = (token: Readonly<Record<string, unknown>>): string | null => {
   const firebase = token.firebase;
   if (typeof firebase !== 'object' || firebase === null || Array.isArray(firebase)) {
@@ -139,11 +132,9 @@ export const resetStudentIdentityAuth = (
   nowMs: number,
 ): StudentSafeIdentity => {
   const student = studentSafeIdentitySchema.parse(input);
-  if (student.status !== 'active') {
-    throw new StudentLifecycleError('student-disabled');
-  }
   return studentSafeIdentitySchema.parse({
     ...student,
+    status: 'active',
     authVersion: student.authVersion + 1,
     updatedAt: nowMs,
   });
