@@ -78,3 +78,81 @@ export type AuditEvidence = z.infer<typeof auditEvidenceSchema>;
 export type AuditTrace = z.infer<typeof auditTraceSchema>;
 export type AuditRecommendation = z.infer<typeof auditRecommendationSchema>;
 export type AuditResult = z.infer<typeof auditResultSchema>;
+
+export type AuditSafetyIssue = Readonly<{
+  code:
+    | 'diagnosticOrCausalClaim'
+    | 'insufficientEvidenceChange'
+    | 'lowConfidenceChange'
+    | 'unknownEventCitation';
+  recommendationIndex: number | null;
+  detail: string;
+}>;
+
+export type AuditSafetyResult = Readonly<{
+  ok: boolean;
+  issues: readonly AuditSafetyIssue[];
+}>;
+
+const UNSAFE_AUDIT_CLAIM_PATTERN =
+  /\b(diagnos(?:e|ed|is)|disorder|caused by|proves? that|because of (?:their|his|her)|compared (?:with|to) (?:peers|classmates)|below (?:peers|classmates))\b/i;
+
+export const checkAuditSafety = (
+  rawResult: AuditResult,
+  allowedEventIds: ReadonlySet<string>,
+): AuditSafetyResult => {
+  const result = auditResultSchema.parse(rawResult);
+  const issues: AuditSafetyIssue[] = [];
+
+  if (!result.evidenceSufficient && result.recommendations.length > 0) {
+    issues.push({
+      code: 'insufficientEvidenceChange',
+      recommendationIndex: null,
+      detail: 'An insufficient-evidence result cannot propose support changes.',
+    });
+  }
+
+  if (UNSAFE_AUDIT_CLAIM_PATTERN.test(result.summary)) {
+    issues.push({
+      code: 'diagnosticOrCausalClaim',
+      recommendationIndex: null,
+      detail: 'Audit summary contains diagnostic, causal, or peer-comparison language.',
+    });
+  }
+
+  result.recommendations.forEach((recommendation, recommendationIndex) => {
+    if (recommendation.confidence === 'low' && recommendation.action !== 'observe') {
+      issues.push({
+        code: 'lowConfidenceChange',
+        recommendationIndex,
+        detail: 'Low-confidence evidence may only produce an observe recommendation.',
+      });
+    }
+
+    const recommendationCopy = [
+      ...recommendation.evidence.map((evidence) => evidence.observation),
+      ...recommendation.alternativeExplanations,
+    ].join(' ');
+    if (UNSAFE_AUDIT_CLAIM_PATTERN.test(recommendationCopy)) {
+      issues.push({
+        code: 'diagnosticOrCausalClaim',
+        recommendationIndex,
+        detail: 'Recommendation contains diagnostic, causal, or peer-comparison language.',
+      });
+    }
+
+    for (const evidence of recommendation.evidence) {
+      for (const eventId of evidence.sourceEventIds) {
+        if (!allowedEventIds.has(eventId)) {
+          issues.push({
+            code: 'unknownEventCitation',
+            recommendationIndex,
+            detail: eventId,
+          });
+        }
+      }
+    }
+  });
+
+  return Object.freeze({ ok: issues.length === 0, issues: Object.freeze(issues) });
+};
