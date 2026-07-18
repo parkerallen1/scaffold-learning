@@ -36,10 +36,12 @@ const STUDENT_SIGN_IN_ERROR = 'Unable to sign in with those credentials.';
 const bootstrapTeacher = httpsCallable<Record<string, never>, unknown>(
   functions,
   'bootstrapTeacher',
+  firebaseRuntime.callableOptions,
 );
 const exchangeStudentCredentials = httpsCallable<StudentCredentials, StudentCredentialResponse>(
   functions,
   'exchangeStudentCredentials',
+  firebaseRuntime.callableOptions,
 );
 
 export const authRuntime = Object.freeze({

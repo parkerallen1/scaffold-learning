@@ -1,4 +1,5 @@
 import { getApp, getApps, initializeApp, type FirebaseOptions } from 'firebase/app';
+import { initializeAppCheck, ReCaptchaEnterpriseProvider } from 'firebase/app-check';
 import { connectAuthEmulator, getAuth } from 'firebase/auth';
 import { connectFirestoreEmulator, getFirestore } from 'firebase/firestore';
 import { connectFunctionsEmulator, getFunctions } from 'firebase/functions';
@@ -9,6 +10,7 @@ type PublicFirebaseEnv = {
   readonly VITE_FIREBASE_AUTH_DOMAIN?: string;
   readonly VITE_FIREBASE_PROJECT_ID?: string;
   readonly VITE_FIREBASE_APP_ID?: string;
+  readonly VITE_FIREBASE_APPCHECK_SITE_KEY?: string;
 };
 
 const env = import.meta.env as PublicFirebaseEnv;
@@ -44,6 +46,16 @@ const firebaseConfig: FirebaseOptions = {
 };
 
 export const firebaseApp = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+
+export const appCheck = useEmulators
+  ? null
+  : initializeAppCheck(firebaseApp, {
+      provider: new ReCaptchaEnterpriseProvider(
+        requirePublicEnv('VITE_FIREBASE_APPCHECK_SITE_KEY'),
+      ),
+      isTokenAutoRefreshEnabled: true,
+    });
+
 export const auth = getAuth(firebaseApp);
 export const db = getFirestore(firebaseApp);
 export const functions = getFunctions(firebaseApp, 'us-central1');
@@ -59,4 +71,8 @@ if (useEmulators && !runtimeState.__QUIZ_MASTER_EMULATORS_CONNECTED__) {
   runtimeState.__QUIZ_MASTER_EMULATORS_CONNECTED__ = true;
 }
 
-export const firebaseRuntime = Object.freeze({ projectId, useEmulators });
+export const firebaseRuntime = Object.freeze({
+  projectId,
+  useEmulators,
+  callableOptions: Object.freeze({ limitedUseAppCheckTokens: !useEmulators }),
+});
