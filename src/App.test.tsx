@@ -9,10 +9,21 @@ vi.mock('./services/speech', () => ({
   speak: vi.fn().mockResolvedValue(undefined),
 }));
 
+vi.mock('./features/auth/authService', () => ({
+  authRuntime: { demoTeacherEnabled: false },
+  observeAuthState: vi.fn((onUserChange: (user: null) => void) => {
+    onUserChange(null);
+    return vi.fn();
+  }),
+  signInDemoTeacher: vi.fn(),
+  signInTeacherWithGoogle: vi.fn(),
+  signOutCurrentUser: vi.fn(),
+}));
+
 describe('App', () => {
   it('reads the first question and advances after a correct answer', async () => {
     const user = userEvent.setup();
-    render(<App />);
+    render(<App pathname="/demo" />);
 
     expect(screen.getByText('Question 1 of 12')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Next Question' })).not.toBeInTheDocument();
@@ -33,7 +44,7 @@ describe('App', () => {
   it('stops the visual timer at zero without advancing or clearing work', () => {
     vi.useFakeTimers();
 
-    render(<App />);
+    render(<App pathname="/demo" />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Prototype Settings' }));
     fireEvent.click(screen.getByRole('checkbox', { name: 'Visual Timer' }));
