@@ -87,6 +87,17 @@ service cloud.firestore {
       allow create, update, delete, list: if false;
     }
 
+    // Planning callables return owned data after server-side authorization.
+    // Keeping the pointer and immutable history server-only prevents clients
+    // from bypassing atomic version transitions.
+    match /supportPlans/{studentId} {
+      allow read, write: if false;
+
+      match /versions/{versionId} {
+        allow read, write: if false;
+      }
+    }
+
     match /classrooms/{classroomId} {
       allow get: if (isTeacher() && resource.data.teacherId == request.auth.uid)
         || activeStudentInClassroom(classroomId);
@@ -107,18 +118,6 @@ service cloud.firestore {
       match /studentProfiles/{profileId} {
         allow read: if teacherOwnsClassroom(classroomId);
         allow write: if false;
-      }
-
-      // Immutable plan history and its active pointer are written atomically by
-      // callables. Students receive only the snapshot attached to an assignment.
-      match /supportPlans/{studentId} {
-        allow read: if teacherOwnsClassroom(classroomId);
-        allow write: if false;
-
-        match /versions/{versionId} {
-          allow read: if teacherOwnsClassroom(classroomId);
-          allow write: if false;
-        }
       }
 
       // Server-generated drafts and audit output are readable only by the

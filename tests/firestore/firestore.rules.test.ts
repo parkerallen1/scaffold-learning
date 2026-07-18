@@ -143,7 +143,7 @@ async function seedFirestore() {
         },
       ],
       [
-        `${classroomPath('class-a')}/supportPlans/student-a`,
+        'supportPlans/student-a',
         {
           studentId: 'student-a',
           classroomId: 'class-a',
@@ -152,7 +152,7 @@ async function seedFirestore() {
         },
       ],
       [
-        `${classroomPath('class-a')}/supportPlans/student-a/versions/plan-demo-01`,
+        'supportPlans/student-a/versions/plan-demo-01',
         {
           id: 'plan-demo-01',
           studentId: 'student-a',
@@ -248,7 +248,7 @@ describe('Firestore authorization boundary', () => {
       getDoc(doc(student, `${classroomPath('class-a')}/recommendations/recommendation-a`)),
     );
     await assertFails(getDoc(doc(student, `${classroomPath('class-a')}/audits/audit-a`)));
-    await assertFails(getDoc(doc(student, `${classroomPath('class-a')}/supportPlans/student-a`)));
+    await assertFails(getDoc(doc(student, 'supportPlans/student-a')));
     await assertFails(
       getDoc(doc(student, `${assignmentPath('class-a', 'assignment-a')}/answerKeys/key-a`)),
     );
@@ -260,14 +260,8 @@ describe('Firestore authorization boundary', () => {
       getDoc(doc(teacher, `${classroomPath('class-a')}/recommendations/recommendation-a`)),
     );
     await assertSucceeds(getDoc(doc(teacher, `${classroomPath('class-a')}/audits/audit-a`)));
-    await assertSucceeds(
-      getDoc(doc(teacher, `${classroomPath('class-a')}/supportPlans/student-a`)),
-    );
-    await assertSucceeds(
-      getDoc(
-        doc(teacher, `${classroomPath('class-a')}/supportPlans/student-a/versions/plan-demo-01`),
-      ),
-    );
+    await assertFails(getDoc(doc(teacher, 'supportPlans/student-a')));
+    await assertFails(getDoc(doc(teacher, 'supportPlans/student-a/versions/plan-demo-01')));
     await assertFails(
       getDoc(doc(teacher, `${assignmentPath('class-a', 'assignment-a')}/answerKeys/key-a`)),
     );
@@ -282,16 +276,13 @@ describe('Firestore authorization boundary', () => {
       }),
     );
     await assertFails(
-      setDoc(
-        doc(teacher, `${classroomPath('class-a')}/supportPlans/student-a/versions/plan-demo-02`),
-        {
-          id: 'plan-demo-02',
-          classroomId: 'class-a',
-          studentId: 'student-a',
-          version: 2,
-          supports: [],
-        },
-      ),
+      setDoc(doc(teacher, 'supportPlans/student-a/versions/plan-demo-02'), {
+        id: 'plan-demo-02',
+        classroomId: 'class-a',
+        studentId: 'student-a',
+        version: 2,
+        supports: [],
+      }),
     );
   });
 
