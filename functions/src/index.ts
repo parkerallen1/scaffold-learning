@@ -34,6 +34,8 @@ export {
   transitionStudentSession,
 } from './sessions/studentSessionLifecycle.js';
 export { auditStudentEvidence } from './audits/auditStudentEvidence.js';
+export { reviewStudentAudit } from './audits/reviewStudentAudit.js';
+export { seedSyntheticStudentEvidence } from './demo/seedSyntheticStudentEvidence.js';
 
 setGlobalOptions({ maxInstances: 10, region: 'us-central1' });
 

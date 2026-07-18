@@ -179,6 +179,10 @@ async function seedFirestore() {
         { id: 'audit-a', studentId: 'student-a', result: 'Private' },
       ],
       [
+        `${classroomPath('class-a')}/audits/audit-a/decisions/final_decision`,
+        { id: 'final_decision', auditId: 'audit-a', reviewedBy: 'teacher-a' },
+      ],
+      [
         `${classroomPath('class-a')}/sessions/session-a`,
         { id: 'session-a', classroomId: 'class-a', studentId: 'student-a' },
       ],
@@ -257,6 +261,9 @@ describe('Firestore authorization boundary', () => {
       getDoc(doc(student, `${classroomPath('class-a')}/recommendations/recommendation-a`)),
     );
     await assertFails(getDoc(doc(student, `${classroomPath('class-a')}/audits/audit-a`)));
+    await assertFails(
+      getDoc(doc(student, `${classroomPath('class-a')}/audits/audit-a/decisions/final_decision`)),
+    );
     await assertFails(getDoc(doc(student, 'supportPlans/student-a')));
     await assertFails(
       getDoc(doc(student, `${assignmentPath('class-a', 'assignment-a')}/answerKeys/key-a`)),
@@ -269,6 +276,9 @@ describe('Firestore authorization boundary', () => {
       getDoc(doc(teacher, `${classroomPath('class-a')}/recommendations/recommendation-a`)),
     );
     await assertSucceeds(getDoc(doc(teacher, `${classroomPath('class-a')}/audits/audit-a`)));
+    await assertSucceeds(
+      getDoc(doc(teacher, `${classroomPath('class-a')}/audits/audit-a/decisions/final_decision`)),
+    );
     await assertFails(getDoc(doc(teacher, 'supportPlans/student-a')));
     await assertFails(getDoc(doc(teacher, 'supportPlans/student-a/versions/plan-demo-01')));
     await assertFails(
@@ -291,6 +301,17 @@ describe('Firestore authorization boundary', () => {
         studentId: 'student-a',
         version: 2,
         supports: [],
+      }),
+    );
+  });
+
+  it('reserves immutable audit decisions for server callables', async () => {
+    const teacher = teacherDb('teacher-a');
+    await assertFails(
+      setDoc(doc(teacher, `${classroomPath('class-a')}/audits/audit-a/decisions/forged_decision`), {
+        id: 'forged_decision',
+        auditId: 'audit-a',
+        reviewedBy: 'teacher-a',
       }),
     );
   });

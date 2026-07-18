@@ -130,6 +130,13 @@ service cloud.firestore {
       match /audits/{auditId} {
         allow read: if teacherOwnsClassroom(classroomId);
         allow write: if false;
+
+        // Evidence stays immutable. The final teacher decision is a separate,
+        // append-only server record so approval cannot rewrite model output.
+        match /decisions/{decisionId} {
+          allow read: if teacherOwnsClassroom(classroomId);
+          allow write: if false;
+        }
       }
 
       match /assignments/{assignmentId} {
