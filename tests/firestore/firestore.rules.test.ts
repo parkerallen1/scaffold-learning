@@ -112,6 +112,15 @@ async function seedFirestore() {
         { id: 'question-a', assignmentId: 'assignment-a', prompt: '2 + 2' },
       ],
       [
+        `${assignmentPath('class-a', 'assignment-a')}/revisions/revision-a`,
+        {
+          id: 'revision-a',
+          assignmentId: 'assignment-a',
+          classroomId: 'class-a',
+          status: 'published',
+        },
+      ],
+      [
         `${assignmentPath('class-a', 'assignment-a')}/answerKeys/key-a`,
         { assignmentId: 'assignment-a', expectedValue: 4 },
       ],
@@ -282,6 +291,29 @@ describe('Firestore authorization boundary', () => {
         studentId: 'student-a',
         version: 2,
         supports: [],
+      }),
+    );
+  });
+
+  it('reserves assignment publication, questions, revisions, and targets for server callables', async () => {
+    const teacher = teacherDb('teacher-a');
+    const student = studentDb('student-a');
+    const assignment = assignmentPath('class-a', 'assignment-a');
+    const revision = `${assignment}/revisions/revision-a`;
+
+    await assertSucceeds(getDoc(doc(teacher, revision)));
+    await assertFails(getDoc(doc(student, revision)));
+    await assertFails(updateDoc(doc(teacher, assignment), { title: 'Changed after publish' }));
+    await assertFails(
+      updateDoc(doc(teacher, `${assignment}/questions/question-a`), { prompt: 'Changed prompt' }),
+    );
+    await assertFails(updateDoc(doc(teacher, revision), { status: 'draft' }));
+    await assertFails(
+      setDoc(doc(teacher, `${classroomPath('class-a')}/assignmentTargets/assignment-a.student-b`), {
+        id: 'assignment-a.student-b',
+        classroomId: 'class-a',
+        assignmentId: 'assignment-a',
+        studentId: 'student-b',
       }),
     );
   });

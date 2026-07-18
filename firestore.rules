@@ -133,13 +133,25 @@ service cloud.firestore {
       }
 
       match /assignments/{assignmentId} {
-        allow read, write: if teacherOwnsClassroom(classroomId);
+        allow read: if teacherOwnsClassroom(classroomId);
         allow get: if studentCanReadAssignment(classroomId, assignmentId);
         allow list: if false;
+        // Draft creation and the only allowed draft-to-published transition
+        // are atomic server operations. Published content is never edited by
+        // a client in place.
+        allow create, update, delete: if false;
 
         match /questions/{questionId} {
-          allow read, write: if teacherOwnsClassroom(classroomId);
+          allow read: if teacherOwnsClassroom(classroomId);
           allow get, list: if studentCanReadAssignment(classroomId, assignmentId);
+          allow create, update, delete: if false;
+        }
+
+        // Safe revision metadata lets the teacher resume a draft after a
+        // refresh, while all transitions remain callable-only.
+        match /revisions/{revisionId} {
+          allow read: if teacherOwnsClassroom(classroomId);
+          allow write: if false;
         }
 
         // Answer keys are server-only, including for teachers. Teacher clients
@@ -153,7 +165,8 @@ service cloud.firestore {
       // is not legal inside domain IDs, which prevents concatenation collisions. This
       // gives rules a concrete path to verify before exposing an assignment.
       match /assignmentTargets/{targetId} {
-        allow read, write: if teacherOwnsClassroom(classroomId);
+        allow read: if teacherOwnsClassroom(classroomId);
+        allow write: if false;
         allow get: if activeStudentInClassroom(classroomId)
           && resource.data.classroomId == classroomId
           && resource.data.studentId == request.auth.uid
