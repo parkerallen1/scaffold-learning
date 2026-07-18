@@ -65,7 +65,11 @@ The checked-in environment template is locked to `demo-quiz-master`; the client 
 
 `seedSyntheticStudentEvidence` can create the 2-session/10-response threshold history in the emulator for a targeted published assignment. It is hard-disabled outside the Functions emulator and a `demo-*` project. A small teacher UI for this callable is not yet included.
 
-## OpenAI configuration
+## ChatGPT/OpenAI API configuration
+
+The application does not use a separate “ChatGPT API.” Teacher recommendations and evidence audits
+run through the official OpenAI SDK and Responses API. There is no active Gemini provider, client,
+credential, or dependency.
 
 Local development always selects the fake providers. For a reviewed production deployment:
 
@@ -73,7 +77,7 @@ Local development always selects the fake providers. For a reviewed production d
 firebase functions:secrets:set OPENAI_API_KEY
 ```
 
-Set the Functions runtime variables `AI_PROVIDER=openai` and `AI_FEATURES_ENABLED=true`. The second variable is a production kill switch: live OpenAI calls remain disabled unless its value is exactly `true`. Optional overrides are `OPENAI_RECOMMENDATION_MODEL` and `OPENAI_AUDIT_MODEL`; the documented default is centralized in the server provider files.
+Set the Functions runtime variables `AI_PROVIDER=openai` and `AI_FEATURES_ENABLED=true`. The second variable is a production kill switch: live OpenAI calls remain disabled unless its value is exactly `true`. Optional overrides are `OPENAI_RECOMMENDATION_MODEL` and `OPENAI_AUDIT_MODEL`; both default to the cost-balanced `gpt-5.6-terra` tier and are centralized in the server provider files.
 
 Never put `OPENAI_API_KEY` in `.env.local`, a `VITE_*` variable, or client source. OpenAI requests use structured outputs, `store: false`, bounded timeouts, no retries, and post-response safety validation.
 
@@ -102,6 +106,7 @@ Useful commands:
 | `npm run test:run` | Unit/component tests except Firestore rules |
 | `npm run firebase:validate` | Firestore rules tests |
 | `npm run e2e` | Emulator-backed Playwright route and cross-role demo paths |
+| `npm run check:provider` | Reject retired Gemini SDK, credential, or endpoint markers in active runtime boundaries |
 | `npm run build` | Domain, client, and Functions production builds |
 | `npm run check` | Required local quality gate |
 

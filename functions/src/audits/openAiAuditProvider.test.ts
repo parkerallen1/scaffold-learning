@@ -70,7 +70,7 @@ describe('OpenAI audit request contract', () => {
     });
 
     expect(body).toMatchObject({
-      model: 'gpt-5.6',
+      model: 'gpt-5.6-terra',
       store: false,
       max_output_tokens: 2_000,
       text: {
@@ -96,7 +96,7 @@ describe('OpenAI audit request contract', () => {
     });
     expect(requester).toHaveBeenCalledWith(
       expect.objectContaining({
-        model: 'gpt-5.6',
+        model: 'gpt-5.6-terra',
         promptVersion: OPENAI_AUDIT_PROMPT_VERSION,
         store: false,
         signal: expect.any(AbortSignal),

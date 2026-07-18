@@ -21,7 +21,7 @@ import { RecommendationManualFallbackError } from './contracts.js';
 import { validateProviderRecommendationResult } from './providerSafety.js';
 
 export const OPENAI_RECOMMENDATION_PROMPT_VERSION = 'recommend-supports-v1';
-export const DEFAULT_OPENAI_RECOMMENDATION_MODEL = 'gpt-5.6';
+export const DEFAULT_OPENAI_RECOMMENDATION_MODEL = 'gpt-5.6-terra';
 export const DEFAULT_OPENAI_RECOMMENDATION_TIMEOUT_MS = 15_000;
 export const openAiApiKey = defineSecret('OPENAI_API_KEY');
 

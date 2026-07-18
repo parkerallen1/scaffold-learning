@@ -29,6 +29,7 @@
     "functions:clean": "npm run clean --workspace functions",
     "functions:check": "npm run check --workspace functions",
     "check:client": "node scripts/check-client-boundaries.mjs",
+    "check:provider": "node scripts/check-provider-boundaries.mjs",
     "typecheck": "tsc --noEmit",
     "lint": "eslint . --max-warnings 0",
     "format": "prettier --write .",
@@ -36,7 +37,7 @@
     "test": "vitest --exclude 'tests/firestore/**/*' --exclude 'tests/e2e/**/*'",
     "test:run": "vitest run --exclude 'tests/firestore/**/*' --exclude 'tests/e2e/**/*'",
     "test:firestore:rules": "vitest run tests/firestore",
-    "check": "npm run functions:clean && npm run domain:clean && npm run format:check && npm run lint && npm run typecheck && npm run domain:check && npm run build --workspace @quiz-master/domain && npm run functions:check && npm run test:run && npm run build && npm run check:client"
+    "check": "npm run functions:clean && npm run domain:clean && npm run format:check && npm run lint && npm run typecheck && npm run domain:check && npm run build --workspace @quiz-master/domain && npm run functions:check && npm run test:run && npm run build && npm run check:client && npm run check:provider"
   },
   "dependencies": {
     "@quiz-master/domain": "*",

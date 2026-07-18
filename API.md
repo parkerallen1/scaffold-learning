@@ -96,6 +96,9 @@ It is present in the build but hard-disabled in production. It never overwrites 
 ## AI provider configuration
 
 The recommendation and audit adapters use the OpenAI Responses API structured-output parser, bounded output tokens, a 15-second timeout, no retry, and `store: false`.
+They use the official OpenAI SDK and default to `gpt-5.6-terra`; there is no Gemini provider or
+browser AI client. “ChatGPT” is the teacher-facing product language, while OpenAI Responses API is
+the precise server integration name.
 
 ```text
 AI_PROVIDER=fake       default and forced in emulator

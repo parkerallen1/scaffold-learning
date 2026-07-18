@@ -2,6 +2,9 @@
 
 Recorded on 2026-07-17 before Milestone 0 source migration.
 
+This is a historical snapshot. The Gemini browser integration and dependency described below were
+removed; the current server integration uses only the official OpenAI SDK and Responses API.
+
 ## Revision and environment
 
 - Baseline revision: `9d6f1c6`

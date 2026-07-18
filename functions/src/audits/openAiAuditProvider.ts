@@ -14,7 +14,7 @@ import {
 import { auditProviderDraftSchema } from './auditCore.js';
 
 export const OPENAI_AUDIT_PROMPT_VERSION = 'audit-supports-v1';
-export const DEFAULT_OPENAI_AUDIT_MODEL = 'gpt-5.6';
+export const DEFAULT_OPENAI_AUDIT_MODEL = 'gpt-5.6-terra';
 export const DEFAULT_OPENAI_AUDIT_TIMEOUT_MS = 15_000;
 
 const auditEvidenceTransportSchema = z

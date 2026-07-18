@@ -62,7 +62,7 @@ const expectManualFallback = async (
 };
 
 describe('OpenAI recommendation request contract', () => {
-  it('uses Responses structured output, a versioned public model alias, and no response storage', () => {
+  it('uses Responses structured output, the balanced public model tier, and no response storage', () => {
     const body = createOpenAiRecommendationResponseBody({
       model: DEFAULT_OPENAI_RECOMMENDATION_MODEL,
       instructions: 'Versioned instructions',
@@ -71,7 +71,7 @@ describe('OpenAI recommendation request contract', () => {
     });
 
     expect(body).toMatchObject({
-      model: 'gpt-5.6',
+      model: 'gpt-5.6-terra',
       instructions: 'Versioned instructions',
       store: false,
       max_output_tokens: 2_000,
@@ -98,7 +98,7 @@ describe('OpenAI recommendation request contract', () => {
     ).toBe(true);
     expect(requester).toHaveBeenCalledWith(
       expect.objectContaining({
-        model: 'gpt-5.6',
+        model: 'gpt-5.6-terra',
         promptVersion: OPENAI_RECOMMENDATION_PROMPT_VERSION,
         store: false,
         signal: expect.any(AbortSignal),
