@@ -58,7 +58,7 @@ import {
 const IS_EMULATOR = process.env.FUNCTIONS_EMULATOR === 'true';
 const MAX_CODE_GENERATION_ATTEMPTS = 5;
 
-const callableOptions = Object.freeze({
+export const teacherCallableOptions = Object.freeze({
   consumeAppCheckToken: !IS_EMULATOR,
   enforceAppCheck: !IS_EMULATOR,
   maxInstances: 20,
@@ -73,12 +73,12 @@ const teacherDocumentSchema = z
   })
   .strict();
 
-class LifecycleNotFoundError extends Error {}
-class LifecycleOwnershipError extends Error {}
+export class LifecycleNotFoundError extends Error {}
+export class LifecycleOwnershipError extends Error {}
 class LifecycleConflictError extends Error {}
-class LifecycleStateError extends Error {}
+export class LifecycleStateError extends Error {}
 class ClassCodeCollisionError extends Error {}
-class StoredDataError extends Error {}
+export class StoredDataError extends Error {}
 
 const app = getApps()[0] ?? initializeApp();
 const firestore = getFirestore(app);
@@ -157,7 +157,7 @@ const requireActiveTeacherRecord = async (teacherId: TeacherId): Promise<void> =
   }
 };
 
-const executeTeacherOperation = async <Input, Result extends Record<string, unknown>>(
+export const executeTeacherOperation = async <Input, Result extends Record<string, unknown>>(
   operation: string,
   request: CallableRequest<unknown>,
   inputSchema: ZodType<Input>,
@@ -197,7 +197,7 @@ const parseStoredClassroom = (snapshot: DocumentSnapshot): Classroom => {
   return parsed.data;
 };
 
-const requireOwnedClassroom = (
+export const requireOwnedClassroom = (
   snapshot: DocumentSnapshot,
   teacherId: TeacherId,
   requireActive = false,
@@ -535,7 +535,7 @@ const resetStudentPinRecord = async (
   return { student, oneTimePin };
 };
 
-export const bootstrapTeacher = onCall(callableOptions, (request) =>
+export const bootstrapTeacher = onCall(teacherCallableOptions, (request) =>
   executeTeacherOperation(
     'bootstrapTeacher',
     request,
@@ -548,7 +548,7 @@ export const bootstrapTeacher = onCall(callableOptions, (request) =>
   ),
 );
 
-export const createClassroom = onCall(callableOptions, (request) =>
+export const createClassroom = onCall(teacherCallableOptions, (request) =>
   executeTeacherOperation(
     'createClassroom',
     request,
@@ -557,7 +557,7 @@ export const createClassroom = onCall(callableOptions, (request) =>
   ),
 );
 
-export const archiveClassroom = onCall(callableOptions, (request) =>
+export const archiveClassroom = onCall(teacherCallableOptions, (request) =>
   executeTeacherOperation(
     'archiveClassroom',
     request,
@@ -568,7 +568,7 @@ export const archiveClassroom = onCall(callableOptions, (request) =>
   ),
 );
 
-export const rotateClassCode = onCall(callableOptions, (request) =>
+export const rotateClassCode = onCall(teacherCallableOptions, (request) =>
   executeTeacherOperation(
     'rotateClassCode',
     request,
@@ -581,7 +581,7 @@ export const rotateClassCode = onCall(callableOptions, (request) =>
 );
 
 export const createStudent = onCall(
-  { ...callableOptions, secrets: [studentPinPepper] },
+  { ...teacherCallableOptions, secrets: [studentPinPepper] },
   (request) =>
     executeTeacherOperation(
       'createStudent',
@@ -592,7 +592,7 @@ export const createStudent = onCall(
     ),
 );
 
-export const disableStudent = onCall(callableOptions, (request) =>
+export const disableStudent = onCall(teacherCallableOptions, (request) =>
   executeTeacherOperation(
     'disableStudent',
     request,
@@ -609,7 +609,7 @@ export const disableStudent = onCall(callableOptions, (request) =>
 );
 
 export const resetStudentPin = onCall(
-  { ...callableOptions, secrets: [studentPinPepper] },
+  { ...teacherCallableOptions, secrets: [studentPinPepper] },
   (request) =>
     executeTeacherOperation(
       'resetStudentPin',

@@ -14,6 +14,12 @@ export {
   resetStudentPin,
   rotateClassCode,
 } from './auth/teacherLifecycle.js';
+export {
+  createSupportPlanVersion,
+  getStudentPlanningData,
+  revertSupportPlanVersion,
+  saveStudentProfile,
+} from './planning/supportPlanPersistence.js';
 
 setGlobalOptions({ maxInstances: 10, region: 'us-central1' });
 
