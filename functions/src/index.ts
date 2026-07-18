@@ -33,6 +33,7 @@ export {
   submitStudentAttempt,
   transitionStudentSession,
 } from './sessions/studentSessionLifecycle.js';
+export { auditStudentEvidence } from './audits/auditStudentEvidence.js';
 
 setGlobalOptions({ maxInstances: 10, region: 'us-central1' });
 
