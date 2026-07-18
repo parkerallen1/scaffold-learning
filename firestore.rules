@@ -175,6 +175,12 @@ service cloud.firestore {
           && resource.data.studentId == request.auth.uid;
       }
 
+      // One server-owned pointer enforces a single canonical session for an
+      // assignment target. It is an implementation detail, not student data.
+      match /sessionTargets/{targetId} {
+        allow read, write: if false;
+      }
+
       // Sessions and events are canonical server records. Clients can read
       // only scoped records and cannot write them directly.
       match /sessions/{sessionId} {
@@ -196,6 +202,16 @@ service cloud.firestore {
           allow read: if teacherOwnsClassroom(classroomId)
             || studentOwnsSession(classroomId, sessionId);
           allow write: if false;
+        }
+
+        // These records enforce idempotency and attempt ordering. Exposing
+        // them would leak internal hashes and allow clients to forge state.
+        match /idempotency/{requestHash} {
+          allow read, write: if false;
+        }
+
+        match /questionProgress/{questionId} {
+          allow read, write: if false;
         }
       }
     }

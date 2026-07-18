@@ -26,6 +26,13 @@ export {
   createAssignmentDraft,
   publishAssignment,
 } from './assignments/assignmentPersistence.js';
+export {
+  advanceStudentSession,
+  recordStudentSupportEvent,
+  startOrResumeStudentSession,
+  submitStudentAttempt,
+  transitionStudentSession,
+} from './sessions/studentSessionLifecycle.js';
 
 setGlobalOptions({ maxInstances: 10, region: 'us-central1' });
 

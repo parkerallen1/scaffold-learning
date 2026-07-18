@@ -400,5 +400,23 @@ describe('Firestore authorization boundary', () => {
         studentId: 'student-a',
       }),
     );
+    await assertFails(
+      setDoc(doc(student, `${classroomPath('class-a')}/sessionTargets/assignment-a.student-a`), {
+        targetId: 'assignment-a.student-a',
+        sessionId: 'session-a',
+        studentId: 'student-a',
+      }),
+    );
+    await assertFails(
+      setDoc(doc(student, `${sessionA}/idempotency/request-hash`), {
+        kind: 'attempt',
+      }),
+    );
+    await assertFails(
+      setDoc(doc(student, `${sessionA}/questionProgress/question-a`), {
+        questionId: 'question-a',
+        attemptCount: 99,
+      }),
+    );
   });
 });
