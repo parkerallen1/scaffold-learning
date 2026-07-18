@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 
+import { AuditReviewPanel } from '@/features/audits/AuditReviewPanel';
 import { OnboardingInterview } from '@/features/onboarding/OnboardingInterview';
 import type { OnboardingProfileDraft } from '@/features/onboarding/OnboardingInterview';
 import {
@@ -338,6 +339,23 @@ export const TeacherStudentPlanningPage = ({
           </h2>
           <PlanSummary plan={data.activePlan} />
         </section>
+
+        <AuditReviewPanel
+          classroomId={identity.classroomId}
+          studentId={identity.studentId}
+          studentName={data.student.displayName}
+          disabled={!canEdit || data.activePlan === null}
+          unavailableReason={
+            data.activePlan === null
+              ? 'Approve an initial support plan before reviewing evidence.'
+              : !canEdit
+                ? 'Evidence review requires an active student.'
+                : undefined
+          }
+          onReviewed={async () => {
+            await load();
+          }}
+        />
 
         <section className="rounded-2xl bg-white p-6 shadow-md" aria-labelledby="history-heading">
           <h2 id="history-heading" className="text-xl font-bold">

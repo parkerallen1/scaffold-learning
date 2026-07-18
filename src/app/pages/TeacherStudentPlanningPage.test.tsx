@@ -14,6 +14,14 @@ const planningHarness = vi.hoisted(() => ({
 
 vi.mock('@/features/planning/planningService', () => planningHarness);
 
+vi.mock('@/features/audits/AuditReviewPanel', () => ({
+  AuditReviewPanel: ({ disabled }: { disabled: boolean }) => (
+    <section aria-label="Evidence and audit">
+      <p>{disabled ? 'Audit unavailable' : 'Audit available'}</p>
+    </section>
+  ),
+}));
+
 vi.mock('@/features/onboarding/OnboardingInterview', () => ({
   OnboardingInterview: ({
     onComplete,
@@ -124,6 +132,9 @@ describe('TeacherStudentPlanningPage', () => {
     expect(
       await screen.findByRole('heading', { name: 'Support plan for Alex Student' }),
     ).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Evidence and audit' })).toHaveTextContent(
+      'Audit unavailable',
+    );
     await user.click(screen.getByRole('button', { name: 'Start observation interview' }));
     await user.click(screen.getByRole('button', { name: 'Complete observations' }));
 

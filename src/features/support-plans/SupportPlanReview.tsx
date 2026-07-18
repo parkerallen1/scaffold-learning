@@ -76,7 +76,7 @@ interface SettingsEditorProps {
   onChange: (settings: SupportSettings) => void;
 }
 
-function SettingsEditor({ settings, onChange }: SettingsEditorProps) {
+export function SettingsEditor({ settings, onChange }: SettingsEditorProps) {
   const label = SUPPORT_CATALOG[settings.supportKey].label;
 
   const setEnabled = (enabled: boolean) => onChange({ ...settings, enabled } as SupportSettings);
