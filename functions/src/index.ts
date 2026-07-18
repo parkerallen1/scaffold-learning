@@ -21,6 +21,11 @@ export {
   saveStudentProfile,
 } from './planning/supportPlanPersistence.js';
 export { recommendStudentSupports } from './planning/recommendStudentSupports.js';
+export {
+  assignPublishedAssignment,
+  createAssignmentDraft,
+  publishAssignment,
+} from './assignments/assignmentPersistence.js';
 
 setGlobalOptions({ maxInstances: 10, region: 'us-central1' });
 
