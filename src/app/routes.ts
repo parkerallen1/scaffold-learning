@@ -4,6 +4,7 @@ export type AppRoute =
   | 'not-found'
   | 'student'
   | 'teacher-assignments'
+  | 'teacher-evidence'
   | 'teacher-home'
   | 'teacher-planning'
   | 'teacher-preview';
@@ -22,6 +23,8 @@ export const resolveAppRoute = (pathname: string): AppRoute => {
       return 'teacher-home';
     case '/teacher/assignments':
       return 'teacher-assignments';
+    case '/teacher/evidence':
+      return 'teacher-evidence';
     case '/teacher/planning':
       return 'teacher-planning';
     case '/teacher/preview':

@@ -19,6 +19,12 @@ export const TeacherHomePage = () => {
           </div>
           <div className="flex flex-wrap gap-2">
             <a
+              href="/teacher/evidence"
+              className="inline-flex min-h-11 items-center rounded-lg bg-indigo-700 px-4 py-2 font-semibold text-white hover:bg-indigo-800"
+            >
+              Review student work
+            </a>
+            <a
               href="/teacher/assignments"
               className="inline-flex min-h-11 items-center rounded-lg bg-emerald-700 px-4 py-2 font-semibold text-white hover:bg-emerald-800"
             >
