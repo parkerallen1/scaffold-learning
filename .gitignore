@@ -20,6 +20,8 @@ firestore-debug.log*
 ui-debug.log*
 functions/lib/
 packages/*/dist/
+playwright-report/
+test-results/
 
 # Editor directories and files
 .vscode/*
