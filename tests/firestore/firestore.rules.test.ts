@@ -188,12 +188,12 @@ afterAll(async () => {
 });
 
 describe('Firestore authorization boundary', () => {
-  it('allows an owning teacher and denies cross-class teacher access', async () => {
+  it('allows owning-teacher reads, denies cross-class access, and reserves lifecycle writes for callables', async () => {
     const owner = teacherDb('teacher-a');
     const otherTeacher = teacherDb('teacher-b');
 
     await assertSucceeds(getDoc(doc(owner, classroomPath('class-a'))));
-    await assertSucceeds(
+    await assertFails(
       updateDoc(doc(owner, studentPath('class-a', 'student-a')), { displayName: 'Updated' }),
     );
     await assertFails(getDoc(doc(otherTeacher, classroomPath('class-a'))));
@@ -264,6 +264,20 @@ describe('Firestore authorization boundary', () => {
     await assertFails(getDoc(doc(studentDb('student-a'), classroomPath('class-a'))));
     await assertSucceeds(
       getDoc(doc(studentDb('student-a', { authVersion: 2 }), studentPath('class-a', 'student-a'))),
+    );
+  });
+
+  it('rejects existing student tokens after the classroom is archived', async () => {
+    if (!testEnvironment) throw new Error('Rules test environment is not initialized');
+    await testEnvironment.withSecurityRulesDisabled(async (context) => {
+      await updateDoc(doc(context.firestore(), classroomPath('class-a')), {
+        status: 'archived',
+      });
+    });
+
+    await assertFails(getDoc(doc(studentDb('student-a'), classroomPath('class-a'))));
+    await assertFails(
+      getDoc(doc(studentDb('student-a'), assignmentPath('class-a', 'assignment-a'))),
     );
   });
 

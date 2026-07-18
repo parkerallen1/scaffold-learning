@@ -47,6 +47,8 @@ service cloud.firestore {
       return isStudent()
         && request.auth.uid == claimedStudentId
         && request.auth.token.classroomId == classroomId
+        && exists(classroomPath(classroomId))
+        && get(classroomPath(classroomId)).data.status == 'active'
         && exists(recordPath)
         && get(recordPath).data.id == claimedStudentId
         && get(recordPath).data.classroomId == classroomId
@@ -82,28 +84,16 @@ service cloud.firestore {
 
     match /teachers/{teacherId} {
       allow get: if isTeacher() && request.auth.uid == teacherId;
-      allow create: if isTeacher()
-        && request.auth.uid == teacherId
-        && request.resource.data.id == teacherId;
-      allow update: if isTeacher()
-        && request.auth.uid == teacherId
-        && resource.data.id == teacherId
-        && request.resource.data.id == teacherId;
-      allow delete, list: if false;
+      allow create, update, delete, list: if false;
     }
 
     match /classrooms/{classroomId} {
       allow get: if (isTeacher() && resource.data.teacherId == request.auth.uid)
         || activeStudentInClassroom(classroomId);
       allow list: if isTeacher() && resource.data.teacherId == request.auth.uid;
-      allow create: if isTeacher()
-        && request.resource.data.id == classroomId
-        && request.resource.data.teacherId == request.auth.uid;
-      allow update: if isTeacher()
-        && resource.data.teacherId == request.auth.uid
-        && request.resource.data.id == classroomId
-        && request.resource.data.teacherId == request.auth.uid;
-      allow delete: if isTeacher() && resource.data.teacherId == request.auth.uid;
+      // Lifecycle writes use authorized callables so class-code indexes and
+      // credential records cannot drift away from these public records.
+      allow create, update, delete: if false;
 
       // Safe identity only. Observations and recommendation rationale live in
       // separate teacher-only collections below.
@@ -111,15 +101,7 @@ service cloud.firestore {
         allow get: if teacherOwnsClassroom(classroomId)
           || activeStudentIs(classroomId, studentId);
         allow list: if teacherOwnsClassroom(classroomId);
-        allow create: if teacherOwnsClassroom(classroomId)
-          && request.resource.data.id == studentId
-          && request.resource.data.classroomId == classroomId;
-        allow update: if teacherOwnsClassroom(classroomId)
-          && resource.data.id == studentId
-          && resource.data.classroomId == classroomId
-          && request.resource.data.id == studentId
-          && request.resource.data.classroomId == classroomId;
-        allow delete: if teacherOwnsClassroom(classroomId);
+        allow create, update, delete: if false;
       }
 
       match /studentProfiles/{profileId} {
