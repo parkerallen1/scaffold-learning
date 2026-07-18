@@ -46,6 +46,10 @@ vi.mock('../features/auth/authService', () => ({
   signOutCurrentUser: authHarness.signOutCurrentUser,
 }));
 
+vi.mock('../features/classrooms/ClassroomWorkspace', () => ({
+  ClassroomWorkspace: () => <section aria-label="Classroom workspace" />,
+}));
+
 const teacherUser: TestUser = {
   authVersion: null,
   classroomId: null,
