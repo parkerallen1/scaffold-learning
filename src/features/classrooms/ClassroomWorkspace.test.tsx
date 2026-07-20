@@ -44,6 +44,7 @@ const activeStudent = {
   classroomId: 'classroom-1',
   createdAt: 1,
   displayName: 'Alex Student',
+  demoStory: 'Alex benefits from a focused screen and calm pacing.',
   id: 'student-1',
   studentHandle: 'alex_student',
   status: 'active' as const,
@@ -156,11 +157,14 @@ describe('ClassroomWorkspace', () => {
     });
     expect(handleCopy).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Copy student pin 1234' })).toBeInTheDocument();
-    expect(
-      screen.getByRole('button', { name: 'Copy class code DEMO-01' }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Copy class code DEMO-01' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Rotate class code' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Reset PIN/ })).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: "Demo Alex Student's experience" })).toHaveAttribute(
+      'href',
+      '/teacher/preview?classroomId=classroom-1&studentId=student-1',
+    );
+    expect(screen.getByText(/Alex benefits from a focused screen/)).toBeInTheDocument();
     await user.click(handleCopy);
     expect(clipboardSpy).toHaveBeenCalledWith('alex_student');
     expect(handleCopy).toHaveTextContent('Copied');

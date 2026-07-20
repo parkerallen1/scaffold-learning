@@ -113,6 +113,12 @@ const StudentRow = ({
       <p className="mt-1 text-xs text-slate-500">
         <span className="capitalize">{student.status}</span> · Access version {student.authVersion}
       </p>
+      {student.demoStory && (
+        <p className="mt-2 max-w-xl text-sm leading-6 text-slate-600">
+          <span className="font-semibold text-slate-800">Synthetic student story:</span>{' '}
+          {student.demoStory}
+        </p>
+      )}
       {demoMode && (
         <div className="mt-3 flex flex-wrap gap-2" aria-label="Build Week student credentials">
           {student.studentHandle && (
@@ -123,6 +129,15 @@ const StudentRow = ({
       )}
     </div>
     <div className="flex flex-wrap gap-2">
+      {demoMode && (
+        <a
+          href={`/teacher/preview?classroomId=${encodeURIComponent(classroom.id)}&studentId=${encodeURIComponent(student.id)}`}
+          className="inline-flex min-h-11 items-center rounded-lg bg-violet-700 px-3 py-2 text-sm font-semibold text-white hover:bg-violet-800"
+          aria-label={`Demo ${student.displayName}'s experience`}
+        >
+          Demo {student.displayName.split(/\s+/)[0]}'s experience
+        </a>
+      )}
       <a
         href={`/teacher/planning?classroomId=${encodeURIComponent(classroom.id)}&studentId=${encodeURIComponent(student.id)}`}
         className="inline-flex min-h-11 items-center rounded-lg bg-blue-700 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-800"

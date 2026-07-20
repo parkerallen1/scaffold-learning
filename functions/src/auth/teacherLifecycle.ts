@@ -15,9 +15,13 @@ import {
   classroomSchema,
   studentIdSchema,
   studentSafeIdentitySchema,
+  supportPlanIdSchema,
+  supportPlanVersionSchema,
   teacherIdSchema,
+  teacherOnlyStudentProfileSchema,
   type Classroom,
   type StudentSafeIdentity,
+  type SupportSettings,
   type TeacherId,
 } from '@quiz-master/domain';
 
@@ -173,7 +177,7 @@ export const executeTeacherOperation = async <Input, Result extends Record<strin
 ): Promise<Result & { claimsRefreshRequired: boolean }> => {
   try {
     const auth = callableAuth(request);
-    const teacherId = requireTeacherPrincipal(auth, IS_EMULATOR);
+    const teacherId = requireTeacherPrincipal(auth);
     const input = inputSchema.parse(request.data);
     if (!options.bootstrap) {
       await requireActiveTeacherRecord(teacherId);
@@ -253,6 +257,166 @@ const bootstrapTeacherRecord = async (teacherId: TeacherId, nowMs: number): Prom
     transaction.set(teacherRef, { ...teacher.data, updatedAt: nowMs });
   });
 };
+
+type DemoStudentSeed = Readonly<{
+  displayName: string;
+  story: string;
+  summary: string;
+  observations: z.infer<typeof teacherOnlyStudentProfileSchema>['observations'];
+  supports: readonly SupportSettings[];
+}>;
+
+type DemoClassroomSeed = Readonly<{
+  name: string;
+  students: readonly DemoStudentSeed[];
+}>;
+
+const DEMO_CLASSROOMS: readonly DemoClassroomSeed[] = Object.freeze([
+  {
+    name: 'Ms. Rivera’s Math Lab',
+    students: [
+      {
+        displayName: 'Johnny Carter',
+        story: 'Johnny has ADHD and benefits from a focused screen, short chunks, and calm pacing.',
+        summary:
+          'Johnny does best when one step is visible at a time, distractions are reduced, and there is no countdown pressure.',
+        observations: {
+          barriers: ['gettingStarted', 'rememberingSteps', 'sustainingAttention'],
+          stuckLooksLike:
+            'Johnny scans the whole page, shifts tasks, and loses his place between steps.',
+          helpfulStrategies: ['Show one step at a time.', 'Use a neutral first-step prompt.'],
+          timerResponse: 'stressful',
+          responsePreferences: ['typing', 'selection'],
+          adultPrompting: 'occasional',
+          interestsAndConsiderations: 'Enjoys quick wins and visible progress.',
+          neverDo: ['Do not auto-submit or advance when time passes.'],
+        },
+        supports: [
+          {
+            supportKey: 'focusView',
+            enabled: true,
+            hideNonessentialChrome: true,
+          },
+          {
+            supportKey: 'readingChunks',
+            enabled: true,
+            chunkMode: 'step',
+            revealAllAllowed: true,
+          },
+          { supportKey: 'calmPacing', enabled: true, timerMode: 'off' },
+        ],
+      },
+      {
+        displayName: 'Sarah Nguyen',
+        story:
+          'Sarah has dyslexia and benefits from read aloud, chunked directions, and flexible responses.',
+        summary:
+          'Sarah understands grade-level ideas best when she can hear directions, reveal them in chunks, and choose an accessible response format.',
+        observations: {
+          barriers: ['readingDirections', 'writtenResponse'],
+          stuckLooksLike:
+            'Sarah rereads dense directions and may know an answer before she can type it.',
+          helpfulStrategies: ['Offer read aloud on request.', 'Break directions into sentences.'],
+          timerResponse: 'neutral',
+          responsePreferences: ['selection', 'typing', 'speech'],
+          adultPrompting: 'none',
+          interestsAndConsiderations: 'Strong verbal reasoning and discussion skills.',
+          neverDo: ['Do not start audio automatically.'],
+        },
+        supports: [
+          { supportKey: 'readAloud', enabled: true, speed: 0.9 },
+          {
+            supportKey: 'readingChunks',
+            enabled: true,
+            chunkMode: 'sentence',
+            revealAllAllowed: true,
+          },
+          {
+            supportKey: 'flexibleResponse',
+            enabled: true,
+            preferredMode: 'typing',
+            allowStudentChoice: true,
+          },
+        ],
+      },
+    ],
+  },
+  {
+    name: 'Reading & Writing Workshop',
+    students: [
+      {
+        displayName: 'Maya Brooks',
+        story:
+          'Maya has dyscalculia and benefits from a hint ladder, focused presentation, and calm pacing.',
+        summary:
+          'Maya benefits from one problem at a time and hints that restore the next step without revealing the answer.',
+        observations: {
+          barriers: ['calculation', 'handlingMistakes'],
+          stuckLooksLike: 'Maya restarts a problem after a small calculation error.',
+          helpfulStrategies: ['Offer a comparable example.', 'Normalize revising one step.'],
+          timerResponse: 'stressful',
+          responsePreferences: ['typing', 'handwriting'],
+          adultPrompting: 'occasional',
+          interestsAndConsiderations: 'Enjoys visual patterns and drawing models.',
+          neverDo: ['Do not reveal the answer in the first hint.'],
+        },
+        supports: [
+          {
+            supportKey: 'hintLadder',
+            enabled: true,
+            maxTier: 3,
+            allowAnalogousExample: true,
+          },
+          {
+            supportKey: 'focusView',
+            enabled: true,
+            hideNonessentialChrome: true,
+          },
+          { supportKey: 'calmPacing', enabled: true, timerMode: 'off' },
+        ],
+      },
+      {
+        displayName: 'Leo Martinez',
+        story:
+          'Leo has working-memory challenges and benefits from chunked steps, hints, and optional breaks.',
+        summary:
+          'Leo stays independent when directions remain available in small steps and he can request a brief reset after sustained effort.',
+        observations: {
+          barriers: ['rememberingSteps', 'sustainingAttention'],
+          stuckLooksLike:
+            'Leo completes the first step, then returns to reread the full directions.',
+          helpfulStrategies: ['Keep completed steps visible.', 'Offer an optional short break.'],
+          timerResponse: 'unknown',
+          responsePreferences: ['typing', 'selection'],
+          adultPrompting: 'frequent',
+          interestsAndConsiderations: 'Responds well to predictable routines.',
+          neverDo: ['Do not frame a break as a consequence.'],
+        },
+        supports: [
+          {
+            supportKey: 'readingChunks',
+            enabled: true,
+            chunkMode: 'step',
+            revealAllAllowed: true,
+          },
+          {
+            supportKey: 'hintLadder',
+            enabled: true,
+            maxTier: 2,
+            allowAnalogousExample: true,
+          },
+          {
+            supportKey: 'breakPrompt',
+            enabled: true,
+            afterAttempts: 3,
+            durationSeconds: 120,
+            skippable: true,
+          },
+        ],
+      },
+    ],
+  },
+]);
 
 const createClassroomRecord = async (
   teacherId: TeacherId,
@@ -458,6 +622,128 @@ const createStudentRecord = async (
   throw new LifecycleConflictError();
 };
 
+const seedDemoStudentPlanningData = async (
+  teacherId: TeacherId,
+  student: StudentSafeIdentity,
+  seed: DemoStudentSeed,
+  nowMs: number,
+): Promise<void> => {
+  const studentRef = firestore
+    .collection('classrooms')
+    .doc(student.classroomId)
+    .collection('students')
+    .doc(student.id);
+  const profileRef = firestore
+    .collection('classrooms')
+    .doc(student.classroomId)
+    .collection('studentProfiles')
+    .doc(student.id);
+  const pointerRef = firestore.collection('supportPlans').doc(student.id);
+  const [profileSnapshot, pointerSnapshot] = await Promise.all([
+    profileRef.get(),
+    pointerRef.get(),
+  ]);
+  const batch = firestore.batch();
+
+  batch.set(
+    studentRef,
+    studentSafeIdentitySchema.parse({ ...student, demoStory: seed.story, updatedAt: nowMs }),
+  );
+  if (!profileSnapshot.exists) {
+    batch.create(
+      profileRef,
+      teacherOnlyStudentProfileSchema.parse({
+        id: student.id,
+        classroomId: student.classroomId,
+        studentId: student.id,
+        observations: seed.observations,
+        teacherSummary: seed.summary,
+        createdBy: teacherId,
+        createdAt: nowMs,
+        updatedAt: nowMs,
+      }),
+    );
+  }
+  if (!pointerSnapshot.exists) {
+    const versionRef = pointerRef.collection('versions').doc();
+    const planId = supportPlanIdSchema.parse(versionRef.id);
+    const plan = supportPlanVersionSchema.parse({
+      id: planId,
+      classroomId: student.classroomId,
+      studentId: student.id,
+      version: 1,
+      supports: seed.supports,
+      source: 'manual',
+      approvedBy: teacherId,
+      approvedAt: nowMs,
+      supersedesId: null,
+    });
+    batch.create(versionRef, plan);
+    batch.create(pointerRef, {
+      classroomId: student.classroomId,
+      studentId: student.id,
+      activePlanId: plan.id,
+      activeVersion: plan.version,
+      updatedAt: nowMs,
+    });
+  }
+  await batch.commit();
+};
+
+const seedDemoTeacherWorkspace = async (
+  teacherId: TeacherId,
+  pepper: string,
+  nowMs: number,
+): Promise<void> => {
+  const ownedSnapshot = await firestore
+    .collection('classrooms')
+    .where('teacherId', '==', teacherId)
+    .get();
+  const ownedClassrooms = ownedSnapshot.docs.map(parseStoredClassroom);
+
+  for (const classroomSeed of DEMO_CLASSROOMS) {
+    const existingClassroom = ownedClassrooms.find(
+      (classroom) => classroom.name === classroomSeed.name,
+    );
+    const classroom =
+      existingClassroom ??
+      (await createClassroomRecord(teacherId, classroomSeed.name, nowMs)).classroom;
+    const studentsSnapshot = await firestore
+      .collection('classrooms')
+      .doc(classroom.id)
+      .collection('students')
+      .get();
+    const existingStudents = studentsSnapshot.docs.map(parseStoredStudent);
+
+    for (const studentSeed of classroomSeed.students) {
+      const existingStudent = existingStudents.find(
+        (student) => student.displayName === studentSeed.displayName,
+      );
+      const student =
+        existingStudent ??
+        (
+          await createStudentRecord(
+            teacherId,
+            { classroomId: classroom.id, displayName: studentSeed.displayName },
+            pepper,
+            nowMs,
+          )
+        ).student;
+      await seedDemoStudentPlanningData(teacherId, student, studentSeed, nowMs);
+    }
+  }
+};
+
+const usesAnonymousSignIn = (request: CallableRequest<unknown>): boolean => {
+  const firebase = callableAuth(request)?.token.firebase;
+  return (
+    typeof firebase === 'object' &&
+    firebase !== null &&
+    !Array.isArray(firebase) &&
+    (firebase as Record<string, unknown>).sign_in_provider === 'anonymous'
+  );
+};
+
 type StudentCredentialContext = Readonly<{
   student: StudentSafeIdentity;
   credential: z.infer<typeof studentCredentialDocumentSchema>;
@@ -561,17 +847,23 @@ const resetStudentPinRecord = async (
   return { student, oneTimePin };
 };
 
-export const bootstrapTeacher = onCall(teacherCallableOptions, (request) =>
-  executeTeacherOperation(
-    'bootstrapTeacher',
-    request,
-    bootstrapTeacherInputSchema,
-    async (teacherId) => {
-      await bootstrapTeacherRecord(teacherId, Date.now());
-      return { teacherId, role: 'teacher' as const };
-    },
-    { bootstrap: true },
-  ),
+export const bootstrapTeacher = onCall(
+  { ...teacherCallableOptions, secrets: [studentPinPepper] },
+  (request) =>
+    executeTeacherOperation(
+      'bootstrapTeacher',
+      request,
+      bootstrapTeacherInputSchema,
+      async (teacherId) => {
+        const nowMs = Date.now();
+        await bootstrapTeacherRecord(teacherId, nowMs);
+        if (usesAnonymousSignIn(request)) {
+          await seedDemoTeacherWorkspace(teacherId, studentPinPepper.value(), nowMs);
+        }
+        return { teacherId, role: 'teacher' as const };
+      },
+      { bootstrap: true },
+    ),
 );
 
 export const createClassroom = onCall(teacherCallableOptions, (request) =>

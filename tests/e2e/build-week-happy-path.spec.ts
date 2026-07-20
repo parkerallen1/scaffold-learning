@@ -1,4 +1,4 @@
-import { expect, test, type APIRequestContext, type Locator, type Page } from '@playwright/test';
+import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
 
 const PROJECT_ID = 'demo-quiz-master';
 
@@ -12,13 +12,6 @@ async function resetDemoEmulators(request: APIRequestContext) {
     `http://127.0.0.1:9099/emulator/v1/projects/${PROJECT_ID}/accounts`,
   );
   expect(auth.ok()).toBeTruthy();
-}
-
-async function readDisplayedOnceValue(dialog: Locator, label: string) {
-  const term = dialog.locator('dt').filter({ hasText: new RegExp(`^${label}$`) });
-  const value = await term.locator('..').locator('dd').textContent();
-  expect(value).not.toBeNull();
-  return value!.trim();
 }
 
 async function acceptNextDialog(page: Page) {
@@ -42,17 +35,17 @@ test.describe('Build Week teacher-guided learning loop', () => {
 
     await teacherPage.goto('/teacher');
     const appOrigin = new URL(teacherPage.url()).origin;
-    await teacherPage.getByRole('button', { name: 'Use emulator demo teacher' }).click();
+    await teacherPage.getByRole('button', { name: 'Explore the demo' }).click();
     await expect(
-      teacherPage.getByRole('heading', { name: /Welcome, Emulator demo teacher/i }),
+      teacherPage.getByRole('heading', { name: /Welcome, Demo teacher/i }),
     ).toBeVisible();
 
     await teacherPage.getByLabel('New classroom name').fill(classroomName);
     await teacherPage.getByRole('button', { name: 'Create classroom' }).click();
-    const classDialog = teacherPage.getByRole('alertdialog');
-    await expect(classDialog).toContainText(`Save the code for ${classroomName}`);
-    const classCode = await readDisplayedOnceValue(classDialog, 'Class code');
-    await classDialog.getByRole('button', { name: 'I saved these details' }).click();
+    await expect(teacherPage.getByRole('heading', { name: classroomName })).toBeVisible();
+    const classCodeControl = teacherPage.getByRole('button', { name: /Copy class code DEMO-/ });
+    await expect(classCodeControl).toBeVisible();
+    const classCode = (await classCodeControl.locator('code').textContent())!.trim();
 
     await teacherPage.getByLabel('Display name').fill(studentName);
     await teacherPage.getByRole('button', { name: 'Create student' }).click();

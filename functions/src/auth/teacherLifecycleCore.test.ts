@@ -33,17 +33,16 @@ const activeStudent = studentSafeIdentitySchema.parse({
 
 describe('teacher principal authorization', () => {
   it('accepts Google sign-in in production', () => {
-    expect(requireTeacherPrincipal(teacherAuth('google.com'), false)).toBe('teacher_demo_01');
+    expect(requireTeacherPrincipal(teacherAuth('google.com'))).toBe('teacher_demo_01');
   });
 
   it('accepts anonymous demo sign-in in every environment', () => {
-    expect(requireTeacherPrincipal(teacherAuth('anonymous'), true)).toBe('teacher_demo_01');
-    expect(requireTeacherPrincipal(teacherAuth('anonymous'), false)).toBe('teacher_demo_01');
+    expect(requireTeacherPrincipal(teacherAuth('anonymous'))).toBe('teacher_demo_01');
   });
 
   it('rejects missing auth and other providers', () => {
-    expect(() => requireTeacherPrincipal(undefined, false)).toThrowError(TeacherAuthorizationError);
-    expect(() => requireTeacherPrincipal(teacherAuth('password'), true)).toThrowError(
+    expect(() => requireTeacherPrincipal(undefined)).toThrowError(TeacherAuthorizationError);
+    expect(() => requireTeacherPrincipal(teacherAuth('password'))).toThrowError(
       TeacherAuthorizationError,
     );
   });

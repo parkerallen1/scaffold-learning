@@ -39,10 +39,7 @@ const providerFor = (token: Readonly<Record<string, unknown>>): string | null =>
   return typeof provider === 'string' ? provider : null;
 };
 
-export const requireTeacherPrincipal = (
-  auth: TeacherCallerAuth | null | undefined,
-  _isEmulator?: boolean,
-): TeacherId => {
+export const requireTeacherPrincipal = (auth: TeacherCallerAuth | null | undefined): TeacherId => {
   if (auth === null || auth === undefined) {
     throw new TeacherAuthorizationError('unauthenticated');
   }

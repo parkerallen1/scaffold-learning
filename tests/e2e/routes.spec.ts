@@ -12,7 +12,7 @@ test.describe('public and protected route smoke checks', () => {
 
     await page.goto('/teacher');
     await expect(page.getByRole('heading', { name: 'Sign in to Quiz Master' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Use emulator demo teacher' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Explore the demo' })).toBeVisible();
 
     await page.goto('/not-a-route');
     await expect(page.getByRole('heading', { name: 'Page not found' })).toBeVisible();
