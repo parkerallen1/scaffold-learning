@@ -46,9 +46,7 @@ import {
   createStudentInputSchema,
   disableStudentIdentity,
   generateBuildWeekClassCode,
-  generateClassCode,
   generateStudentHandle,
-  generateStudentPin,
   requireTeacherPrincipal,
   resetStudentIdentityAuth,
   studentActionInputSchema,
@@ -58,15 +56,13 @@ import {
 } from './teacherLifecycleCore.js';
 
 const IS_EMULATOR = process.env.FUNCTIONS_EMULATOR === 'true';
-const MAX_CODE_GENERATION_ATTEMPTS = 5;
 const BUILD_WEEK_CODE_GENERATION_ATTEMPTS = 99;
 const MAX_STUDENT_HANDLE_GENERATION_ATTEMPTS = 999;
 
 const generateClassCodeForAttempt = (attempt: number): string =>
-  IS_EMULATOR ? generateBuildWeekClassCode(attempt + 1) : generateClassCode();
+  generateBuildWeekClassCode(attempt + 1);
 
-const generatePinForEnvironment = (): string =>
-  IS_EMULATOR ? BUILD_WEEK_STUDENT_PIN : generateStudentPin();
+const generatePinForEnvironment = (): string => BUILD_WEEK_STUDENT_PIN;
 
 export const teacherCallableOptions = Object.freeze({
   consumeAppCheckToken: !IS_EMULATOR,
@@ -263,9 +259,7 @@ const createClassroomRecord = async (
   name: string,
   nowMs: number,
 ): Promise<{ classroom: Classroom; classCode: string }> => {
-  const generationAttempts = IS_EMULATOR
-    ? BUILD_WEEK_CODE_GENERATION_ATTEMPTS
-    : MAX_CODE_GENERATION_ATTEMPTS;
+  const generationAttempts = BUILD_WEEK_CODE_GENERATION_ATTEMPTS;
   for (let attempt = 0; attempt < generationAttempts; attempt += 1) {
     const classCode = generateClassCodeForAttempt(attempt);
     const normalizedCode = normalizeClassCode(classCode);
@@ -348,9 +342,7 @@ const rotateClassCodeRecord = async (
   classroomId: string,
   nowMs: number,
 ): Promise<string> => {
-  const generationAttempts = IS_EMULATOR
-    ? BUILD_WEEK_CODE_GENERATION_ATTEMPTS
-    : MAX_CODE_GENERATION_ATTEMPTS;
+  const generationAttempts = BUILD_WEEK_CODE_GENERATION_ATTEMPTS;
   for (let attempt = 0; attempt < generationAttempts; attempt += 1) {
     const classCode = generateClassCodeForAttempt(attempt);
     const newCodeKey = classCodeLookupKey(normalizeClassCode(classCode));

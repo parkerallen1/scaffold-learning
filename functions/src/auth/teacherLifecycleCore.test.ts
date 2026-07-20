@@ -36,11 +36,9 @@ describe('teacher principal authorization', () => {
     expect(requireTeacherPrincipal(teacherAuth('google.com'), false)).toBe('teacher_demo_01');
   });
 
-  it('accepts anonymous sign-in only in the emulator', () => {
+  it('accepts anonymous demo sign-in in every environment', () => {
     expect(requireTeacherPrincipal(teacherAuth('anonymous'), true)).toBe('teacher_demo_01');
-    expect(() => requireTeacherPrincipal(teacherAuth('anonymous'), false)).toThrowError(
-      TeacherAuthorizationError,
-    );
+    expect(requireTeacherPrincipal(teacherAuth('anonymous'), false)).toBe('teacher_demo_01');
   });
 
   it('rejects missing auth and other providers', () => {

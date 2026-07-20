@@ -41,7 +41,7 @@ const providerFor = (token: Readonly<Record<string, unknown>>): string | null =>
 
 export const requireTeacherPrincipal = (
   auth: TeacherCallerAuth | null | undefined,
-  isEmulator: boolean,
+  _isEmulator?: boolean,
 ): TeacherId => {
   if (auth === null || auth === undefined) {
     throw new TeacherAuthorizationError('unauthenticated');
@@ -53,7 +53,7 @@ export const requireTeacherPrincipal = (
   }
 
   const provider = providerFor(auth.token);
-  const providerAllowed = provider === 'google.com' || (isEmulator && provider === 'anonymous');
+  const providerAllowed = provider === 'google.com' || provider === 'anonymous';
   if (!providerAllowed) {
     throw new TeacherAuthorizationError('provider-not-allowed');
   }

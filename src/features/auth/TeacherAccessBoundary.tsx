@@ -45,16 +45,10 @@ const TeacherSignIn = () => {
                 disabled={isWorking}
                 className="w-full rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 font-semibold text-amber-900 hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                Use emulator demo teacher
+                Explore the demo
               </button>
             )}
           </div>
-
-          {demoTeacherEnabled && (
-            <p className="mt-3 text-xs text-amber-800">
-              Demo teacher access is local-only and never appears in production mode.
-            </p>
-          )}
           <a
             className="mt-6 inline-flex min-h-11 items-center text-sm font-semibold text-blue-700 hover:underline"
             href="/"

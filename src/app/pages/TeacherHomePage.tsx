@@ -4,7 +4,7 @@ import { ClassroomWorkspace } from '../../features/classrooms/ClassroomWorkspace
 export const TeacherHomePage = () => {
   const { demoTeacherEnabled, isWorking, signOut, user } = useAuth();
   const teacherName = user?.isAnonymous
-    ? 'Emulator demo teacher'
+    ? 'Demo teacher'
     : (user?.displayName ?? user?.email ?? 'Teacher');
 
   return (
@@ -46,13 +46,6 @@ export const TeacherHomePage = () => {
             </button>
           </div>
         </header>
-
-        {demoTeacherEnabled && (
-          <p className="mt-4 rounded-lg bg-amber-100 p-3 text-sm font-medium text-amber-900">
-            Build Week demo: class codes are simple and sequential (DEMO-01, DEMO-02, …), and every
-            newly created or reset student PIN is 1234. All data must remain synthetic.
-          </p>
-        )}
 
         {user?.uid && <ClassroomWorkspace demoMode={demoTeacherEnabled} teacherId={user.uid} />}
       </div>

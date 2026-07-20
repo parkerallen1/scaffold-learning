@@ -129,25 +129,23 @@ describe('authentication shell', () => {
     expect(screen.getByRole('heading', { name: 'Welcome, Ada Teacher' })).toBeInTheDocument();
   });
 
-  it('offers and runs the demo teacher path only when emulator mode is enabled', async () => {
+  it('offers and runs the public demo teacher path', async () => {
     const user = userEvent.setup();
     await loadAuthRoute('/teacher');
     act(() => authHarness.onUserChange?.(null));
 
-    await user.click(screen.getByRole('button', { name: 'Use emulator demo teacher' }));
+    await user.click(screen.getByRole('button', { name: 'Explore the demo' }));
 
     expect(authHarness.signInDemoTeacher).toHaveBeenCalledOnce();
-    expect(screen.getByText(/all data must remain synthetic/i)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Welcome, Demo teacher' })).toBeInTheDocument();
   });
 
-  it('hides the demo teacher path outside emulator mode', async () => {
-    authHarness.demoTeacherEnabled = false;
+  it('does not show local-only demo messaging', async () => {
     await loadAuthRoute('/teacher');
     act(() => authHarness.onUserChange?.(null));
 
-    expect(
-      screen.queryByRole('button', { name: 'Use emulator demo teacher' }),
-    ).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Explore the demo' })).toBeInTheDocument();
+    expect(screen.queryByText(/local-only/i)).not.toBeInTheDocument();
   });
 
   it('renders the authenticated teacher workspace and signs out', async () => {

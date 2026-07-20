@@ -45,7 +45,7 @@ const exchangeStudentCredentials = httpsCallable<StudentCredentials, StudentCred
 );
 
 export const authRuntime = Object.freeze({
-  demoTeacherEnabled: firebaseRuntime.useEmulators,
+  demoTeacherEnabled: true,
 });
 
 const optionalClaimString = (claim: unknown): string | null =>
@@ -125,9 +125,6 @@ export const signInTeacherWithGoogle = async (): Promise<AuthUser> => {
 };
 
 export const signInDemoTeacher = async (): Promise<AuthUser> => {
-  if (!authRuntime.demoTeacherEnabled) {
-    throw new Error('Demo teacher sign-in is only available with local Firebase emulators.');
-  }
   const credential = await signInAnonymously(auth);
   return bootstrapSignedInTeacher(credential.user);
 };
