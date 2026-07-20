@@ -272,6 +272,7 @@ const createClassroomRecord = async (
       id: classroomId,
       teacherId,
       name,
+      classCode,
       status: 'active',
       createdAt: nowMs,
       updatedAt: nowMs,
@@ -379,6 +380,11 @@ const rotateClassCodeRecord = async (
         transaction.set(oldCodeRef, { classroomId: classroom.id, status: 'archived' });
         transaction.create(newCodeRef, { classroomId: classroom.id, status: 'active' });
         transaction.set(classroomAuthRef, { classCodeKey: newCodeKey, updatedAt: nowMs });
+        transaction.set(classroomRef, {
+          ...classroom,
+          classCode,
+          updatedAt: nowMs,
+        });
       });
       return classCode;
     } catch (error) {

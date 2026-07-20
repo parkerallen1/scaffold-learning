@@ -30,6 +30,7 @@ vi.mock('./useClassrooms', () => ({
 }));
 
 const activeClassroom = {
+  classCode: 'DEMO-01',
   createdAt: 1,
   id: 'classroom-1',
   name: 'Algebra Lab',
@@ -88,10 +89,15 @@ describe('ClassroomWorkspace', () => {
     expect(screen.getByText(/No classrooms yet/)).toBeInTheDocument();
   });
 
-  it('creates a classroom and clears its display-once code after acknowledgement', async () => {
+  it('creates a classroom without a display-once popup', async () => {
     const user = userEvent.setup();
     classroomHarness.createClassroom.mockResolvedValue({
-      classroom: { ...activeClassroom, id: 'classroom-2', name: 'Geometry Lab' },
+      classroom: {
+        ...activeClassroom,
+        classCode: 'DEMO-02',
+        id: 'classroom-2',
+        name: 'Geometry Lab',
+      },
       classCode: 'ABCD-EF',
     });
     render(<ClassroomWorkspace teacherId="teacher-1" />);
@@ -100,11 +106,10 @@ describe('ClassroomWorkspace', () => {
     await user.click(screen.getByRole('button', { name: 'Create classroom' }));
 
     expect(classroomHarness.createClassroom).toHaveBeenCalledWith('Geometry Lab');
-    expect(await screen.findByRole('alertdialog')).toHaveTextContent('ABCD-EF');
-    expect(screen.getByRole('button', { name: 'Copy class code' })).toBeInTheDocument();
-
-    await user.click(screen.getByRole('button', { name: 'I saved these details' }));
-    expect(screen.queryByText('ABCD-EF')).not.toBeInTheDocument();
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+    expect(await screen.findByText(/class code is available to copy/i)).toHaveTextContent(
+      'class code is available to copy from the classroom header',
+    );
   });
 
   it('creates a student without storing or logging the returned one-time PIN', async () => {
@@ -151,6 +156,10 @@ describe('ClassroomWorkspace', () => {
     });
     expect(handleCopy).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Copy student pin 1234' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Copy class code DEMO-01' }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Rotate class code' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Reset PIN/ })).not.toBeInTheDocument();
     await user.click(handleCopy);
     expect(clipboardSpy).toHaveBeenCalledWith('alex_student');

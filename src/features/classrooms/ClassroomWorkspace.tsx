@@ -213,12 +213,9 @@ export const ClassroomWorkspace = ({
       pendingSelection.current = result.classroom.id;
       setSelectedId(result.classroom.id);
       setClassroomName('');
-      setSecretNotice({
-        title: `Save the code for ${result.classroom.name}`,
-        message:
-          'Share this code only with students in this class. It cannot be recovered after you close this message; rotate it if it is lost.',
-        details: [{ label: 'Class code', value: result.classCode }],
-      });
+      setActionNotice(
+        `${result.classroom.name} created. Its class code is available to copy from the classroom header.`,
+      );
     });
   };
 
@@ -379,26 +376,38 @@ export const ClassroomWorkspace = ({
                     {selectedClassroom.status} classroom
                   </p>
                   <h2 className="mt-1 text-2xl font-bold">{selectedClassroom.name}</h2>
+                  {selectedClassroom.classCode && (
+                    <div className="mt-3">
+                      <CopyableCredential label="Class code" value={selectedClassroom.classCode} />
+                    </div>
+                  )}
                 </div>
                 {selectedClassroom.status === 'active' && (
-                  <div className="flex flex-wrap gap-2">
-                    <button
-                      type="button"
-                      onClick={handleRotateCode}
-                      disabled={pendingAction !== null}
-                      className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold hover:bg-slate-50 disabled:opacity-50"
-                    >
-                      Rotate class code
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleArchive}
-                      disabled={pendingAction !== null}
-                      className="rounded-lg border border-red-300 px-3 py-2 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50"
-                    >
-                      Archive classroom
-                    </button>
-                  </div>
+                  <details className="relative rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm">
+                    <summary className="cursor-pointer font-semibold text-slate-700">
+                      ⓘ Classroom options
+                    </summary>
+                    <div className="mt-3 flex flex-col gap-2 border-t border-slate-200 pt-3">
+                      {!demoMode && (
+                        <button
+                          type="button"
+                          onClick={handleRotateCode}
+                          disabled={pendingAction !== null}
+                          className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold hover:bg-white disabled:opacity-50"
+                        >
+                          Rotate class code
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={handleArchive}
+                        disabled={pendingAction !== null}
+                        className="rounded-lg border border-red-300 px-3 py-2 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50"
+                      >
+                        Archive classroom
+                      </button>
+                    </div>
+                  </details>
                 )}
               </div>
               {selectedClassroom.status === 'archived' && (
