@@ -11,6 +11,8 @@ import {
 export const roleSchema = z.enum(['teacher', 'student']);
 export const classroomStatusSchema = z.enum(['active', 'archived']);
 export const studentStatusSchema = z.enum(['active', 'disabled']);
+export const BUILD_WEEK_STUDENT_PIN = '1234';
+export const studentHandleSchema = z.string().regex(/^[a-z0-9][a-z0-9_-]{2,31}$/);
 
 export const classroomSchema = z
   .object({
@@ -28,6 +30,7 @@ export const studentSafeIdentitySchema = z
     id: studentIdSchema,
     classroomId: classroomIdSchema,
     displayName: z.string().trim().min(1).max(80),
+    studentHandle: studentHandleSchema.optional(),
     status: studentStatusSchema,
     authVersion: z.number().int().positive(),
     createdAt: epochMillisSchema,

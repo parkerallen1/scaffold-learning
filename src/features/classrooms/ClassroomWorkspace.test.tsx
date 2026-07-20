@@ -44,6 +44,7 @@ const activeStudent = {
   createdAt: 1,
   displayName: 'Alex Student',
   id: 'student-1',
+  studentHandle: 'alex_student',
   status: 'active' as const,
   updatedAt: 1,
 };
@@ -133,6 +134,35 @@ describe('ClassroomWorkspace', () => {
 
     await user.click(screen.getByRole('button', { name: 'I saved these details' }));
     expect(screen.queryByText('482901')).not.toBeInTheDocument();
+  });
+
+  it('shows persistent copy controls instead of a popup or reset button in the demo', async () => {
+    const user = userEvent.setup();
+    const clipboardSpy = vi.spyOn(navigator.clipboard, 'writeText').mockResolvedValue();
+    classroomHarness.createStudent.mockResolvedValue({
+      oneTimePin: '1234',
+      student: activeStudent,
+      studentHandle: 'alex_student',
+    });
+    render(<ClassroomWorkspace demoMode teacherId="teacher-1" />);
+
+    const handleCopy = await screen.findByRole('button', {
+      name: 'Copy student handle alex_student',
+    });
+    expect(handleCopy).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Copy student pin 1234' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Reset PIN/ })).not.toBeInTheDocument();
+    await user.click(handleCopy);
+    expect(clipboardSpy).toHaveBeenCalledWith('alex_student');
+    expect(handleCopy).toHaveTextContent('Copied');
+
+    await user.type(screen.getByLabelText('Display name'), 'Jamie Learner');
+    await user.click(screen.getByRole('button', { name: 'Create student' }));
+
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+    expect(await screen.findByRole('status')).toHaveTextContent(
+      'Click the handle or PIN in the roster to copy it',
+    );
   });
 
   it('links every roster student to the protected planning workspace', async () => {

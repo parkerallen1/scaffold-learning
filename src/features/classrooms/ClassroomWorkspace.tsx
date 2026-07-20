@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 
-import type { Classroom, StudentSafeIdentity } from '@/lib/domain';
+import { BUILD_WEEK_STUDENT_PIN, type Classroom, type StudentSafeIdentity } from '@/lib/domain';
 
 import {
   archiveClassroom,
@@ -56,14 +56,52 @@ const ClassroomList = ({
   </ul>
 );
 
+const CopyableCredential = ({ label, value }: { label: string; value: string }) => {
+  const [copyStatus, setCopyStatus] = useState<'copied' | 'idle' | 'unavailable'>('idle');
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopyStatus('copied');
+    } catch {
+      setCopyStatus('unavailable');
+    }
+  };
+
+  return (
+    <button
+      type="button"
+      aria-label={`Copy ${label.toLowerCase()} ${value}`}
+      onClick={() => void copy()}
+      className="rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-left hover:border-blue-400 hover:bg-blue-50"
+    >
+      <span className="block text-xs font-semibold uppercase tracking-wide text-slate-500">
+        {label}
+      </span>
+      <span className="mt-0.5 flex items-center gap-2">
+        <code className="font-mono font-bold text-slate-900">{value}</code>
+        <span className="text-xs font-semibold text-blue-700">
+          {copyStatus === 'copied'
+            ? 'Copied'
+            : copyStatus === 'unavailable'
+              ? 'Select to copy'
+              : 'Copy'}
+        </span>
+      </span>
+    </button>
+  );
+};
+
 const StudentRow = ({
   classroom,
+  demoMode,
   isWorking,
   onDisable,
   onResetPin,
   student,
 }: {
   classroom: Classroom;
+  demoMode: boolean;
   isWorking: boolean;
   onDisable: (student: StudentSafeIdentity) => void;
   onResetPin: (student: StudentSafeIdentity) => void;
@@ -75,6 +113,14 @@ const StudentRow = ({
       <p className="mt-1 text-xs text-slate-500">
         <span className="capitalize">{student.status}</span> · Access version {student.authVersion}
       </p>
+      {demoMode && (
+        <div className="mt-3 flex flex-wrap gap-2" aria-label="Build Week student credentials">
+          {student.studentHandle && (
+            <CopyableCredential label="Student handle" value={student.studentHandle} />
+          )}
+          <CopyableCredential label="Student PIN" value={BUILD_WEEK_STUDENT_PIN} />
+        </div>
+      )}
     </div>
     <div className="flex flex-wrap gap-2">
       <a
@@ -86,14 +132,16 @@ const StudentRow = ({
       </a>
       {classroom.status === 'active' && (
         <>
-          <button
-            type="button"
-            onClick={() => onResetPin(student)}
-            disabled={isWorking}
-            className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold hover:bg-slate-50 disabled:opacity-50"
-          >
-            {student.status === 'disabled' ? 'Reset PIN & enable' : 'Reset PIN'}
-          </button>
+          {!demoMode && (
+            <button
+              type="button"
+              onClick={() => onResetPin(student)}
+              disabled={isWorking}
+              className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold hover:bg-slate-50 disabled:opacity-50"
+            >
+              {student.status === 'disabled' ? 'Reset PIN & enable' : 'Reset PIN'}
+            </button>
+          )}
           <button
             type="button"
             onClick={() => onDisable(student)}
@@ -108,7 +156,13 @@ const StudentRow = ({
   </li>
 );
 
-export const ClassroomWorkspace = ({ teacherId }: { teacherId: string }) => {
+export const ClassroomWorkspace = ({
+  demoMode = false,
+  teacherId,
+}: {
+  demoMode?: boolean;
+  teacherId: string;
+}) => {
   const classrooms = useOwnedClassrooms(teacherId);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const pendingSelection = useRef<string | null>(null);
@@ -116,6 +170,7 @@ export const ClassroomWorkspace = ({ teacherId }: { teacherId: string }) => {
   const [studentName, setStudentName] = useState('');
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [actionNotice, setActionNotice] = useState<string | null>(null);
   const [secretNotice, setSecretNotice] = useState<SecretNotice | null>(null);
 
   const selectedClassroom =
@@ -135,6 +190,7 @@ export const ClassroomWorkspace = ({ teacherId }: { teacherId: string }) => {
 
   const runAction = async (key: string, action: () => Promise<void>) => {
     setActionError(null);
+    setActionNotice(null);
     setPendingAction(key);
     try {
       await action();
@@ -176,15 +232,21 @@ export const ClassroomWorkspace = ({ teacherId }: { teacherId: string }) => {
         displayName,
       });
       setStudentName('');
-      setSecretNotice({
-        title: `Save sign-in details for ${result.student.displayName}`,
-        message:
-          'Give these details directly to the student. The PIN cannot be recovered after you close this message; reset it if it is lost.',
-        details: [
-          { label: 'Student handle', value: result.studentHandle },
-          { label: 'One-time PIN', value: result.oneTimePin },
-        ],
-      });
+      if (demoMode) {
+        setActionNotice(
+          `${result.student.displayName} created. Click the handle or PIN in the roster to copy it.`,
+        );
+      } else {
+        setSecretNotice({
+          title: `Save sign-in details for ${result.student.displayName}`,
+          message:
+            'Give these details directly to the student. The PIN cannot be recovered after you close this message; reset it if it is lost.',
+          details: [
+            { label: 'Student handle', value: result.studentHandle },
+            { label: 'One-time PIN', value: result.oneTimePin },
+          ],
+        });
+      }
     });
   };
 
@@ -298,6 +360,11 @@ export const ClassroomWorkspace = ({ teacherId }: { teacherId: string }) => {
 
       <div className="space-y-6">
         {actionError && <InlineError message={actionError} />}
+        {actionNotice && (
+          <p role="status" className="rounded-lg bg-emerald-50 p-3 text-sm text-emerald-900">
+            {actionNotice}
+          </p>
+        )}
         {!selectedClassroom && !classrooms.isLoading && classrooms.data.length > 0 && (
           <p role="status" className="rounded-2xl bg-white p-6 shadow-md">
             Select a classroom to manage its students.
@@ -392,6 +459,7 @@ export const ClassroomWorkspace = ({ teacherId }: { teacherId: string }) => {
                   <StudentRow
                     key={student.id}
                     classroom={selectedClassroom}
+                    demoMode={demoMode}
                     student={student}
                     isWorking={pendingAction !== null}
                     onDisable={handleDisableStudent}

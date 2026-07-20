@@ -414,7 +414,7 @@ const createStudentRecord = async (
   const classroomRef = firestore.collection('classrooms').doc(input.classroomId);
   const oneTimePin = generatePinForEnvironment();
   const pin = await hashStudentPin(oneTimePin, pepper);
-  const student = studentSafeIdentitySchema.parse({
+  const studentBase = {
     id: studentId,
     classroomId: input.classroomId,
     displayName: input.displayName,
@@ -422,10 +422,11 @@ const createStudentRecord = async (
     authVersion: 1,
     createdAt: nowMs,
     updatedAt: nowMs,
-  });
+  };
 
   for (let sequence = 1; sequence <= MAX_STUDENT_HANDLE_GENERATION_ATTEMPTS; sequence += 1) {
     const studentHandle = generateStudentHandle(input.displayName, sequence);
+    const student = studentSafeIdentitySchema.parse({ ...studentBase, studentHandle });
     const credentialKey = studentCredentialLookupKey(input.classroomId, studentHandle);
     const credentialRef = firestore.collection(STUDENT_CREDENTIALS).doc(credentialKey);
 

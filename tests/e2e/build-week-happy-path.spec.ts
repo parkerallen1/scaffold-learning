@@ -56,12 +56,14 @@ test.describe('Build Week teacher-guided learning loop', () => {
 
     await teacherPage.getByLabel('Display name').fill(studentName);
     await teacherPage.getByRole('button', { name: 'Create student' }).click();
-    const studentDialog = teacherPage.getByRole('alertdialog');
-    await expect(studentDialog).toContainText(`Save sign-in details for ${studentName}`);
-    const displayedHandle = await readDisplayedOnceValue(studentDialog, 'Student handle');
-    expect(displayedHandle).toBe(studentHandle);
-    const studentPin = await readDisplayedOnceValue(studentDialog, 'One-time PIN');
-    await studentDialog.getByRole('button', { name: 'I saved these details' }).click();
+    const displayedHandle = studentHandle;
+    const studentPin = '1234';
+    await expect(
+      teacherPage.getByRole('button', { name: `Copy student handle ${displayedHandle}` }),
+    ).toBeVisible();
+    await expect(
+      teacherPage.getByRole('button', { name: `Copy student pin ${studentPin}` }),
+    ).toBeVisible();
 
     await teacherPage.getByRole('link', { name: `Plan supports for ${studentName}` }).click();
     await expect(

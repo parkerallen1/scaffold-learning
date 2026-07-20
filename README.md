@@ -61,7 +61,7 @@ deterministic fake AI and does not send observations to OpenAI.
 
 1. Open `/teacher` and use the emulator teacher sign-in.
 2. Create a classroom and save the display-once class code.
-3. Create a synthetic student and save the display-once handle/PIN.
+3. Create a synthetic student, then click its handle or PIN in the roster to copy it.
 4. Open the student’s support-planning link from the roster.
 5. Complete the structured interview, review suggestions, and approve a plan.
 6. Open `/teacher/assignments`, author an activity, publish it, and assign the student.

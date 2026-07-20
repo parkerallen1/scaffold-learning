@@ -54,7 +54,7 @@ export const TeacherHomePage = () => {
           </p>
         )}
 
-        {user?.uid && <ClassroomWorkspace teacherId={user.uid} />}
+        {user?.uid && <ClassroomWorkspace demoMode={demoTeacherEnabled} teacherId={user.uid} />}
       </div>
     </main>
   );

@@ -4,6 +4,7 @@ import { z } from 'zod';
 
 import {
   classroomIdSchema,
+  BUILD_WEEK_STUDENT_PIN,
   studentIdSchema,
   studentSafeIdentitySchema,
   teacherIdSchema,
@@ -15,7 +16,7 @@ const CLASS_CODE_ALPHABET = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
 const CLASS_CODE_LENGTH = 8;
 const PIN_RANGE = 1_000_000;
 const STUDENT_HANDLE_MAX_LENGTH = 32;
-export const BUILD_WEEK_STUDENT_PIN = '1234';
+export { BUILD_WEEK_STUDENT_PIN };
 
 export type TeacherCallerAuth = Readonly<{
   uid: string;
