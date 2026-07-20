@@ -49,7 +49,8 @@ export const TeacherHomePage = () => {
 
         {demoTeacherEnabled && (
           <p className="mt-4 rounded-lg bg-amber-100 p-3 text-sm font-medium text-amber-900">
-            Emulator workspace: all data must remain synthetic.
+            Build Week demo: class codes are simple and sequential (DEMO-01, DEMO-02, …), and every
+            newly created or reset student PIN is 1234. All data must remain synthetic.
           </p>
         )}
 

@@ -32,10 +32,11 @@ const StudentSession = () => {
 };
 
 export const StudentEntryPage = () => {
-  const { error, isLoading, isWorking, signInAsStudent, signOut, user } = useAuth();
+  const { demoTeacherEnabled, error, isLoading, isWorking, signInAsStudent, signOut, user } =
+    useAuth();
   const [classCode, setClassCode] = useState('');
   const [studentHandle, setStudentHandle] = useState('');
-  const [pin, setPin] = useState('');
+  const [pin, setPin] = useState(demoTeacherEnabled ? '1234' : '');
 
   if (isLoading) {
     return (
@@ -74,7 +75,7 @@ export const StudentEntryPage = () => {
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const submittedPin = pin;
-    setPin('');
+    if (!demoTeacherEnabled) setPin('');
     await signInAsStudent({ classCode, pin: submittedPin, studentHandle });
   };
 
@@ -94,6 +95,12 @@ export const StudentEntryPage = () => {
           <p className="mt-3 text-slate-600">
             Enter the class code, student handle, and PIN provided by your teacher.
           </p>
+          {demoTeacherEnabled && (
+            <p className="mt-3 rounded-lg bg-amber-100 p-3 text-sm font-medium text-amber-900">
+              Build Week demo: class codes look like DEMO-01, and every newly created or reset
+              student PIN is 1234.
+            </p>
+          )}
 
           <form
             className="mt-6 space-y-4"
@@ -111,6 +118,7 @@ export const StudentEntryPage = () => {
                 onChange={(event) => setClassCode(event.target.value)}
                 className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 uppercase"
                 maxLength={12}
+                placeholder={demoTeacherEnabled ? 'DEMO-01' : undefined}
               />
             </label>
             <label className="block text-sm font-semibold text-slate-700">
@@ -136,12 +144,14 @@ export const StudentEntryPage = () => {
                 maxLength={12}
                 minLength={4}
                 pattern="[0-9]*"
-                type="password"
+                type={demoTeacherEnabled ? 'text' : 'password'}
                 aria-describedby="student-pin-help"
               />
             </label>
             <p id="student-pin-help" className="text-xs text-slate-600">
-              Enter numbers only. Your PIN is cleared after each sign-in attempt.
+              {demoTeacherEnabled
+                ? 'Demo PINs are shown in plain text and stay filled in after a failed attempt.'
+                : 'Enter numbers only. Your PIN is cleared after each sign-in attempt.'}
             </p>
             <button
               type="submit"
@@ -152,9 +162,11 @@ export const StudentEntryPage = () => {
             </button>
           </form>
 
-          <p className="mt-4 text-xs text-slate-600">
-            Quiz Master does not save your PIN in this browser.
-          </p>
+          {!demoTeacherEnabled && (
+            <p className="mt-4 text-xs text-slate-600">
+              Quiz Master does not save your PIN in this browser.
+            </p>
+          )}
         </section>
       </div>
     </main>

@@ -39,11 +39,13 @@ import {
   studentCredentialLookupKey,
 } from './credentialCrypto.js';
 import {
+  BUILD_WEEK_STUDENT_PIN,
   bootstrapTeacherInputSchema,
   classroomActionInputSchema,
   createClassroomInputSchema,
   createStudentInputSchema,
   disableStudentIdentity,
+  generateBuildWeekClassCode,
   generateClassCode,
   generateStudentPin,
   requireTeacherPrincipal,
@@ -56,6 +58,13 @@ import {
 
 const IS_EMULATOR = process.env.FUNCTIONS_EMULATOR === 'true';
 const MAX_CODE_GENERATION_ATTEMPTS = 5;
+const BUILD_WEEK_CODE_GENERATION_ATTEMPTS = 99;
+
+const generateClassCodeForAttempt = (attempt: number): string =>
+  IS_EMULATOR ? generateBuildWeekClassCode(attempt + 1) : generateClassCode();
+
+const generatePinForEnvironment = (): string =>
+  IS_EMULATOR ? BUILD_WEEK_STUDENT_PIN : generateStudentPin();
 
 export const teacherCallableOptions = Object.freeze({
   consumeAppCheckToken: !IS_EMULATOR,
@@ -251,8 +260,11 @@ const createClassroomRecord = async (
   name: string,
   nowMs: number,
 ): Promise<{ classroom: Classroom; classCode: string }> => {
-  for (let attempt = 0; attempt < MAX_CODE_GENERATION_ATTEMPTS; attempt += 1) {
-    const classCode = generateClassCode();
+  const generationAttempts = IS_EMULATOR
+    ? BUILD_WEEK_CODE_GENERATION_ATTEMPTS
+    : MAX_CODE_GENERATION_ATTEMPTS;
+  for (let attempt = 0; attempt < generationAttempts; attempt += 1) {
+    const classCode = generateClassCodeForAttempt(attempt);
     const normalizedCode = normalizeClassCode(classCode);
     const classCodeKey = classCodeLookupKey(normalizedCode);
     const classroomRef = firestore.collection('classrooms').doc();
@@ -333,8 +345,11 @@ const rotateClassCodeRecord = async (
   classroomId: string,
   nowMs: number,
 ): Promise<string> => {
-  for (let attempt = 0; attempt < MAX_CODE_GENERATION_ATTEMPTS; attempt += 1) {
-    const classCode = generateClassCode();
+  const generationAttempts = IS_EMULATOR
+    ? BUILD_WEEK_CODE_GENERATION_ATTEMPTS
+    : MAX_CODE_GENERATION_ATTEMPTS;
+  for (let attempt = 0; attempt < generationAttempts; attempt += 1) {
+    const classCode = generateClassCodeForAttempt(attempt);
     const newCodeKey = classCodeLookupKey(normalizeClassCode(classCode));
     const classroomRef = firestore.collection('classrooms').doc(classroomId);
     const classroomAuthRef = firestore.collection(CLASSROOM_AUTH).doc(classroomId);
@@ -396,7 +411,7 @@ const createStudentRecord = async (
   const credentialRef = firestore.collection(STUDENT_CREDENTIALS).doc(credentialKey);
   const pointerRef = firestore.collection(STUDENT_CREDENTIAL_POINTERS).doc(studentId);
   const classroomRef = firestore.collection('classrooms').doc(input.classroomId);
-  const oneTimePin = generateStudentPin();
+  const oneTimePin = generatePinForEnvironment();
   const pin = await hashStudentPin(oneTimePin, pepper);
   const student = studentSafeIdentitySchema.parse({
     id: studentId,
@@ -516,7 +531,7 @@ const resetStudentPinRecord = async (
   pepper: string,
   nowMs: number,
 ): Promise<{ student: StudentSafeIdentity; oneTimePin: string }> => {
-  const oneTimePin = generateStudentPin();
+  const oneTimePin = generatePinForEnvironment();
   const pin = await hashStudentPin(oneTimePin, pepper);
   const student = await firestore.runTransaction(async (transaction) => {
     const context = await readStudentCredentialContext(

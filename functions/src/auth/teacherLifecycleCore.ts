@@ -14,6 +14,7 @@ import {
 const CLASS_CODE_ALPHABET = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
 const CLASS_CODE_LENGTH = 8;
 const PIN_RANGE = 1_000_000;
+export const BUILD_WEEK_STUDENT_PIN = '1234';
 
 export type TeacherCallerAuth = Readonly<{
   uid: string;
@@ -79,6 +80,13 @@ export const generateClassCode = (nextInt: RandomInt = randomInt): string => {
     compact += CLASS_CODE_ALPHABET[characterIndex];
   }
   return `${compact.slice(0, 4)}-${compact.slice(4)}`;
+};
+
+export const generateBuildWeekClassCode = (sequence: number): string => {
+  if (!Number.isInteger(sequence) || sequence < 1 || sequence > 99) {
+    throw new Error('Build Week class-code sequence must be between 1 and 99.');
+  }
+  return `DEMO-${sequence.toString().padStart(2, '0')}`;
 };
 
 export const generateStudentPin = (nextInt: RandomInt = randomInt): string => {

@@ -3,8 +3,10 @@ import { describe, expect, it } from 'vitest';
 import { studentSafeIdentitySchema } from '@quiz-master/domain';
 
 import {
+  BUILD_WEEK_STUDENT_PIN,
   createStudentInputSchema,
   disableStudentIdentity,
+  generateBuildWeekClassCode,
   generateClassCode,
   generateStudentPin,
   requireTeacherPrincipal,
@@ -70,6 +72,13 @@ describe('generated student credentials', () => {
   it('generates a fixed-width six-digit PIN', () => {
     expect(generateStudentPin(() => 0)).toBe('000000');
     expect(generateStudentPin(() => 999_999)).toBe('999999');
+  });
+
+  it('uses plain, predictable credentials for the Build Week emulator', () => {
+    expect(generateBuildWeekClassCode(1)).toBe('DEMO-01');
+    expect(generateBuildWeekClassCode(12)).toBe('DEMO-12');
+    expect(BUILD_WEEK_STUDENT_PIN).toBe('1234');
+    expect(() => generateBuildWeekClassCode(0)).toThrow();
   });
 
   it('normalizes handles and rejects extra input fields', () => {

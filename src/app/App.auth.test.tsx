@@ -137,7 +137,7 @@ describe('authentication shell', () => {
     await user.click(screen.getByRole('button', { name: 'Use emulator demo teacher' }));
 
     expect(authHarness.signInDemoTeacher).toHaveBeenCalledOnce();
-    expect(screen.getByText(/all data must remain synthetic/)).toBeInTheDocument();
+    expect(screen.getByText(/all data must remain synthetic/i)).toBeInTheDocument();
   });
 
   it('hides the demo teacher path outside emulator mode', async () => {
@@ -194,7 +194,7 @@ describe('authentication shell', () => {
     expect(screen.queryByText('Question 1 of 12')).not.toBeInTheDocument();
   });
 
-  it('exchanges student credentials, clears the PIN immediately, and renders a student-only shell', async () => {
+  it('shows and retains the simple demo PIN while exchanging student credentials', async () => {
     const user = userEvent.setup();
     let completeSignIn: ((value: TestUser) => void) | undefined;
     authHarness.signInStudent.mockReturnValueOnce(
@@ -208,15 +208,16 @@ describe('authentication shell', () => {
     await user.type(screen.getByLabelText('Class code'), 'ABC123');
     await user.type(screen.getByLabelText('Student handle'), 'alex');
     const pinInput = screen.getByLabelText('Student PIN');
-    await user.type(pinInput, '4829');
+    expect(pinInput).toHaveAttribute('type', 'text');
+    expect(pinInput).toHaveValue('1234');
     await user.click(screen.getByRole('button', { name: 'Sign in' }));
 
     expect(authHarness.signInStudent).toHaveBeenCalledWith({
       classCode: 'ABC123',
-      pin: '4829',
+      pin: '1234',
       studentHandle: 'alex',
     });
-    expect(pinInput).toHaveValue('');
+    expect(pinInput).toHaveValue('1234');
     expect(screen.getByRole('button', { name: 'Signing in…' })).toBeDisabled();
 
     await act(async () => completeSignIn?.(studentUser));
@@ -244,6 +245,27 @@ describe('authentication shell', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent(
       'Unable to sign in with those credentials.',
     );
+  });
+
+  it('keeps production PIN entry masked and clears it on submission', async () => {
+    const user = userEvent.setup();
+    authHarness.demoTeacherEnabled = false;
+    await loadAuthRoute('/student');
+    act(() => authHarness.onUserChange?.(null));
+
+    await user.type(screen.getByLabelText('Class code'), 'ABC123');
+    await user.type(screen.getByLabelText('Student handle'), 'alex');
+    const pinInput = screen.getByLabelText('Student PIN');
+    expect(pinInput).toHaveAttribute('type', 'password');
+    await user.type(pinInput, '4829');
+    await user.click(screen.getByRole('button', { name: 'Sign in' }));
+
+    expect(authHarness.signInStudent).toHaveBeenCalledWith({
+      classCode: 'ABC123',
+      pin: '4829',
+      studentHandle: 'alex',
+    });
+    expect(pinInput).toHaveValue('');
   });
 
   it('does not expose the student shell to a signed-in teacher', async () => {

@@ -48,6 +48,10 @@ npm run emulators:start
 
 Open the Hosting emulator at `http://127.0.0.1:5002`. The Emulator UI is at `http://127.0.0.1:4000`.
 
+For the Build Week review flow, emulator class codes are assigned sequentially as `DEMO-01`,
+`DEMO-02`, and so on. Every student created or reset in the emulator uses the visible PIN `1234`.
+Production deployments continue to use random class codes, random PINs, and masked PIN entry.
+
 `setup:local` creates missing ignored emulator configuration and a local-only student PIN pepper; it
 never overwrites existing values. The checked-in environment template is locked to
 `demo-quiz-master`; the client refuses to mix a demo project with production mode. The emulator uses
