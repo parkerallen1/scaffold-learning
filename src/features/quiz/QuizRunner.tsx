@@ -18,7 +18,7 @@ export const QuizRunner = () => {
   const questions = QUESTIONS;
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState<number>(0);
   const [userAnswer, setUserAnswer] = useState<string>('');
-  const [isCorrect, setIsCorrect] = useState<boolean>(false);
+  const [answerOutcome, setAnswerOutcome] = useState<'correct' | 'incorrect' | null>(null);
   const [isFinished, setIsFinished] = useState<boolean>(false);
   const [isLoadingSpeech, setIsLoadingSpeech] = useState<boolean>(false);
   const [speechError, setSpeechError] = useState<string | null>(null);
@@ -39,6 +39,7 @@ export const QuizRunner = () => {
   const [timerValue, setTimerValue] = useState<number>(180);
 
   const currentQuestion: Question = questions[currentQuestionIndex];
+  const isCorrect = answerOutcome === 'correct';
 
   const clearCanvas = useCallback(() => {
     scratchCanvasRef.current?.clear();
@@ -49,7 +50,7 @@ export const QuizRunner = () => {
     if (currentQuestionIndex < questions.length - 1) {
       setCurrentQuestionIndex((previousIndex) => previousIndex + 1);
       setUserAnswer('');
-      setIsCorrect(false);
+      setAnswerOutcome(null);
       setTimerValue(timerSeconds);
       clearCanvas();
     } else {
@@ -74,9 +75,13 @@ export const QuizRunner = () => {
 
   const handleAnswerChange = (answer: string) => {
     setUserAnswer(answer);
+    setAnswerOutcome(null);
+    setShowInterestReward(false);
+  };
 
-    const answerIsCorrect = isAnswerCorrect(currentQuestion, answer);
-    setIsCorrect(answerIsCorrect);
+  const handleAnswerSubmit = () => {
+    const answerIsCorrect = isAnswerCorrect(currentQuestion, userAnswer);
+    setAnswerOutcome(answerIsCorrect ? 'correct' : 'incorrect');
 
     if (answerIsCorrect && isInterestEnabled && interestFileUrl) {
       setShowInterestReward(true);
@@ -86,7 +91,7 @@ export const QuizRunner = () => {
   const handleRestart = () => {
     setCurrentQuestionIndex(0);
     setUserAnswer('');
-    setIsCorrect(false);
+    setAnswerOutcome(null);
     setIsFinished(false);
     setTimerValue(timerSeconds);
     clearCanvas();
@@ -168,10 +173,11 @@ export const QuizRunner = () => {
             <ScratchCanvas ref={scratchCanvasRef} questionIndex={currentQuestionIndex}>
               <AnswerPanel
                 answer={userAnswer}
-                isCorrect={isCorrect}
                 isRewardVisible={showInterestReward}
+                outcome={answerOutcome}
                 onAnswerChange={handleAnswerChange}
                 onNext={handleNextQuestion}
+                onSubmit={handleAnswerSubmit}
               />
             </ScratchCanvas>
           </>

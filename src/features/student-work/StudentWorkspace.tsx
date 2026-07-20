@@ -93,7 +93,7 @@ const splitPrompt = (prompt: string, mode: 'sentence' | 'step'): readonly string
 const feedbackFor = (outcome: AttemptEvent['outcome'] | null): string | null => {
   if (outcome === 'correct') return 'Your answer was recorded as a match.';
   if (outcome === 'incorrect') {
-    return 'That answer is not a match yet. You can try again or show it for review later.';
+    return 'Incorrect. You can try again or show it for review later.';
   }
   if (outcome === 'teacherReview') return 'Your answer was saved for your teacher to review.';
   return null;

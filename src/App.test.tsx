@@ -22,7 +22,7 @@ vi.mock('./features/auth/authService', () => ({
 }));
 
 describe('App', () => {
-  it('reads the first question and advances after a correct answer', async () => {
+  it('checks an answer only after submission and advances after a correct answer', async () => {
     const user = userEvent.setup();
     render(<App pathname="/demo" />);
 
@@ -35,7 +35,18 @@ describe('App', () => {
     );
 
     const answerInput = screen.getByLabelText('Your Final Answer');
+    await user.type(answerInput, '8');
+    expect(screen.queryByText(/incorrect/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Next Question' })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Submit answer' }));
+    expect(screen.getByText('Incorrect. Try again.')).toBeInTheDocument();
+
+    await user.clear(answerInput);
     await user.type(answerInput, '8.36');
+    expect(screen.queryByText(/incorrect/i)).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Submit answer' }));
+    expect(screen.getByText('Correct.')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Next Question' }));
 
     expect(screen.getByText('Question 2 of 12')).toBeInTheDocument();

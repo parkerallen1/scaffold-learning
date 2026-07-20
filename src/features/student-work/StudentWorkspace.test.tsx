@@ -170,8 +170,9 @@ describe('StudentWorkspace', () => {
     expect(screen.queryByLabelText('Scratch work area')).not.toBeInTheDocument();
 
     await user.type(screen.getByLabelText('Your answer'), '5');
+    expect(screen.queryByText(/incorrect/i)).not.toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Submit answer' }));
-    expect(await screen.findByText(/not a match yet/)).toBeInTheDocument();
+    expect(await screen.findByText(/^Incorrect\./)).toBeInTheDocument();
     expect(harness.submit).toHaveBeenCalledWith(
       expect.objectContaining({
         activeSupports: expect.arrayContaining([
