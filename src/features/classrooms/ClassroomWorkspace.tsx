@@ -114,7 +114,6 @@ export const ClassroomWorkspace = ({ teacherId }: { teacherId: string }) => {
   const pendingSelection = useRef<string | null>(null);
   const [classroomName, setClassroomName] = useState('');
   const [studentName, setStudentName] = useState('');
-  const [studentHandle, setStudentHandle] = useState('');
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [secretNotice, setSecretNotice] = useState<SecretNotice | null>(null);
@@ -171,15 +170,12 @@ export const ClassroomWorkspace = ({ teacherId }: { teacherId: string }) => {
     event.preventDefault();
     if (!selectedClassroom) return;
     const displayName = studentName.trim();
-    const handle = studentHandle.trim();
     void runAction('create-student', async () => {
       const result = await createStudent({
         classroomId: selectedClassroom.id,
         displayName,
-        studentHandle: handle,
       });
       setStudentName('');
-      setStudentHandle('');
       setSecretNotice({
         title: `Save sign-in details for ${result.student.displayName}`,
         message:
@@ -349,9 +345,10 @@ export const ClassroomWorkspace = ({ teacherId }: { teacherId: string }) => {
               <section className="rounded-2xl bg-white p-6 shadow-md">
                 <h3 className="text-xl font-bold">Add a student</h3>
                 <p className="mt-1 text-sm text-slate-600">
-                  Use a classroom-only display name and a unique handle the student can remember.
+                  Enter a classroom-only display name. A unique student handle will be generated
+                  automatically.
                 </p>
-                <form className="mt-4 grid gap-3 sm:grid-cols-2" onSubmit={handleCreateStudent}>
+                <form className="mt-4" onSubmit={handleCreateStudent}>
                   <label className="text-sm font-semibold text-slate-700">
                     Display name
                     <input
@@ -362,23 +359,10 @@ export const ClassroomWorkspace = ({ teacherId }: { teacherId: string }) => {
                       className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2"
                     />
                   </label>
-                  <label className="text-sm font-semibold text-slate-700">
-                    Student handle
-                    <input
-                      required
-                      value={studentHandle}
-                      onChange={(event) => setStudentHandle(event.target.value)}
-                      maxLength={32}
-                      minLength={3}
-                      pattern="[a-zA-Z0-9][a-zA-Z0-9_-]{2,31}"
-                      autoComplete="off"
-                      className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2"
-                    />
-                  </label>
                   <button
                     type="submit"
                     disabled={pendingAction !== null}
-                    className="rounded-lg bg-emerald-700 px-4 py-3 font-semibold text-white hover:bg-emerald-800 disabled:opacity-50 sm:col-span-2"
+                    className="mt-3 w-full rounded-lg bg-emerald-700 px-4 py-3 font-semibold text-white hover:bg-emerald-800 disabled:opacity-50"
                   >
                     {pendingAction === 'create-student' ? 'Creating student…' : 'Create student'}
                   </button>

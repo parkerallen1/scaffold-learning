@@ -8,6 +8,7 @@ import {
   disableStudentIdentity,
   generateBuildWeekClassCode,
   generateClassCode,
+  generateStudentHandle,
   generateStudentPin,
   requireTeacherPrincipal,
   resetStudentIdentityAuth,
@@ -81,24 +82,32 @@ describe('generated student credentials', () => {
     expect(() => generateBuildWeekClassCode(0)).toThrow();
   });
 
-  it('normalizes handles and rejects extra input fields', () => {
+  it('generates lowercase handles from display names and suffixes collisions', () => {
+    expect(generateStudentHandle('Alex Student')).toBe('alex_student');
+    expect(generateStudentHandle('Alex Student', 2)).toBe('alex_student_2');
+    expect(generateStudentHandle('  José   Niño  ')).toBe('jose_nino');
+    expect(generateStudentHandle('A')).toBe('a_student');
+    expect(generateStudentHandle('李')).toBe('student_student');
+    expect(
+      generateStudentHandle('A very long student display name that needs truncation', 12),
+    ).toBe('a_very_long_student_display_n_12');
+  });
+
+  it('accepts display names and rejects caller-supplied handles or other extra fields', () => {
     expect(
       createStudentInputSchema.parse({
         classroomId: 'classroom_demo_01',
         displayName: ' Jordan ',
-        studentHandle: ' Student_07 ',
       }),
     ).toEqual({
       classroomId: 'classroom_demo_01',
       displayName: 'Jordan',
-      studentHandle: 'student_07',
     });
     expect(() =>
       createStudentInputSchema.parse({
         classroomId: 'classroom_demo_01',
         displayName: 'Jordan',
         studentHandle: 'student_07',
-        pin: '123456',
       }),
     ).toThrow();
   });

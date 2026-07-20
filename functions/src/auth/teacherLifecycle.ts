@@ -47,6 +47,7 @@ import {
   disableStudentIdentity,
   generateBuildWeekClassCode,
   generateClassCode,
+  generateStudentHandle,
   generateStudentPin,
   requireTeacherPrincipal,
   resetStudentIdentityAuth,
@@ -59,6 +60,7 @@ import {
 const IS_EMULATOR = process.env.FUNCTIONS_EMULATOR === 'true';
 const MAX_CODE_GENERATION_ATTEMPTS = 5;
 const BUILD_WEEK_CODE_GENERATION_ATTEMPTS = 99;
+const MAX_STUDENT_HANDLE_GENERATION_ATTEMPTS = 999;
 
 const generateClassCodeForAttempt = (attempt: number): string =>
   IS_EMULATOR ? generateBuildWeekClassCode(attempt + 1) : generateClassCode();
@@ -84,6 +86,7 @@ const teacherDocumentSchema = z
 export class LifecycleNotFoundError extends Error {}
 export class LifecycleOwnershipError extends Error {}
 class LifecycleConflictError extends Error {}
+class StudentHandleCollisionError extends LifecycleConflictError {}
 export class LifecycleStateError extends Error {}
 class ClassCodeCollisionError extends Error {}
 export class StoredDataError extends Error {}
@@ -407,8 +410,6 @@ const createStudentRecord = async (
     .collection('students')
     .doc();
   const studentId = studentIdSchema.parse(studentRef.id);
-  const credentialKey = studentCredentialLookupKey(input.classroomId, input.studentHandle);
-  const credentialRef = firestore.collection(STUDENT_CREDENTIALS).doc(credentialKey);
   const pointerRef = firestore.collection(STUDENT_CREDENTIAL_POINTERS).doc(studentId);
   const classroomRef = firestore.collection('classrooms').doc(input.classroomId);
   const oneTimePin = generatePinForEnvironment();
@@ -423,27 +424,39 @@ const createStudentRecord = async (
     updatedAt: nowMs,
   });
 
-  await firestore.runTransaction(async (transaction) => {
-    const [classroomSnapshot, credentialSnapshot] = await Promise.all([
-      transaction.get(classroomRef),
-      transaction.get(credentialRef),
-    ]);
-    requireOwnedClassroom(classroomSnapshot, teacherId, true);
-    if (credentialSnapshot.exists) {
-      throw new LifecycleConflictError();
-    }
-    transaction.create(studentRef, student);
-    transaction.create(credentialRef, {
-      classroomId: input.classroomId,
-      studentId,
-      normalizedHandle: input.studentHandle,
-      status: 'active',
-      pin,
-    });
-    transaction.create(pointerRef, { classroomId: input.classroomId, credentialKey });
-  });
+  for (let sequence = 1; sequence <= MAX_STUDENT_HANDLE_GENERATION_ATTEMPTS; sequence += 1) {
+    const studentHandle = generateStudentHandle(input.displayName, sequence);
+    const credentialKey = studentCredentialLookupKey(input.classroomId, studentHandle);
+    const credentialRef = firestore.collection(STUDENT_CREDENTIALS).doc(credentialKey);
 
-  return { student, studentHandle: input.studentHandle, oneTimePin };
+    try {
+      await firestore.runTransaction(async (transaction) => {
+        const [classroomSnapshot, credentialSnapshot] = await Promise.all([
+          transaction.get(classroomRef),
+          transaction.get(credentialRef),
+        ]);
+        requireOwnedClassroom(classroomSnapshot, teacherId, true);
+        if (credentialSnapshot.exists) {
+          throw new StudentHandleCollisionError();
+        }
+        transaction.create(studentRef, student);
+        transaction.create(credentialRef, {
+          classroomId: input.classroomId,
+          studentId,
+          normalizedHandle: studentHandle,
+          status: 'active',
+          pin,
+        });
+        transaction.create(pointerRef, { classroomId: input.classroomId, credentialKey });
+      });
+      return { student, studentHandle, oneTimePin };
+    } catch (error) {
+      if (!(error instanceof StudentHandleCollisionError)) {
+        throw error;
+      }
+    }
+  }
+  throw new LifecycleConflictError();
 };
 
 type StudentCredentialContext = Readonly<{

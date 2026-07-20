@@ -119,14 +119,14 @@ describe('ClassroomWorkspace', () => {
     await screen.findByRole('heading', { name: 'Algebra Lab' });
 
     await user.type(screen.getByLabelText('Display name'), 'Alex Student');
-    await user.type(screen.getByLabelText('Student handle'), 'alex_01');
+    expect(screen.queryByLabelText('Student handle')).not.toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Create student' }));
 
     expect(classroomHarness.createStudent).toHaveBeenCalledWith({
       classroomId: 'classroom-1',
       displayName: 'Alex Student',
-      studentHandle: 'alex_01',
     });
+    expect(await screen.findByRole('alertdialog')).toHaveTextContent('alex_01');
     expect(await screen.findByRole('alertdialog')).toHaveTextContent('482901');
     expect(storageSpy).not.toHaveBeenCalled();
     expect(logSpy).not.toHaveBeenCalled();

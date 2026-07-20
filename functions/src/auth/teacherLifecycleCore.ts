@@ -14,6 +14,7 @@ import {
 const CLASS_CODE_ALPHABET = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
 const CLASS_CODE_LENGTH = 8;
 const PIN_RANGE = 1_000_000;
+const STUDENT_HANDLE_MAX_LENGTH = 32;
 export const BUILD_WEEK_STUDENT_PIN = '1234';
 
 export type TeacherCallerAuth = Readonly<{
@@ -97,6 +98,28 @@ export const generateStudentPin = (nextInt: RandomInt = randomInt): string => {
   return value.toString().padStart(6, '0');
 };
 
+export const generateStudentHandle = (displayName: string, sequence = 1): string => {
+  if (!Number.isInteger(sequence) || sequence < 1 || sequence > 999) {
+    throw new Error('Student-handle sequence must be between 1 and 999.');
+  }
+  const normalizedName = displayName
+    .normalize('NFKD')
+    .replace(/\p{Mark}/gu, '')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, '_')
+    .replace(/[^a-z0-9_-]/g, '')
+    .replace(/_+/g, '_')
+    .replace(/^[-_]+|[-_]+$/g, '');
+  const readableBase =
+    normalizedName.length >= 3 ? normalizedName : `${normalizedName || 'student'}_student`;
+  const suffix = sequence === 1 ? '' : `_${sequence}`;
+  const truncatedBase = readableBase
+    .slice(0, STUDENT_HANDLE_MAX_LENGTH - suffix.length)
+    .replace(/[-_]+$/g, '');
+  return `${truncatedBase}${suffix}`;
+};
+
 const emptyInputSchema = z.object({}).strict();
 
 export const bootstrapTeacherInputSchema = emptyInputSchema;
@@ -108,11 +131,6 @@ export const createStudentInputSchema = z
   .object({
     classroomId: classroomIdSchema,
     displayName: z.string().trim().min(1).max(80),
-    studentHandle: z
-      .string()
-      .max(128)
-      .transform((value) => value.normalize('NFKC').trim().toLowerCase())
-      .pipe(z.string().regex(/^[a-z0-9][a-z0-9_-]{2,31}$/)),
   })
   .strict();
 export const studentActionInputSchema = z

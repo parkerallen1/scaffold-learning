@@ -56,7 +56,7 @@ const rotateClassCodeCallable = httpsCallable<ClassroomActionInput, RotateClassC
   firebaseRuntime.callableOptions,
 );
 const createStudentCallable = httpsCallable<
-  ClassroomActionInput & { displayName: string; studentHandle: string },
+  ClassroomActionInput & { displayName: string },
   CreateStudentResponse
 >(functions, 'createStudent', firebaseRuntime.callableOptions);
 const disableStudentCallable = httpsCallable<StudentActionInput, StudentResponse>(
@@ -165,11 +165,7 @@ export const archiveClassroom = (classroomId: string) =>
     return classroomSchema.parse(response.data.classroom);
   });
 
-export const createStudent = (input: {
-  classroomId: string;
-  displayName: string;
-  studentHandle: string;
-}) =>
+export const createStudent = (input: { classroomId: string; displayName: string }) =>
   safely(async () => {
     const response = await createStudentCallable(input);
     return {
