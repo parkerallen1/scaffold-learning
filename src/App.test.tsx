@@ -61,7 +61,7 @@ describe('App', () => {
     expect(screen.queryByText('Background Color')).not.toBeInTheDocument();
   });
 
-  it('shows the complete question before a student chooses chunked directions', async () => {
+  it('makes hidden question content clear when chunked directions are active', async () => {
     const user = userEvent.setup();
     const supportPlan = supportPlanVersionSchema.parse({
       approvedAt: 1,
@@ -86,19 +86,21 @@ describe('App', () => {
 
     expect(
       screen.getByRole('heading', {
+        name: 'Use mental math to find the sum or difference. …',
+      }),
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Show the rest of the question' }));
+    expect(
+      screen.getByRole('heading', {
         name: 'Use mental math to find the sum or difference. 4.25 + 1.36 + 2.75 = ___',
       }),
     ).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Show one part at a time' }));
     expect(
-      screen.getByRole('heading', { name: 'Use mental math to find the sum or difference.' }),
-    ).toBeInTheDocument();
-
-    await user.click(screen.getByRole('button', { name: 'Show full question' }));
-    expect(
       screen.getByRole('heading', {
-        name: 'Use mental math to find the sum or difference. 4.25 + 1.36 + 2.75 = ___',
+        name: 'Use mental math to find the sum or difference. …',
       }),
     ).toBeInTheDocument();
   });

@@ -19,7 +19,7 @@ export const QuizRunner = ({ supportPlan }: { supportPlan?: SupportPlanVersion }
   const [isFinished, setIsFinished] = useState<boolean>(false);
   const [isLoadingSpeech, setIsLoadingSpeech] = useState<boolean>(false);
   const [speechError, setSpeechError] = useState<string | null>(null);
-  const [showChunkedDirections, setShowChunkedDirections] = useState(false);
+  const [showChunkedDirections, setShowChunkedDirections] = useState(true);
   const scratchCanvasRef = useRef<ScratchCanvasHandle>(null);
 
   const currentQuestion: Question = questions[currentQuestionIndex];
@@ -40,7 +40,7 @@ export const QuizRunner = ({ supportPlan }: { supportPlan?: SupportPlanVersion }
     currentQuestion.question.split(/(?<=[.!?])\s+/)[0] ?? currentQuestion.question;
   const displayedQuestion =
     readingChunks?.supportKey === 'readingChunks' && showChunkedDirections
-      ? { ...currentQuestion, question: firstDirection }
+      ? { ...currentQuestion, question: `${firstDirection} …` }
       : currentQuestion;
   const clearCanvas = useCallback(() => {
     scratchCanvasRef.current?.clear();
@@ -51,7 +51,7 @@ export const QuizRunner = ({ supportPlan }: { supportPlan?: SupportPlanVersion }
       setCurrentQuestionIndex((previousIndex) => previousIndex + 1);
       setUserAnswer('');
       setAnswerOutcome(null);
-      setShowChunkedDirections(false);
+      setShowChunkedDirections(true);
       setTimerSeconds(initialTimer);
       clearCanvas();
     } else {
@@ -86,7 +86,7 @@ export const QuizRunner = ({ supportPlan }: { supportPlan?: SupportPlanVersion }
     setUserAnswer('');
     setAnswerOutcome(null);
     setIsFinished(false);
-    setShowChunkedDirections(false);
+    setShowChunkedDirections(true);
     clearCanvas();
   };
 
@@ -149,7 +149,9 @@ export const QuizRunner = ({ supportPlan }: { supportPlan?: SupportPlanVersion }
                 onClick={() => setShowChunkedDirections((current) => !current)}
                 className="mx-6 mt-4 self-start rounded-lg border border-blue-700 px-4 py-2 text-sm font-semibold text-blue-800 dark:text-blue-200"
               >
-                {showChunkedDirections ? 'Show full question' : 'Show one part at a time'}
+                {showChunkedDirections
+                  ? 'Show the rest of the question'
+                  : 'Show one part at a time'}
               </button>
             )}
             <ScratchCanvas ref={scratchCanvasRef} questionIndex={currentQuestionIndex}>
