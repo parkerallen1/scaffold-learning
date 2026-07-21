@@ -2,7 +2,26 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
+import { assignmentDraftSchema } from '@/lib/domain';
+
 import { AssignmentAuthoringForm } from './AssignmentAuthoringForm';
+
+const generatedDraft = assignmentDraftSchema.parse({
+  title: 'Imported fractions',
+  questions: [
+    {
+      id: 'question_ai_001',
+      questionType: 'multipleChoice' as const,
+      prompt: 'Which fraction equals one half?',
+      approvedHints: ['Compare the numerator and denominator.'],
+      choices: [
+        { id: 'choice_001_01', label: '2/4' },
+        { id: 'choice_001_02', label: '3/4' },
+      ],
+      correctChoiceId: 'choice_001_01',
+    },
+  ],
+});
 
 describe('AssignmentAuthoringForm', () => {
   it('validates and publishes a numeric teacher draft', async () => {
@@ -57,5 +76,28 @@ describe('AssignmentAuthoringForm', () => {
     await user.click(screen.getByRole('button', { name: 'Remove question 1' }));
     expect(screen.getByText('Review (0)')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Publish assignment' })).toBeDisabled();
+  });
+
+  it('loads an AI draft and lets the teacher edit it before publication', async () => {
+    const user = userEvent.setup();
+    const onPublish = vi.fn();
+    render(<AssignmentAuthoringForm initialDraft={generatedDraft} onPublish={onPublish} />);
+
+    expect(screen.getByLabelText('Assignment title')).toHaveValue('Imported fractions');
+    expect(screen.getByText('Review (1)')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Edit question 1' }));
+    const question = screen.getByLabelText('Question');
+    await user.clear(question);
+    await user.type(question, 'Which fraction is equivalent to one half?');
+    await user.click(screen.getByRole('button', { name: 'Save question changes' }));
+    await user.click(screen.getByRole('button', { name: 'Publish assignment' }));
+
+    expect(onPublish).toHaveBeenCalledWith(
+      expect.objectContaining({
+        questions: [
+          expect.objectContaining({ prompt: 'Which fraction is equivalent to one half?' }),
+        ],
+      }),
+    );
   });
 });

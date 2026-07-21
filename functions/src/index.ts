@@ -27,6 +27,7 @@ export {
   createAssignmentDraft,
   publishAssignment,
 } from './assignments/assignmentPersistence.js';
+export { generateAssignmentDraft } from './assignments/generateAssignmentDraft.js';
 export {
   advanceStudentSession,
   recordStudentSupportEvent,
@@ -37,6 +38,7 @@ export {
 export { auditStudentEvidence } from './audits/auditStudentEvidence.js';
 export { reviewStudentAudit } from './audits/reviewStudentAudit.js';
 export { seedSyntheticStudentEvidence } from './demo/seedSyntheticStudentEvidence.js';
+export { synthesizeSpeech } from './speech/synthesizeSpeech.js';
 
 setGlobalOptions({ maxInstances: 10, region: 'us-central1' });
 

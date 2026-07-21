@@ -22,7 +22,7 @@ flowchart LR
   D["Deterministic fake providers"] --> C
 ```
 
-OpenAI is server-only. The emulator forces deterministic fake providers. Browser read-aloud uses `speechSynthesis` and remains optional.
+OpenAI is server-only. The emulator keeps planning and assignment generation deterministic. Read-aloud uses authenticated OpenAI TTS when a local key is configured and otherwise falls back to optional browser `speechSynthesis`.
 
 ## Trust boundaries
 

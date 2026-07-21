@@ -43,6 +43,16 @@ type AssignPublishedAssignmentInput = {
   studentIds: string[];
 };
 
+type GenerateAssignmentDraftInput = {
+  classroomId: string;
+  prompt?: string;
+  file?: {
+    base64Data: string;
+    fileName: string;
+    mimeType: string;
+  };
+};
+
 const createAssignmentDraftCallable = httpsCallable<CreateAssignmentDraftInput, unknown>(
   functions,
   'createAssignmentDraft',
@@ -56,6 +66,11 @@ const publishAssignmentCallable = httpsCallable<PublishAssignmentInput, unknown>
 const assignPublishedAssignmentCallable = httpsCallable<AssignPublishedAssignmentInput, unknown>(
   functions,
   'assignPublishedAssignment',
+  firebaseRuntime.callableOptions,
+);
+const generateAssignmentDraftCallable = httpsCallable<GenerateAssignmentDraftInput, unknown>(
+  functions,
+  'generateAssignmentDraft',
   firebaseRuntime.callableOptions,
 );
 
@@ -146,6 +161,47 @@ const safely = async <Result>(action: () => Promise<Result>): Promise<Result> =>
     throw new Error(ACTION_ERROR);
   }
 };
+
+const fileToBase64 = async (file: File): Promise<string> => {
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  let binary = '';
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return btoa(binary);
+};
+
+const supportedMimeType = (file: File): string => {
+  if (file.type) return file.type;
+  const extension = file.name.split('.').at(-1)?.toLowerCase();
+  if (extension === 'pdf') return 'application/pdf';
+  if (extension === 'docx') {
+    return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+  }
+  return 'text/plain';
+};
+
+export const generateAssignmentDraft = ({
+  classroomId,
+  prompt,
+  file,
+}: Readonly<{ classroomId: string; prompt?: string; file?: File }>) =>
+  safely(async () => {
+    const response = await generateAssignmentDraftCallable({
+      classroomId: classroomIdSchema.parse(classroomId),
+      ...(prompt?.trim() ? { prompt: prompt.trim() } : {}),
+      ...(file
+        ? {
+            file: {
+              base64Data: await fileToBase64(file),
+              fileName: file.name,
+              mimeType: supportedMimeType(file),
+            },
+          }
+        : {}),
+    });
+    const envelope = strictRecord(response.data, ['claimsRefreshRequired', 'draft']);
+    parseClaimsRefresh(envelope.claimsRefreshRequired);
+    return assignmentDraftSchema.parse(envelope.draft);
+  });
 
 export const createAssignmentDraft = (input: CreateAssignmentDraftInput) =>
   safely(async () => {

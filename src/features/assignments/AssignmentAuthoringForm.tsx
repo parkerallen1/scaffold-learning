@@ -7,6 +7,7 @@ import type { AssignmentDraft } from '@/lib/domain';
 type QuestionType = AssignmentDraft['questions'][number]['questionType'];
 
 interface AssignmentAuthoringFormProps {
+  initialDraft?: AssignmentDraft;
   isSaving?: boolean;
   onPublish: (draft: AssignmentDraft) => Promise<void> | void;
 }
@@ -28,16 +29,20 @@ const FieldError = ({ message }: { message?: string }) =>
   ) : null;
 
 export const AssignmentAuthoringForm = ({
+  initialDraft,
   isSaving = false,
   onPublish,
 }: AssignmentAuthoringFormProps) => {
-  const [title, setTitle] = useState('');
+  const [title, setTitle] = useState(initialDraft?.title ?? '');
   const [questionType, setQuestionType] = useState<QuestionType>('numeric');
   const [prompt, setPrompt] = useState('');
   const [answer, setAnswer] = useState('');
   const [choices, setChoices] = useState('');
   const [hints, setHints] = useState('');
-  const [questions, setQuestions] = useState<AssignmentDraft['questions']>([]);
+  const [questions, setQuestions] = useState<AssignmentDraft['questions']>(
+    initialDraft?.questions ?? [],
+  );
+  const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null);
   const [error, setError] = useState<string>();
 
   const resetQuestion = () => {
@@ -45,12 +50,33 @@ export const AssignmentAuthoringForm = ({
     setAnswer('');
     setChoices('');
     setHints('');
+    setEditingQuestionId(null);
+  };
+
+  const editQuestion = (question: AssignmentDraft['questions'][number]) => {
+    setEditingQuestionId(question.id);
+    setQuestionType(question.questionType);
+    setPrompt(question.prompt);
+    setHints(question.approvedHints.join('\n'));
+    if (question.questionType === 'numeric') {
+      setAnswer(String(question.expectedValue));
+      setChoices('');
+    } else if (question.questionType === 'multipleChoice') {
+      setChoices(question.choices.map((choice) => choice.label).join('\n'));
+      setAnswer(
+        String(question.choices.findIndex((choice) => choice.id === question.correctChoiceId) + 1),
+      );
+    } else {
+      setAnswer(question.acceptedAnswers.join('\n'));
+      setChoices('');
+    }
+    setError(undefined);
   };
 
   const addQuestion = () => {
     setError(undefined);
     const common = {
-      id: newId('question'),
+      id: editingQuestionId ?? newId('question'),
       prompt,
       approvedHints: lines(hints),
     };
@@ -89,7 +115,11 @@ export const AssignmentAuthoringForm = ({
       setError(parsed.error.issues[0]?.message ?? 'Review this question before adding it.');
       return;
     }
-    setQuestions((current) => [...current, parsed.data]);
+    setQuestions((current) =>
+      editingQuestionId === null
+        ? [...current, parsed.data]
+        : current.map((question) => (question.id === editingQuestionId ? parsed.data : question)),
+    );
     resetQuestion();
   };
 
@@ -124,7 +154,9 @@ export const AssignmentAuthoringForm = ({
       </section>
 
       <fieldset className="rounded-2xl bg-white p-6 shadow-md">
-        <legend className="px-1 text-xl font-bold text-slate-950">Add a question</legend>
+        <legend className="px-1 text-xl font-bold text-slate-950">
+          {editingQuestionId ? 'Edit question' : 'Add a question'}
+        </legend>
         <label className="mt-3 block font-semibold text-slate-800">
           Response type
           <select
@@ -199,7 +231,7 @@ export const AssignmentAuthoringForm = ({
           onClick={addQuestion}
           className="mt-5 rounded-lg border border-blue-700 px-4 py-2 font-semibold text-blue-800 hover:bg-blue-50"
         >
-          Add question
+          {editingQuestionId ? 'Save question changes' : 'Add question'}
         </button>
         <FieldError message={error} />
       </fieldset>
@@ -218,6 +250,14 @@ export const AssignmentAuthoringForm = ({
                 <p className="mt-1 text-sm capitalize text-slate-600">
                   {question.questionType.replace(/([A-Z])/g, ' $1')}
                 </p>
+                <button
+                  type="button"
+                  onClick={() => editQuestion(question)}
+                  className="mt-3 mr-4 text-sm font-semibold text-blue-700 underline"
+                  aria-label={`Edit question ${index + 1}`}
+                >
+                  Edit
+                </button>
                 <button
                   type="button"
                   onClick={() =>

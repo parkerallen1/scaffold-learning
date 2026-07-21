@@ -1,6 +1,7 @@
 import { useState } from 'react';
 
 import { AssignmentAuthoringForm } from '@/features/assignments/AssignmentAuthoringForm';
+import { AssignmentDraftGenerator } from '@/features/assignments/AssignmentDraftGenerator';
 import {
   assignPublishedAssignment,
   createAssignmentDraft,
@@ -20,7 +21,9 @@ export const TeacherAssignmentsPage = () => {
   const [isWorking, setIsWorking] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [draftNotice, setDraftNotice] = useState<string | null>(null);
   const [formKey, setFormKey] = useState(0);
+  const [generatedDraft, setGeneratedDraft] = useState<AssignmentDraft | undefined>();
 
   const activeClassrooms = classrooms.data.filter((classroom) => classroom.status === 'active');
   const selectedClassroom =
@@ -36,6 +39,7 @@ export const TeacherAssignmentsPage = () => {
     setSelectedStudentIds([]);
     setError(null);
     setSuccess(null);
+    setDraftNotice(null);
   };
 
   const toggleStudent = (studentId: string) => {
@@ -66,6 +70,7 @@ export const TeacherAssignmentsPage = () => {
     setIsWorking(true);
     setError(null);
     setSuccess(null);
+    setDraftNotice(null);
     try {
       const created = await createAssignmentDraft({
         classroomId: selectedClassroom.id,
@@ -96,7 +101,9 @@ export const TeacherAssignmentsPage = () => {
   const createAnother = () => {
     setSuccess(null);
     setError(null);
+    setDraftNotice(null);
     setFormKey((current) => current + 1);
+    setGeneratedDraft(undefined);
   };
 
   return (
@@ -247,8 +254,28 @@ export const TeacherAssignmentsPage = () => {
                 Publishing the protected assignment and assigning students…
               </p>
             )}
+            {draftNotice && (
+              <p
+                role="status"
+                className="mb-4 rounded-lg bg-violet-50 p-3 font-medium text-violet-900"
+              >
+                {draftNotice}
+              </p>
+            )}
+            <div className="mb-6">
+              <AssignmentDraftGenerator
+                classroomId={selectedClassroom.id}
+                onGenerated={(draft) => {
+                  setGeneratedDraft(draft);
+                  setFormKey((current) => current + 1);
+                  setError(null);
+                  setDraftNotice('Draft generated. Review and edit every field before publishing.');
+                }}
+              />
+            </div>
             <AssignmentAuthoringForm
               key={formKey}
+              initialDraft={generatedDraft}
               isSaving={isWorking}
               onPublish={(draft) => void publishAndAssign(draft)}
             />

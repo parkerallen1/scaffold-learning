@@ -5,6 +5,7 @@ import { assignmentDraftSchema } from '@/lib/domain';
 import {
   assignPublishedAssignment,
   createAssignmentDraft,
+  generateAssignmentDraft,
   publishAssignment,
 } from './assignmentService';
 
@@ -93,6 +94,20 @@ describe('assignmentService', () => {
     expect(result).toEqual({ assignment: publicAssignment, revision });
     expect(JSON.stringify(result)).not.toContain('expectedValue');
     expect(JSON.stringify(result)).not.toContain('answerKey');
+  });
+
+  it('strictly parses an AI-generated editable draft', async () => {
+    firebaseHarness.callables
+      .get('generateAssignmentDraft')
+      ?.mockResolvedValue(envelope({ draft }));
+
+    await expect(
+      generateAssignmentDraft({ classroomId, prompt: 'Create a number sense check.' }),
+    ).resolves.toEqual(draft);
+    expect(firebaseHarness.callables.get('generateAssignmentDraft')).toHaveBeenCalledWith({
+      classroomId,
+      prompt: 'Create a number sense check.',
+    });
   });
 
   it('validates the publication transition and every returned student target', async () => {

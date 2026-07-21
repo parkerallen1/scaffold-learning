@@ -11,7 +11,7 @@ This repository is the OpenAI Build Week education-pathway project and a synthet
 - Structured teacher onboarding based on observable classroom behavior, not diagnoses.
 - Fixed-catalog support recommendations through a deterministic local provider or server-side OpenAI Responses API.
 - Explicit teacher review, manual fallback, immutable support-plan versions, and revert.
-- Teacher-authored numeric, multiple-choice, and short-text assignments.
+- Teacher-authored assignments plus editable AI drafts from a prompt, PDF, DOCX, or text file.
 - Server-owned publication, protected answer keys, and student targeting pinned to a plan version.
 - Student assignment resume, deterministic checking, neutral retries, review-later escape, approved supports, scratch canvas, and local answer recovery.
 - Read-only teacher session review for submitted responses, outcomes, timing, active supports, and support-use events.
@@ -26,7 +26,7 @@ The product contract is [PLAN.md](./PLAN.md). The packet-sized build roadmap is 
 - AI can use only the typed support catalog and must cite supplied evidence.
 - AI output cannot diagnose, compare students with peers, grade high-stakes work, or infer causes.
 - Answer keys, PIN hashes, onboarding notes, plan history, and AI calls stay behind server boundaries.
-- Browser speech synthesis handles read-aloud. No cloud speech credential is shipped to the client.
+- OpenAI TTS runs behind an authenticated callable and falls back to browser speech. No cloud speech credential is shipped to the client.
 - Countdown expiry never submits or advances work.
 - The Build Week demo uses synthetic student data only.
 
@@ -73,9 +73,9 @@ deterministic fake AI and does not send observations to OpenAI.
 
 ## ChatGPT/OpenAI API configuration
 
-The application does not use a separate “ChatGPT API.” Teacher recommendations and evidence audits
-run through the official OpenAI SDK and Responses API. There is no active Gemini provider, client,
-credential, or dependency.
+The application does not use a separate “ChatGPT API.” Teacher recommendations, evidence audits,
+IEP analysis, assignment drafting, and read-aloud run through the official OpenAI SDK. There is no
+active Gemini provider, client, credential, or dependency.
 
 Local development always selects the fake providers. For a reviewed production deployment:
 
@@ -83,7 +83,12 @@ Local development always selects the fake providers. For a reviewed production d
 firebase functions:secrets:set OPENAI_API_KEY
 ```
 
-Set the Functions runtime variables `AI_PROVIDER=openai` and `AI_FEATURES_ENABLED=true`. The second variable is a production kill switch: live OpenAI calls remain disabled unless its value is exactly `true`. Optional overrides are `OPENAI_RECOMMENDATION_MODEL` and `OPENAI_AUDIT_MODEL`; both default to the cost-balanced `gpt-5.6-terra` tier and are centralized in the server provider files.
+Set the Functions runtime variables `AI_PROVIDER=openai` and `AI_FEATURES_ENABLED=true`. The second
+variable is a production kill switch: live OpenAI calls remain disabled unless its value is exactly
+`true`. Assignment drafting defaults to `gpt-5.6-luna`, read-aloud uses `gpt-4o-mini-tts`, and the
+other reviewed AI workflows keep their server-side defaults. Optional model overrides include
+`OPENAI_ASSIGNMENT_MODEL`, `OPENAI_RECOMMENDATION_MODEL`, `OPENAI_AUDIT_MODEL`, and
+`OPENAI_IEP_MODEL`.
 
 Never put `OPENAI_API_KEY` in `.env.local`, a `VITE_*` variable, or client source. OpenAI requests use structured outputs, `store: false`, bounded timeouts, no retries, and post-response safety validation.
 
@@ -97,11 +102,13 @@ npm run firebase:validate
 npm run e2e
 ```
 
-`npm run check` runs formatting, lint, root/domain/Functions typechecks, the unit and component test suite, all builds, and the client-boundary secret scan. `npm run firebase:validate` runs deny-first Firestore rules tests and requires Java. CI supplies Java 21.
+`npm run check` runs formatting, lint, root/domain/Functions typechecks, the unit and component test
+suite, all builds, and the client-boundary secret scan. `npm run firebase:validate` runs deny-first
+Firestore rules tests and requires Java.
 
 `npm run e2e` builds the demo and runs the two system-Chrome Playwright paths against isolated Auth,
-Firestore, and Functions emulators. It requires Java 21 and Google Chrome; CI installs Java and keeps
-failure traces/screenshots. See [tests/e2e/README.md](./tests/e2e/README.md).
+Firestore, and Functions emulators. It requires Java 21 and Google Chrome and keeps local failure
+traces/screenshots. See [tests/e2e/README.md](./tests/e2e/README.md).
 
 Useful commands:
 

@@ -7,6 +7,7 @@ import { TeacherAssignmentsPage } from './TeacherAssignmentsPage';
 const assignmentHarness = vi.hoisted(() => ({
   assignPublishedAssignment: vi.fn(),
   createAssignmentDraft: vi.fn(),
+  generateAssignmentDraft: vi.fn(),
   publishAssignment: vi.fn(),
   useAuth: vi.fn(),
   useClassroomStudents: vi.fn(),
@@ -16,6 +17,7 @@ const assignmentHarness = vi.hoisted(() => ({
 vi.mock('@/features/assignments/assignmentService', () => ({
   assignPublishedAssignment: assignmentHarness.assignPublishedAssignment,
   createAssignmentDraft: assignmentHarness.createAssignmentDraft,
+  generateAssignmentDraft: assignmentHarness.generateAssignmentDraft,
   publishAssignment: assignmentHarness.publishAssignment,
 }));
 

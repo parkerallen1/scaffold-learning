@@ -28,6 +28,7 @@ export const QuestionCard = ({
       <button
         type="button"
         aria-label="Read question aloud"
+        title="AI-generated voice"
         className="group flex shrink-0 items-center justify-center"
         onClick={onSpeak}
       >
