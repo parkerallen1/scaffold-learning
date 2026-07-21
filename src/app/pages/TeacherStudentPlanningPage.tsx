@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { AuditReviewPanel } from '@/features/audits/AuditReviewPanel';
 import { OnboardingInterview } from '@/features/onboarding/OnboardingInterview';
 import type { OnboardingProfileDraft } from '@/features/onboarding/OnboardingInterview';
+import { IepUploadPanel } from '@/features/planning/IepUploadPanel';
 import {
   createSupportPlanVersion,
   getStudentPlanningData,
@@ -20,7 +21,7 @@ import {
   type SupportSettings,
 } from '@/lib/domain';
 
-type WorkflowStep = 'overview' | 'interview' | 'review';
+type WorkflowStep = 'overview' | 'interview' | 'iep' | 'review';
 
 const LOAD_ERROR = 'Unable to load this student’s planning workspace. Please try again.';
 const RECOMMENDATION_ERROR =
@@ -159,7 +160,12 @@ export const TeacherStudentPlanningPage = ({
     if (isWorking) return;
     const supportLabel =
       supports.length === 1 ? '1 approved support' : `${supports.length} approved supports`;
-    if (!window.confirm(`Make ${supportLabel} live for ${data?.student.displayName ?? 'this student'}?`)) return;
+    if (
+      !window.confirm(
+        `Make ${supportLabel} live for ${data?.student.displayName ?? 'this student'}?`,
+      )
+    )
+      return;
 
     setIsWorking(true);
     setError(null);
@@ -258,6 +264,20 @@ export const TeacherStudentPlanningPage = ({
     );
   }
 
+  if (step === 'iep') {
+    return (
+      <main className="min-h-screen bg-slate-50 p-6 text-slate-900">
+        <IepUploadPanel
+          {...identity}
+          studentName={data.student.displayName}
+          onBack={() => setStep('overview')}
+          onUseQuestions={() => setStep('interview')}
+          onComplete={completeInterview}
+        />
+      </main>
+    );
+  }
+
   if (step === 'review') {
     return (
       <div className="min-h-screen bg-slate-50 text-slate-900">
@@ -317,6 +337,18 @@ export const TeacherStudentPlanningPage = ({
         className="mt-4 rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800 disabled:opacity-50"
       >
         {data.profile === null ? 'Start observation interview' : 'Review observation interview'}
+      </button>
+      <button
+        type="button"
+        disabled={!canEdit || isWorking}
+        onClick={() => {
+          setError(null);
+          setSuccess(null);
+          setStep('iep');
+        }}
+        className="mt-4 ml-3 rounded-lg border border-blue-700 px-4 py-2 font-semibold text-blue-700 hover:bg-blue-50 disabled:opacity-50"
+      >
+        Upload IEP instead
       </button>
     </section>
   );

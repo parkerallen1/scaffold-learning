@@ -21,6 +21,7 @@ export {
   saveStudentProfile,
 } from './planning/supportPlanPersistence.js';
 export { recommendStudentSupports } from './planning/recommendStudentSupports.js';
+export { analyzeIepDocument } from './planning/analyzeIepDocument.js';
 export {
   assignPublishedAssignment,
   createAssignmentDraft,

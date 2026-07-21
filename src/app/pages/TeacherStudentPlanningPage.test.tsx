@@ -53,6 +53,12 @@ vi.mock('@/features/onboarding/OnboardingInterview', () => ({
   ),
 }));
 
+vi.mock('@/features/planning/IepUploadPanel', () => ({
+  IepUploadPanel: ({ studentName }: { studentName: string }) => (
+    <section aria-label="IEP import">IEP import for {studentName}</section>
+  ),
+}));
+
 vi.mock('@/features/support-plans/SupportPlanReview', () => ({
   SupportPlanReview: ({
     onComplete,
@@ -149,9 +155,7 @@ describe('TeacherStudentPlanningPage', () => {
 
     await user.click(screen.getByRole('button', { name: 'Save reviewed supports' }));
     await waitFor(() => expect(planningHarness.createSupportPlanVersion).toHaveBeenCalledOnce());
-    expect(window.confirm).toHaveBeenCalledWith(
-      'Make 1 approved support live for Alex Student?',
-    );
+    expect(window.confirm).toHaveBeenCalledWith('Make 1 approved support live for Alex Student?');
     expect(await screen.findByRole('status')).toHaveTextContent('Support plan is now active');
   });
 
@@ -166,6 +170,18 @@ describe('TeacherStudentPlanningPage', () => {
 
     expect(await screen.findByText(/build the plan manually/i)).toBeInTheDocument();
     expect(screen.queryByText('provider details')).not.toBeInTheDocument();
+  });
+
+  it('offers IEP import as an alternative to observation questions', async () => {
+    const user = userEvent.setup();
+    render(<TeacherStudentPlanningPage search={search} />);
+
+    await screen.findByRole('heading', { name: 'Support plan for Alex Student' });
+    await user.click(screen.getByRole('button', { name: 'Upload IEP instead' }));
+
+    expect(screen.getByRole('region', { name: 'IEP import' })).toHaveTextContent(
+      'IEP import for Alex Student',
+    );
   });
 
   it('requires confirmation before creating a revert version', async () => {

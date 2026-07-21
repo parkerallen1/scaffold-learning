@@ -3,7 +3,8 @@ export const AI_DAY_LIMIT = 50;
 export const AI_MINUTE_WINDOW_MS = 60_000;
 export const AI_DAY_WINDOW_MS = 86_400_000;
 
-export type AiOperation = 'recommendStudentSupports' | 'auditStudentEvidence';
+export type AiOperation =
+  'recommendStudentSupports' | 'auditStudentEvidence' | 'analyzeIepDocument';
 export type AiProviderName = 'fake' | 'openai';
 export type AiTelemetryStatus =
   'completed' | 'feature_disabled' | 'rate_limited' | 'provider_fallback' | 'internal_failure';

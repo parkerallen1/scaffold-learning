@@ -2,6 +2,9 @@ import { httpsCallable } from 'firebase/functions';
 
 import {
   classroomIdSchema,
+  analyzeIepDocumentInputSchema,
+  IEP_MAX_FILE_BYTES,
+  iepProfileDraftSchema,
   recommendationResultSchema,
   studentIdSchema,
   studentSafeIdentitySchema,
@@ -11,6 +14,7 @@ import {
   supportSettingsSchema,
   teacherOnlyStudentProfileSchema,
   type RecommendationResult,
+  type IepProfileDraft,
   type StructuredObservations,
   type StudentSafeIdentity,
   type SupportPlanVersion,
@@ -47,6 +51,14 @@ const recommendStudentSupportsCallable = httpsCallable<PlanningIdentityInput, un
   'recommendStudentSupports',
   firebaseRuntime.callableOptions,
 );
+const analyzeIepDocumentCallable = httpsCallable<
+  PlanningIdentityInput & {
+    fileName: string;
+    mimeType: string;
+    base64Data: string;
+  },
+  unknown
+>(functions, 'analyzeIepDocument', firebaseRuntime.callableOptions);
 const createSupportPlanVersionCallable = httpsCallable<
   PlanningIdentityInput & { supports: SupportSettings[] },
   unknown
@@ -165,6 +177,50 @@ export const recommendStudentSupports = (input: PlanningIdentityInput) =>
       throw new Error(ACTION_ERROR);
     }
     return recommendationResultSchema.parse(data.recommendationResult);
+  });
+
+const mimeTypeForIep = (file: File) => {
+  if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
+    return 'application/pdf' as const;
+  }
+  if (
+    file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+    file.name.toLowerCase().endsWith('.docx')
+  ) {
+    return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' as const;
+  }
+  if (file.type === 'text/plain' || file.name.toLowerCase().endsWith('.txt')) {
+    return 'text/plain' as const;
+  }
+  throw new Error(ACTION_ERROR);
+};
+
+const base64For = async (file: File) => {
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  let binary = '';
+  for (let offset = 0; offset < bytes.length; offset += 32_768) {
+    binary += String.fromCharCode(...bytes.subarray(offset, offset + 32_768));
+  }
+  return btoa(binary);
+};
+
+export const analyzeIepDocument = (
+  input: PlanningIdentityInput & { file: File },
+): Promise<IepProfileDraft> =>
+  safely(async () => {
+    if (input.file.size === 0 || input.file.size > IEP_MAX_FILE_BYTES) {
+      throw new Error(ACTION_ERROR);
+    }
+    const identity = planningIdentity(input);
+    const payload = analyzeIepDocumentInputSchema.parse({
+      ...identity,
+      fileName: input.file.name,
+      mimeType: mimeTypeForIep(input.file),
+      base64Data: await base64For(input.file),
+    });
+    const response = await analyzeIepDocumentCallable(payload);
+    const data = envelope(response.data);
+    return iepProfileDraftSchema.parse(data.profileDraft);
   });
 
 export const createSupportPlanVersion = (

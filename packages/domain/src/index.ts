@@ -4,6 +4,7 @@ export * from './audits.js';
 export * from './checking.js';
 export * from './fixtures.js';
 export * from './identity.js';
+export * from './iep.js';
 export * from './ids.js';
 export * from './metrics.js';
 export * from './onboarding.js';
