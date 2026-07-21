@@ -262,6 +262,7 @@ export const exchangeStudentCredentials = onCall(
   {
     consumeAppCheckToken: !IS_EMULATOR,
     enforceAppCheck: !IS_EMULATOR,
+    invoker: 'public',
     maxInstances: 20,
     secrets: [studentPinPepper],
   },

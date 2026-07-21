@@ -18,6 +18,7 @@ export const synthesizeSpeech = onCall(
   {
     consumeAppCheckToken: process.env.FUNCTIONS_EMULATOR !== 'true',
     enforceAppCheck: process.env.FUNCTIONS_EMULATOR !== 'true',
+    invoker: 'public',
     maxInstances: 8,
     secrets: [openAiApiKey],
     timeoutSeconds: 30,

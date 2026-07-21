@@ -71,6 +71,7 @@ const generatePinForEnvironment = (): string => BUILD_WEEK_STUDENT_PIN;
 export const teacherCallableOptions = Object.freeze({
   consumeAppCheckToken: !IS_EMULATOR,
   enforceAppCheck: !IS_EMULATOR,
+  invoker: 'public' as const,
   maxInstances: 20,
 });
 

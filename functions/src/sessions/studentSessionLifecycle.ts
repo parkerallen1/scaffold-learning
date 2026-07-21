@@ -68,6 +68,7 @@ const IS_EMULATOR = process.env.FUNCTIONS_EMULATOR === 'true';
 const callableOptions = Object.freeze({
   consumeAppCheckToken: !IS_EMULATOR,
   enforceAppCheck: !IS_EMULATOR,
+  invoker: 'public' as const,
   maxInstances: 30,
 });
 

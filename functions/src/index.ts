@@ -49,7 +49,7 @@ const healthcheckResultSchema = z.object({
 });
 
 export const healthcheck = onCall(
-  { enforceAppCheck: process.env.FUNCTIONS_EMULATOR !== 'true' },
+  { enforceAppCheck: process.env.FUNCTIONS_EMULATOR !== 'true', invoker: 'public' },
   () =>
     healthcheckResultSchema.parse({
       ok: true,
