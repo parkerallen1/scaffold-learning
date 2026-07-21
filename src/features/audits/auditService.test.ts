@@ -31,6 +31,7 @@ const supportCounts = {
   flexibleResponse: 0,
   calmPacing: 0,
   breakPrompt: 0,
+  dyslexiaFont: 0,
 };
 const evidenceSummary = {
   sessionCount: 2,
