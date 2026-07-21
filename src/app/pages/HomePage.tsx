@@ -7,8 +7,7 @@ export const HomePage = () => (
         </p>
         <h1 className="mt-2 text-4xl font-bold sm:text-5xl">Scaffold Learning</h1>
         <p className="mt-4 max-w-2xl text-lg text-slate-600">
-          Help students start, sustain, and complete teacher-assigned work with supports chosen by
-          their teacher.
+          Empowering educators and supporting students with disabilities and learning differences.
         </p>
 
         <div className="mt-8 grid gap-4 sm:grid-cols-2">
