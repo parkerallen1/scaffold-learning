@@ -335,12 +335,14 @@ export function SupportPlanReview({
 }: SupportPlanReviewProps) {
   const [items, setItems] = useState<ReviewItem[]>(() => initialItems(recommendations));
   const [error, setError] = useState<string | null>(null);
+  const [decisionMessage, setDecisionMessage] = useState<string | null>(null);
 
   const changeSettings = (supportKey: SupportKey, settings: SupportSettings) => {
     setItems((current) =>
       current.map((item) => (item.supportKey === supportKey ? { ...item, settings } : item)),
     );
     setError(null);
+    setDecisionMessage(null);
   };
 
   const decide = (supportKey: SupportKey, status: 'approved' | 'rejected') => {
@@ -356,6 +358,9 @@ export function SupportPlanReview({
       ),
     );
     setError(null);
+    setDecisionMessage(
+      `${SUPPORT_CATALOG[supportKey].label} ${status === 'approved' ? 'approved' : 'rejected'}.`,
+    );
   };
 
   const addManualSupport = (supportKey: SupportKey) => {
@@ -424,15 +429,27 @@ export function SupportPlanReview({
             <article
               key={item.supportKey}
               aria-label={`${catalog.label} review`}
-              className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
+              className={`rounded-2xl border bg-white p-5 shadow-sm ${
+                item.status === 'approved'
+                  ? 'border-emerald-400 ring-2 ring-emerald-100'
+                  : item.status === 'rejected'
+                    ? 'border-slate-300 opacity-75'
+                    : 'border-slate-200'
+              }`}
             >
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <h2 className="text-xl font-bold">{catalog.label}</h2>
                   <p className="mt-1 text-sm text-slate-600">{catalog.description}</p>
                 </div>
-                <span className="rounded-full bg-slate-100 px-3 py-1 text-sm font-semibold capitalize">
-                  {item.status}
+                <span
+                  className={`rounded-full px-3 py-1 text-sm font-semibold capitalize ${
+                    item.status === 'approved'
+                      ? 'bg-emerald-100 text-emerald-800'
+                      : 'bg-slate-100 text-slate-700'
+                  }`}
+                >
+                  {item.status === 'approved' ? '✓ Approved' : item.status}
                 </span>
               </div>
 
@@ -480,10 +497,15 @@ export function SupportPlanReview({
                 <button
                   type="button"
                   onClick={() => decide(item.supportKey, 'approved')}
-                  className="rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
-                  aria-label={`Approve ${catalog.label}`}
+                  disabled={item.status === 'approved'}
+                  className="rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800 disabled:bg-emerald-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+                  aria-label={
+                    item.status === 'approved'
+                      ? `${catalog.label} approved`
+                      : `Approve ${catalog.label}`
+                  }
                 >
-                  Approve
+                  {item.status === 'approved' ? '✓ Approved' : 'Approve'}
                 </button>
                 <button
                   type="button"
@@ -498,6 +520,16 @@ export function SupportPlanReview({
           );
         })}
       </section>
+
+      {decisionMessage && (
+        <p
+          role="status"
+          aria-live="polite"
+          className="rounded-lg bg-emerald-50 p-3 font-semibold text-emerald-800"
+        >
+          {decisionMessage}
+        </p>
+      )}
 
       <section aria-label="Manual support catalog" className="rounded-2xl bg-slate-50 p-5">
         <h2 className="text-xl font-bold">Manual support catalog</h2>
@@ -554,9 +586,10 @@ export function SupportPlanReview({
       <button
         type="button"
         onClick={finish}
+        aria-label="Save approved plan"
         className="rounded-lg bg-emerald-700 px-5 py-3 font-semibold text-white hover:bg-emerald-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600"
       >
-        Save approved plan
+        Save approved plan{approvedItems.length > 0 ? ` (${approvedItems.length})` : ''}
       </button>
     </main>
   );

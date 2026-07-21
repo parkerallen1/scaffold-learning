@@ -61,6 +61,8 @@ describe('SupportPlanReview', () => {
     const speed = screen.getByRole('spinbutton', { name: 'Reading speed' });
     fireEvent.change(speed, { target: { value: '1.5' } });
     await user.click(screen.getByRole('button', { name: 'Approve Read aloud' }));
+    expect(screen.getByRole('status')).toHaveTextContent('Read aloud approved.');
+    expect(screen.getByRole('button', { name: 'Read aloud approved' })).toBeDisabled();
 
     const preview = within(screen.getByRole('region', { name: 'Student preview' }));
     expect(

@@ -41,14 +41,32 @@ const PlanSummary = ({ plan }: { plan: StudentPlanningData['activePlan'] }) => {
 
   return (
     <div className="mt-3">
-      <p className="font-semibold text-slate-900">Active version {plan.version}</p>
       {plan.supports.length === 0 ? (
-        <p className="mt-1 text-sm text-slate-600">No supports are enabled in this version.</p>
+        <p className="text-sm text-slate-600">No supports are currently enabled.</p>
       ) : (
-        <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-700">
-          {plan.supports.map((support) => (
-            <li key={support.supportKey}>{SUPPORT_CATALOG[support.supportKey].label}</li>
-          ))}
+        <ul className="grid gap-3 sm:grid-cols-2">
+          {plan.supports.map((support) => {
+            const catalog = SUPPORT_CATALOG[support.supportKey];
+            return (
+              <li
+                key={support.supportKey}
+                className="flex items-start justify-between gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4"
+              >
+                <span className="font-semibold text-slate-900">{catalog.label}</span>
+                <details className="relative shrink-0">
+                  <summary
+                    aria-label={`What ${catalog.label} does`}
+                    className="flex h-7 w-7 cursor-pointer list-none items-center justify-center rounded-full border border-emerald-700 font-bold text-emerald-800"
+                  >
+                    i
+                  </summary>
+                  <p className="absolute right-0 z-10 mt-2 w-64 rounded-lg border border-slate-200 bg-white p-3 text-sm font-normal text-slate-700 shadow-lg">
+                    {catalog.description}
+                  </p>
+                </details>
+              </li>
+            );
+          })}
         </ul>
       )}
     </div>
@@ -141,15 +159,15 @@ export const TeacherStudentPlanningPage = ({
     if (isWorking) return;
     const supportLabel =
       supports.length === 1 ? '1 approved support' : `${supports.length} approved supports`;
-    if (!window.confirm(`Create a new plan version with ${supportLabel}?`)) return;
+    if (!window.confirm(`Make ${supportLabel} live for ${data?.student.displayName ?? 'this student'}?`)) return;
 
     setIsWorking(true);
     setError(null);
     try {
-      const plan = await createSupportPlanVersion({ ...identity, supports });
+      await createSupportPlanVersion({ ...identity, supports });
       await load();
       setStep('overview');
-      setSuccess(`Support plan version ${plan.version} is now active.`);
+      setSuccess('Support plan is now active.');
     } catch {
       setError('Unable to save the approved support plan. Please try again.');
     } finally {
@@ -278,6 +296,30 @@ export const TeacherStudentPlanningPage = ({
     data.activePlan === null
       ? []
       : data.planHistory.filter((plan) => plan.version < data.activePlan!.version);
+  const observationsPanel = (
+    <section className="rounded-2xl bg-white p-6 shadow-md" aria-labelledby="profile-heading">
+      <h2 id="profile-heading" className="text-xl font-bold">
+        Teacher observations
+      </h2>
+      <p className="mt-2 text-sm text-slate-600">
+        {data.profile === null
+          ? 'No structured observation profile has been saved.'
+          : 'A structured observation profile is ready. Review it before requesting new suggestions.'}
+      </p>
+      <button
+        type="button"
+        disabled={!canEdit || isWorking}
+        onClick={() => {
+          setError(null);
+          setSuccess(null);
+          setStep('interview');
+        }}
+        className="mt-4 rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800 disabled:opacity-50"
+      >
+        {data.profile === null ? 'Start observation interview' : 'Review observation interview'}
+      </button>
+    </section>
+  );
 
   return (
     <main className="min-h-screen bg-slate-50 p-6 text-slate-900">
@@ -316,28 +358,7 @@ export const TeacherStudentPlanningPage = ({
           </p>
         )}
 
-        <section className="rounded-2xl bg-white p-6 shadow-md" aria-labelledby="profile-heading">
-          <h2 id="profile-heading" className="text-xl font-bold">
-            Teacher observations
-          </h2>
-          <p className="mt-2 text-sm text-slate-600">
-            {data.profile === null
-              ? 'No structured observation profile has been saved.'
-              : 'A structured observation profile is ready. Review it before requesting new suggestions.'}
-          </p>
-          <button
-            type="button"
-            disabled={!canEdit || isWorking}
-            onClick={() => {
-              setError(null);
-              setSuccess(null);
-              setStep('interview');
-            }}
-            className="mt-4 rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800 disabled:opacity-50"
-          >
-            {data.profile === null ? 'Start observation interview' : 'Review observation interview'}
-          </button>
-        </section>
+        {data.activePlan === null && observationsPanel}
 
         <section
           className="rounded-2xl bg-white p-6 shadow-md"
@@ -366,10 +387,10 @@ export const TeacherStudentPlanningPage = ({
           }}
         />
 
-        <section className="rounded-2xl bg-white p-6 shadow-md" aria-labelledby="history-heading">
-          <h2 id="history-heading" className="text-xl font-bold">
+        <details className="rounded-2xl bg-white p-6 shadow-md">
+          <summary id="history-heading" className="cursor-pointer text-xl font-bold">
             Plan history
-          </h2>
+          </summary>
           {data.planHistory.length === 0 ? (
             <p className="mt-3 text-slate-600">No plan versions have been saved.</p>
           ) : (
@@ -411,7 +432,9 @@ export const TeacherStudentPlanningPage = ({
               Only the 50 most recent versions are shown.
             </p>
           )}
-        </section>
+        </details>
+
+        {data.activePlan !== null && observationsPanel}
       </div>
     </main>
   );

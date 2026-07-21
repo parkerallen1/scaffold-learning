@@ -150,9 +150,9 @@ describe('TeacherStudentPlanningPage', () => {
     await user.click(screen.getByRole('button', { name: 'Save reviewed supports' }));
     await waitFor(() => expect(planningHarness.createSupportPlanVersion).toHaveBeenCalledOnce());
     expect(window.confirm).toHaveBeenCalledWith(
-      'Create a new plan version with 1 approved support?',
+      'Make 1 approved support live for Alex Student?',
     );
-    expect(await screen.findByRole('status')).toHaveTextContent('version 1 is now active');
+    expect(await screen.findByRole('status')).toHaveTextContent('Support plan is now active');
   });
 
   it('falls back to the manual catalog when recommendations are unavailable', async () => {
@@ -195,6 +195,7 @@ describe('TeacherStudentPlanningPage', () => {
     planningHarness.revertSupportPlanVersion.mockResolvedValue({ version: 3 });
     render(<TeacherStudentPlanningPage search={search} />);
 
+    await user.click(await screen.findByText('Plan history'));
     await user.click(await screen.findByRole('button', { name: 'Use version 1 settings' }));
     await waitFor(() =>
       expect(planningHarness.revertSupportPlanVersion).toHaveBeenCalledWith({
