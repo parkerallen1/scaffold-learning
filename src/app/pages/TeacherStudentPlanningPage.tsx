@@ -54,17 +54,21 @@ const PlanSummary = ({ plan }: { plan: StudentPlanningData['activePlan'] }) => {
                 className="flex items-start justify-between gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4"
               >
                 <span className="font-semibold text-slate-900">{catalog.label}</span>
-                <details className="relative shrink-0">
-                  <summary
+                <span className="group relative shrink-0">
+                  <span
+                    tabIndex={0}
                     aria-label={`What ${catalog.label} does`}
-                    className="flex h-7 w-7 cursor-pointer list-none items-center justify-center rounded-full border border-emerald-700 font-bold text-emerald-800"
+                    className="flex h-7 w-7 cursor-help items-center justify-center rounded-full border border-emerald-700 font-bold text-emerald-800"
                   >
                     i
-                  </summary>
-                  <p className="absolute right-0 z-10 mt-2 w-64 rounded-lg border border-slate-200 bg-white p-3 text-sm font-normal text-slate-700 shadow-lg">
+                  </span>
+                  <span
+                    role="tooltip"
+                    className="pointer-events-none absolute right-0 z-10 mt-2 hidden w-64 rounded-lg border border-slate-200 bg-white p-3 text-sm font-normal text-slate-700 shadow-lg group-hover:block group-focus-within:block"
+                  >
                     {catalog.description}
-                  </p>
-                </details>
+                  </span>
+                </span>
               </li>
             );
           })}

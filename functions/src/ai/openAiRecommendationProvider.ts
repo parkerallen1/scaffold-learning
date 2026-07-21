@@ -10,6 +10,7 @@ import {
   flexibleResponseSettingsSchema,
   focusViewSettingsSchema,
   hintLadderSettingsSchema,
+  interestRewardSettingsSchema,
   readAloudSettingsSchema,
   readingChunksSettingsSchema,
   recommendationInputSchema,
@@ -56,6 +57,7 @@ const openAiSupportSettingsSchema = z.discriminatedUnion('supportKey', [
   openAiCalmPacingSettingsSchema,
   breakPromptSettingsSchema,
   dyslexiaFontSettingsSchema,
+  interestRewardSettingsSchema,
 ]);
 
 const openAiSupportRecommendationSchema = z

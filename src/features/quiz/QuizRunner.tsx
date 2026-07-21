@@ -1,5 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import type { ChangeEvent } from 'react';
+import { useCallback, useRef, useState } from 'react';
 
 import { QUESTIONS } from '../../constants';
 import { speak } from '../../services/speech';
@@ -7,12 +6,9 @@ import type { Question } from '../../types';
 import { isAnswerCorrect } from './answerChecking';
 import { AnswerPanel } from './components/AnswerPanel';
 import { CompletionScreen } from './components/CompletionScreen';
-import { PrototypeSettingsDialog } from './components/PrototypeSettingsDialog';
 import { QuestionCard } from './components/QuestionCard';
-import { RewardModal } from './components/RewardModal';
 import { ScratchCanvas } from './components/ScratchCanvas';
 import type { ScratchCanvasHandle } from './components/ScratchCanvas';
-import { TimerDisplay } from './components/TimerDisplay';
 
 export const QuizRunner = () => {
   const questions = QUESTIONS;
@@ -24,68 +20,30 @@ export const QuizRunner = () => {
   const [speechError, setSpeechError] = useState<string | null>(null);
   const scratchCanvasRef = useRef<ScratchCanvasHandle>(null);
 
-  const [showSettings, setShowSettings] = useState<boolean>(false);
-  const [appBackgroundColor, setAppBackgroundColor] = useState<string>(
-    'bg-gray-100 dark:bg-gray-900',
-  );
-
-  const [isInterestEnabled, setIsInterestEnabled] = useState<boolean>(false);
-  const [interestFile, setInterestFile] = useState<File | null>(null);
-  const [interestFileUrl, setInterestFileUrl] = useState<string | null>(null);
-  const [showInterestReward, setShowInterestReward] = useState<boolean>(false);
-
-  const [isTimerEnabled, setIsTimerEnabled] = useState<boolean>(false);
-  const [timerSeconds, setTimerSeconds] = useState<number>(180);
-  const [timerValue, setTimerValue] = useState<number>(180);
-
   const currentQuestion: Question = questions[currentQuestionIndex];
-  const isCorrect = answerOutcome === 'correct';
-
   const clearCanvas = useCallback(() => {
     scratchCanvasRef.current?.clear();
   }, []);
 
   const handleNextQuestion = useCallback(() => {
-    setShowInterestReward(false);
     if (currentQuestionIndex < questions.length - 1) {
       setCurrentQuestionIndex((previousIndex) => previousIndex + 1);
       setUserAnswer('');
       setAnswerOutcome(null);
-      setTimerValue(timerSeconds);
       clearCanvas();
     } else {
       setIsFinished(true);
     }
-  }, [clearCanvas, currentQuestionIndex, questions.length, timerSeconds]);
-
-  useEffect(() => {
-    if (isTimerEnabled && !isFinished && !isCorrect) {
-      const timer = setInterval(() => {
-        setTimerValue((previousValue) => {
-          if (previousValue > 1) {
-            return previousValue - 1;
-          }
-          clearInterval(timer);
-          return 0;
-        });
-      }, 1000);
-      return () => clearInterval(timer);
-    }
-  }, [currentQuestionIndex, isCorrect, isFinished, isTimerEnabled]);
+  }, [clearCanvas, currentQuestionIndex, questions.length]);
 
   const handleAnswerChange = (answer: string) => {
     setUserAnswer(answer);
     setAnswerOutcome(null);
-    setShowInterestReward(false);
   };
 
   const handleAnswerSubmit = () => {
     const answerIsCorrect = isAnswerCorrect(currentQuestion, userAnswer);
     setAnswerOutcome(answerIsCorrect ? 'correct' : 'incorrect');
-
-    if (answerIsCorrect && isInterestEnabled && interestFileUrl) {
-      setShowInterestReward(true);
-    }
   };
 
   const handleRestart = () => {
@@ -93,18 +51,7 @@ export const QuizRunner = () => {
     setUserAnswer('');
     setAnswerOutcome(null);
     setIsFinished(false);
-    setTimerValue(timerSeconds);
     clearCanvas();
-  };
-
-  const handleTimerEnabledChange = (enabled: boolean) => {
-    setIsTimerEnabled(enabled);
-    setTimerValue(timerSeconds);
-  };
-
-  const handleTimerSecondsChange = (seconds: number) => {
-    setTimerSeconds(seconds);
-    setTimerValue(seconds);
   };
 
   const handleSpeak = useCallback(async () => {
@@ -121,43 +68,15 @@ export const QuizRunner = () => {
     }
   }, [currentQuestion.question, isLoadingSpeech]);
 
-  const handleInterestFileChange = (event: ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files && event.target.files[0]) {
-      const file = event.target.files[0];
-      setInterestFile(file);
-      if (interestFileUrl) {
-        URL.revokeObjectURL(interestFileUrl);
-      }
-      setInterestFileUrl(URL.createObjectURL(file));
-    }
-  };
-
   return (
     <section
       aria-labelledby="quiz-runner-title"
-      className={`relative min-h-screen ${appBackgroundColor} text-gray-800 dark:text-gray-200 flex flex-col items-center justify-center p-4 sm:p-6 md:p-8 font-sans transition-colors duration-300`}
+      className="relative flex min-h-screen flex-col items-center justify-center bg-gray-100 p-4 font-sans text-gray-800 dark:bg-gray-900 dark:text-gray-200 sm:p-6 md:p-8"
     >
       <h1 id="quiz-runner-title" className="sr-only">
         Synthetic quiz practice
       </h1>
-      <PrototypeSettingsDialog
-        interestFile={interestFile}
-        isInterestEnabled={isInterestEnabled}
-        isOpen={showSettings}
-        isTimerEnabled={isTimerEnabled}
-        onBackgroundColorChange={setAppBackgroundColor}
-        onClose={() => setShowSettings(false)}
-        onInterestEnabledChange={setIsInterestEnabled}
-        onInterestFileChange={handleInterestFileChange}
-        onOpen={() => setShowSettings(true)}
-        onTimerEnabledChange={handleTimerEnabledChange}
-        onTimerSecondsChange={handleTimerSecondsChange}
-        timerSeconds={timerSeconds}
-      >
-        {showInterestReward && interestFileUrl && interestFile && (
-          <RewardModal file={interestFile} fileUrl={interestFileUrl} onNext={handleNextQuestion} />
-        )}
-
+      <div className="relative flex min-h-[85vh] w-full max-w-7xl flex-col rounded-2xl bg-white shadow-2xl dark:bg-gray-800">
         {isFinished ? (
           <CompletionScreen onRestart={handleRestart} />
         ) : (
@@ -173,7 +92,7 @@ export const QuizRunner = () => {
             <ScratchCanvas ref={scratchCanvasRef} questionIndex={currentQuestionIndex}>
               <AnswerPanel
                 answer={userAnswer}
-                isRewardVisible={showInterestReward}
+                isRewardVisible={false}
                 outcome={answerOutcome}
                 onAnswerChange={handleAnswerChange}
                 onNext={handleNextQuestion}
@@ -182,11 +101,7 @@ export const QuizRunner = () => {
             </ScratchCanvas>
           </>
         )}
-      </PrototypeSettingsDialog>
-
-      {isTimerEnabled && !isFinished && (
-        <TimerDisplay configuredSeconds={timerSeconds} remainingSeconds={timerValue} />
-      )}
+      </div>
     </section>
   );
 };

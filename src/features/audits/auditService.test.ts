@@ -32,6 +32,7 @@ const supportCounts = {
   calmPacing: 0,
   breakPrompt: 0,
   dyslexiaFont: 0,
+  interestReward: 0,
 };
 const evidenceSummary = {
   sessionCount: 2,

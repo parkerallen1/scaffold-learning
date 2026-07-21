@@ -73,20 +73,16 @@ const CopyableCredential = ({ label, value }: { label: string; value: string }) 
       type="button"
       aria-label={`Copy ${label.toLowerCase()} ${value}`}
       onClick={() => void copy()}
-      className="rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-left hover:border-blue-400 hover:bg-blue-50"
+      className="inline-flex min-h-8 items-center gap-2 rounded-md border border-slate-300 bg-slate-50 px-2 py-1 text-left text-xs hover:border-blue-400 hover:bg-blue-50"
     >
-      <span className="block text-xs font-semibold uppercase tracking-wide text-slate-500">
-        {label}
-      </span>
-      <span className="mt-0.5 flex items-center gap-2">
-        <code className="font-mono font-bold text-slate-900">{value}</code>
-        <span className="text-xs font-semibold text-blue-700">
-          {copyStatus === 'copied'
-            ? 'Copied'
-            : copyStatus === 'unavailable'
-              ? 'Select to copy'
-              : 'Copy'}
-        </span>
+      <span className="font-semibold text-slate-500">{label.replace('Student ', '')}</span>
+      <code className="font-mono font-bold text-slate-900">{value}</code>
+      <span className="font-semibold text-blue-700">
+        {copyStatus === 'copied'
+          ? 'Copied'
+          : copyStatus === 'unavailable'
+            ? 'Select to copy'
+            : 'Copy'}
       </span>
     </button>
   );
@@ -107,31 +103,28 @@ const StudentRow = ({
   onResetPin: (student: StudentSafeIdentity) => void;
   student: StudentSafeIdentity;
 }) => (
-  <li className="grid gap-4 rounded-xl border border-slate-200 p-4 lg:grid-cols-[minmax(0,1fr)_auto]">
-    <div className="min-w-0">
-      <p className="font-semibold text-slate-900">{student.displayName}</p>
-      <p className="mt-1 text-xs text-slate-500">
-        <span className="capitalize">{student.status}</span> · Access version {student.authVersion}
-      </p>
-      {student.demoStory && (
-        <p className="mt-2 max-w-xl text-sm leading-6 text-slate-600">
-          <span className="font-semibold text-slate-800">Synthetic student story:</span>{' '}
-          {student.demoStory}
-        </p>
+  <li className="relative rounded-xl border border-slate-200 p-4 pb-16">
+    <div className="flex flex-wrap items-start justify-between gap-3">
+      <div className="min-w-0">
+        <p className="font-semibold text-slate-900">{student.displayName}</p>
+        <p className="mt-1 text-xs capitalize text-slate-500">{student.status}</p>
+      </div>
+      {demoMode && (
+        <div className="flex flex-wrap gap-2" aria-label="Build Week student credentials">
+          {student.studentHandle && (
+            <CopyableCredential label="Student handle" value={student.studentHandle} />
+          )}
+          <CopyableCredential label="Student PIN" value={BUILD_WEEK_STUDENT_PIN} />
+        </div>
       )}
     </div>
-    {demoMode && (
-      <div
-        className="flex flex-wrap content-start justify-start gap-2 lg:justify-end"
-        aria-label="Build Week student credentials"
-      >
-        {student.studentHandle && (
-          <CopyableCredential label="Student handle" value={student.studentHandle} />
-        )}
-        <CopyableCredential label="Student PIN" value={BUILD_WEEK_STUDENT_PIN} />
-      </div>
+    {student.demoStory && (
+      <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">
+        <span className="font-semibold text-slate-800">Synthetic student story:</span>{' '}
+        {student.demoStory}
+      </p>
     )}
-    <div className="flex flex-wrap gap-2 lg:col-span-2">
+    <div className="mt-4 flex flex-wrap gap-2 pr-12">
       {demoMode && (
         <a
           href={`/teacher/preview?classroomId=${encodeURIComponent(classroom.id)}&studentId=${encodeURIComponent(student.id)}`}
@@ -164,9 +157,20 @@ const StudentRow = ({
             type="button"
             onClick={() => onDisable(student)}
             disabled={isWorking || student.status === 'disabled'}
-            className="rounded-lg border border-red-300 px-3 py-2 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50"
+            className="absolute bottom-4 right-4 flex h-9 w-9 items-center justify-center rounded-md text-red-700 hover:bg-red-50 disabled:opacity-40"
+            aria-label="Disable access"
+            title={`Remove ${student.displayName} from this classroom`}
           >
-            Disable access
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 24 24"
+              className="h-5 w-5"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path d="M3 6h18M8 6V4h8v2m-9 0 1 14h8l1-14M10 10v6m4-6v6" />
+            </svg>
           </button>
         </>
       )}

@@ -159,6 +159,17 @@ const QuestionWork = ({
   const dyslexiaFont = supportPlan.supports.find(
     (support) => support.supportKey === 'dyslexiaFont' && support.enabled,
   );
+  const calmPacing = supportPlan.supports.find(
+    (support) => support.supportKey === 'calmPacing' && support.enabled,
+  );
+  const interestReward = supportPlan.supports.find(
+    (support) => support.supportKey === 'interestReward' && support.enabled,
+  );
+  const configuredTimerSeconds =
+    calmPacing?.supportKey === 'calmPacing' && calmPacing.timerMode === 'nonExpiringCountdown'
+      ? calmPacing.durationSeconds
+      : null;
+  const [timerSeconds, setTimerSeconds] = useState(configuredTimerSeconds ?? 0);
   const chunks = splitPrompt(
     question.prompt,
     chunking?.supportKey === 'readingChunks' ? chunking.chunkMode : 'sentence',
@@ -169,6 +180,16 @@ const QuestionWork = ({
   useEffect(() => {
     startedAtRef.current = Date.now();
   }, []);
+
+  useEffect(() => {
+    if (calmPacing?.supportKey !== 'calmPacing' || calmPacing.timerMode === 'off') return;
+    const timer = window.setInterval(() => {
+      setTimerSeconds((current) =>
+        calmPacing.timerMode === 'elapsed' ? current + 1 : Math.max(0, current - 1),
+      );
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [calmPacing]);
 
   useEffect(() => {
     writeStudentDraft(studentId, session.id, question.id, {
@@ -278,24 +299,36 @@ const QuestionWork = ({
       aria-labelledby="current-question"
     >
       <div className="rounded-2xl bg-white p-6 shadow-md">
-        <p className="text-sm font-semibold text-emerald-700">Problem {question.order + 1}</p>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-sm font-semibold text-emerald-700">Problem {question.order + 1}</p>
+          {calmPacing?.supportKey === 'calmPacing' && calmPacing.timerMode !== 'off' && (
+            <p className="rounded-full bg-slate-100 px-3 py-1 text-sm font-medium text-slate-600">
+              {calmPacing.timerMode === 'elapsed' ? 'Time' : 'Pace'} {Math.floor(timerSeconds / 60)}
+              :{String(timerSeconds % 60).padStart(2, '0')}
+            </p>
+          )}
+        </div>
         <h2 id="current-question" className="mt-2 text-2xl font-bold leading-relaxed">
           {visiblePrompt}
         </h2>
 
-        <div aria-label="Approved learning supports" className="mt-5 flex flex-wrap gap-2">
+        <div aria-label="Question tools" className="mt-5 flex flex-wrap gap-2">
           {readAloud?.supportKey === 'readAloud' && (
             <button
               type="button"
+              aria-label="Read aloud"
               className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold hover:bg-slate-50"
               onClick={() => {
                 void logSupport('readAloud', 'activated');
                 void speak(question.prompt, readAloud.speed).catch(() =>
-                  setSupportNotice('Read aloud is not available in this browser.'),
+                  setSupportNotice('Read aloud is unavailable right now.'),
                 );
               }}
             >
-              Read aloud
+              Read aloud{' '}
+              <span aria-hidden="true" className="font-normal text-slate-500">
+                (AI voice)
+              </span>
             </button>
           )}
           {chunking?.supportKey === 'readingChunks' && (
@@ -457,6 +490,11 @@ const QuestionWork = ({
           {feedbackFor(outcome) && (
             <p role="status" className="mt-4 rounded-xl bg-blue-50 p-4 text-blue-900">
               {feedbackFor(outcome)}
+            </p>
+          )}
+          {outcome === 'correct' && interestReward?.supportKey === 'interestReward' && (
+            <p className="mt-4 rounded-xl bg-violet-50 p-4 font-semibold text-violet-900">
+              {interestReward.rewardMessage}
             </p>
           )}
           <div className="mt-5 flex flex-wrap gap-3">

@@ -72,6 +72,8 @@ const describeStudentExperience = (settings: SupportSettings) => {
       return settings.increasedSpacing
         ? 'A clear sans-serif typeface is used with extra letter and word spacing.'
         : 'A clear sans-serif typeface is used with standard spacing.';
+    case 'interestReward':
+      return `After a correct answer, the student sees: “${settings.rewardMessage}”`;
   }
 };
 
@@ -320,6 +322,19 @@ export function SettingsEditor({ settings, onChange }: SettingsEditorProps) {
             className="h-5 w-5 accent-blue-700"
           />
           Add extra letter and word spacing
+        </label>
+      )}
+
+      {settings.supportKey === 'interestReward' && (
+        <label className="block text-sm font-medium text-slate-800">
+          Encouragement shown after a correct answer
+          <textarea
+            aria-label="Interest encouragement message"
+            maxLength={240}
+            value={settings.rewardMessage}
+            onChange={(event) => onChange({ ...settings, rewardMessage: event.target.value })}
+            className="mt-1 block min-h-20 w-full rounded-md border border-slate-300 p-2"
+          />
         </label>
       )}
     </fieldset>

@@ -16,6 +16,7 @@ export const SUPPORT_KEYS = [
   'calmPacing',
   'breakPrompt',
   'dyslexiaFont',
+  'interestReward',
 ] as const;
 
 export const supportKeySchema = z.enum(SUPPORT_KEYS);
@@ -105,6 +106,19 @@ export const SUPPORT_CATALOG = Object.freeze({
       supportKey: 'dyslexiaFont',
       enabled: true,
       increasedSpacing: true,
+    },
+  },
+  interestReward: {
+    label: 'Interest-based encouragement',
+    description:
+      'Show a short teacher-written message connected to the student’s interests after a correct answer.',
+    caution:
+      'Keep the message private, age-appropriate, and encouraging rather than contingent or punitive.',
+    evidenceSignals: ['shown'],
+    defaultSettings: {
+      supportKey: 'interestReward',
+      enabled: true,
+      rewardMessage: 'Nice work — you’re making progress!',
     },
   },
 } as const satisfies Readonly<
@@ -201,6 +215,14 @@ export const dyslexiaFontSettingsSchema = z
   })
   .strict();
 
+export const interestRewardSettingsSchema = z
+  .object({
+    supportKey: z.literal('interestReward'),
+    enabled: enabledSchema,
+    rewardMessage: z.string().trim().min(1).max(240),
+  })
+  .strict();
+
 export const supportSettingsSchema = z.discriminatedUnion('supportKey', [
   readAloudSettingsSchema,
   readingChunksSettingsSchema,
@@ -210,6 +232,7 @@ export const supportSettingsSchema = z.discriminatedUnion('supportKey', [
   calmPacingSettingsSchema,
   breakPromptSettingsSchema,
   dyslexiaFontSettingsSchema,
+  interestRewardSettingsSchema,
 ]);
 
 export const supportSettingsSnapshotSchema = supportSettingsSchema.readonly();
