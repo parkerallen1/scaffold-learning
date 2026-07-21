@@ -160,6 +160,9 @@ describe('ClassroomWorkspace', () => {
     expect(screen.getByRole('button', { name: 'Copy class code DEMO-01' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Rotate class code' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Reset PIN/ })).not.toBeInTheDocument();
+    const classroomOptions = screen.getByLabelText('Classroom options');
+    expect(classroomOptions).toHaveTextContent('i');
+    expect(classroomOptions).not.toHaveTextContent('Classroom options');
     expect(screen.getByRole('link', { name: "Demo Alex Student's experience" })).toHaveAttribute(
       'href',
       '/teacher/preview?classroomId=classroom-1&studentId=student-1',

@@ -412,11 +412,15 @@ export const ClassroomWorkspace = ({
                     <CopyableCredential label="Class code" value={selectedClassroom.classCode} />
                   )}
                   {selectedClassroom.status === 'active' && (
-                    <details className="relative rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm">
-                      <summary className="cursor-pointer font-semibold text-slate-700">
-                        ⓘ Classroom options
+                    <details className="relative text-sm">
+                      <summary
+                        aria-label="Classroom options"
+                        title="Classroom options"
+                        className="flex h-10 w-10 cursor-pointer list-none items-center justify-center rounded-full border border-slate-300 bg-white text-base font-bold text-slate-600 shadow-sm transition hover:border-blue-400 hover:bg-blue-50 hover:text-blue-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 [&::-webkit-details-marker]:hidden"
+                      >
+                        <span aria-hidden="true">i</span>
                       </summary>
-                      <div className="mt-3 flex flex-col gap-2 border-t border-slate-200 pt-3">
+                      <div className="absolute right-0 z-10 mt-2 flex w-48 flex-col gap-2 rounded-xl border border-slate-200 bg-white p-3 shadow-lg">
                         {!demoMode && (
                           <button
                             type="button"
