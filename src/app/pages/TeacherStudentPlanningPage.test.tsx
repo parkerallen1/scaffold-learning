@@ -177,7 +177,7 @@ describe('TeacherStudentPlanningPage', () => {
     render(<TeacherStudentPlanningPage search={search} />);
 
     await screen.findByRole('heading', { name: 'Support plan for Alex Student' });
-    await user.click(screen.getByRole('button', { name: 'Upload IEP instead' }));
+    await user.click(screen.getByRole('button', { name: 'Upload IEP' }));
 
     expect(screen.getByRole('region', { name: 'IEP import' })).toHaveTextContent(
       'IEP import for Alex Student',

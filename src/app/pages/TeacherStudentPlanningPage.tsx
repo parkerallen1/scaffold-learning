@@ -384,7 +384,7 @@ export const TeacherStudentPlanningPage = ({
         }}
         className="mt-4 ml-3 rounded-lg border border-blue-700 px-4 py-2 font-semibold text-blue-700 hover:bg-blue-50 disabled:opacity-50"
       >
-        Upload IEP instead
+        Upload IEP
       </button>
     </section>
   );
