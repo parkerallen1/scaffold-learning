@@ -184,6 +184,63 @@ describe('TeacherStudentPlanningPage', () => {
     );
   });
 
+  it('lets the teacher manually add and remove active supports', async () => {
+    const user = userEvent.setup();
+    const activePlan = {
+      approvedAt: 10,
+      approvedBy: 'teacher-1',
+      classroomId: 'classroom-1',
+      id: 'plan-0001',
+      source: 'manual',
+      studentId: 'student-1',
+      supersedesId: null,
+      supports: [
+        { enabled: true, speed: 1, supportKey: 'readAloud' },
+        {
+          chunkMode: 'sentence',
+          enabled: true,
+          revealAllAllowed: true,
+          supportKey: 'readingChunks',
+        },
+      ],
+      version: 1,
+    };
+    planningHarness.getStudentPlanningData.mockResolvedValue({
+      ...emptyPlanningData,
+      activePlan,
+      planHistory: [activePlan],
+    });
+    render(<TeacherStudentPlanningPage search={search} />);
+
+    await user.click(await screen.findByRole('button', { name: 'Edit supports' }));
+    const readAloud = screen.getByRole('checkbox', { name: /Read aloud/ });
+    const focusView = screen.getByRole('checkbox', { name: /Focus view/ });
+    expect(readAloud).toBeChecked();
+    expect(focusView).not.toBeChecked();
+
+    await user.click(readAloud);
+    await user.click(focusView);
+    await user.click(screen.getByRole('button', { name: 'Save active supports' }));
+
+    await waitFor(() =>
+      expect(planningHarness.createSupportPlanVersion).toHaveBeenCalledWith({
+        classroomId: 'classroom-1',
+        studentId: 'student-1',
+        supports: [
+          {
+            chunkMode: 'sentence',
+            enabled: true,
+            revealAllAllowed: true,
+            supportKey: 'readingChunks',
+          },
+          { enabled: true, hideNonessentialChrome: true, supportKey: 'focusView' },
+        ],
+      }),
+    );
+    expect(window.confirm).toHaveBeenCalledWith('Make 2 approved supports live for Alex Student?');
+    expect(await screen.findByRole('status')).toHaveTextContent('Support plan is now active');
+  });
+
   it('requires confirmation before creating a revert version', async () => {
     const user = userEvent.setup();
     const versionOne = {

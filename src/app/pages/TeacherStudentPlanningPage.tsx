@@ -15,9 +15,12 @@ import {
 import { SupportPlanReview } from '@/features/support-plans/SupportPlanReview';
 import {
   SUPPORT_CATALOG,
+  SUPPORT_KEYS,
   classroomIdSchema,
   studentIdSchema,
+  supportSettingsSchema,
   type SupportRecommendation,
+  type SupportKey,
   type SupportSettings,
 } from '@/lib/domain';
 
@@ -91,6 +94,8 @@ export const TeacherStudentPlanningPage = ({
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isWorking, setIsWorking] = useState(false);
+  const [isEditingActivePlan, setIsEditingActivePlan] = useState(false);
+  const [manualSupports, setManualSupports] = useState<SupportSettings[]>([]);
 
   const load = async () => {
     if (identity === null) return;
@@ -177,12 +182,39 @@ export const TeacherStudentPlanningPage = ({
       await createSupportPlanVersion({ ...identity, supports });
       await load();
       setStep('overview');
+      setIsEditingActivePlan(false);
       setSuccess('Support plan is now active.');
     } catch {
       setError('Unable to save the approved support plan. Please try again.');
     } finally {
       setIsWorking(false);
     }
+  };
+
+  const startManualPlanEdit = () => {
+    if (data === null) return;
+    setError(null);
+    setSuccess(null);
+    setManualSupports(
+      data.activePlan?.supports.map((support) => supportSettingsSchema.parse(support)) ?? [],
+    );
+    setIsEditingActivePlan(true);
+  };
+
+  const toggleManualSupport = (supportKey: SupportKey) => {
+    setManualSupports((current) => {
+      const exists = current.some((support) => support.supportKey === supportKey);
+      if (exists) return current.filter((support) => support.supportKey !== supportKey);
+      return [...current, supportSettingsSchema.parse(SUPPORT_CATALOG[supportKey].defaultSettings)];
+    });
+  };
+
+  const saveManualPlan = () => {
+    const orderedSupports = SUPPORT_KEYS.flatMap((supportKey) => {
+      const support = manualSupports.find((candidate) => candidate.supportKey === supportKey);
+      return support ? [support] : [];
+    });
+    void completePlanReview(orderedSupports);
   };
 
   const revertTo = async (planId: string, version: number) => {
@@ -400,10 +432,93 @@ export const TeacherStudentPlanningPage = ({
           className="rounded-2xl bg-white p-6 shadow-md"
           aria-labelledby="active-plan-heading"
         >
-          <h2 id="active-plan-heading" className="text-xl font-bold">
-            Active support plan
-          </h2>
-          <PlanSummary plan={data.activePlan} />
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 id="active-plan-heading" className="text-xl font-bold">
+              Active support plan
+            </h2>
+            {!isEditingActivePlan && (
+              <button
+                type="button"
+                disabled={!canEdit || isWorking}
+                onClick={startManualPlanEdit}
+                className="rounded-lg border border-blue-700 px-3 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-50 disabled:opacity-50"
+              >
+                {data.activePlan === null ? 'Add supports' : 'Edit supports'}
+              </button>
+            )}
+          </div>
+
+          {isEditingActivePlan ? (
+            <form
+              className="mt-5"
+              onSubmit={(event) => {
+                event.preventDefault();
+                saveManualPlan();
+              }}
+            >
+              <fieldset disabled={isWorking}>
+                <legend className="text-sm font-semibold text-slate-700">
+                  Select the supports that should be live for this student.
+                </legend>
+                <ul className="mt-3 grid gap-3 sm:grid-cols-2">
+                  {SUPPORT_KEYS.map((supportKey) => {
+                    const catalog = SUPPORT_CATALOG[supportKey];
+                    const checked = manualSupports.some(
+                      (support) => support.supportKey === supportKey,
+                    );
+                    return (
+                      <li key={supportKey}>
+                        <label
+                          htmlFor={`manual-support-${supportKey}`}
+                          aria-label={`${catalog.label}: ${catalog.description}`}
+                          className={`flex h-full cursor-pointer items-start gap-3 rounded-xl border p-4 ${
+                            checked
+                              ? 'border-blue-300 bg-blue-50'
+                              : 'border-slate-200 bg-white hover:bg-slate-50'
+                          }`}
+                        >
+                          <input
+                            id={`manual-support-${supportKey}`}
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => toggleManualSupport(supportKey)}
+                            className="mt-1 h-4 w-4 accent-blue-700"
+                          />
+                          <span>
+                            <span className="block font-semibold text-slate-900">
+                              {catalog.label}
+                            </span>
+                            <span className="mt-1 block text-sm leading-5 text-slate-600">
+                              {catalog.description}
+                            </span>
+                          </span>
+                        </label>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </fieldset>
+              <div className="mt-5 flex flex-wrap justify-end gap-3">
+                <button
+                  type="button"
+                  disabled={isWorking}
+                  onClick={() => setIsEditingActivePlan(false)}
+                  className="rounded-lg border border-slate-300 px-4 py-2 font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isWorking}
+                  className="rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800 disabled:opacity-50"
+                >
+                  {isWorking ? 'Saving…' : 'Save active supports'}
+                </button>
+              </div>
+            </form>
+          ) : (
+            <PlanSummary plan={data.activePlan} />
+          )}
         </section>
 
         <AuditReviewPanel
