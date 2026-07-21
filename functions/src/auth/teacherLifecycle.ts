@@ -337,6 +337,11 @@ const DEMO_CLASSROOMS: readonly DemoClassroomSeed[] = Object.freeze([
             preferredMode: 'typing',
             allowStudentChoice: true,
           },
+          {
+            supportKey: 'dyslexiaFont',
+            enabled: true,
+            increasedSpacing: true,
+          },
         ],
       },
     ],
