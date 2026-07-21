@@ -11,6 +11,7 @@ export interface AiProviderFactoryOptions {
   isEmulator?: boolean;
   emulatorLiveOpenAi?: string;
   featuresEnabled?: string;
+  forceFakeForTests?: string;
   createOpenAi?: () => AiProvider;
 }
 
@@ -19,8 +20,10 @@ export const createAiProvider = ({
   isEmulator = process.env.FUNCTIONS_EMULATOR === 'true',
   emulatorLiveOpenAi = process.env.AI_EMULATOR_LIVE_OPENAI,
   featuresEnabled = process.env.AI_FEATURES_ENABLED,
+  forceFakeForTests = process.env.AI_FORCE_FAKE_FOR_TESTS,
   createOpenAi = createConfiguredOpenAiRecommendationProvider,
 }: AiProviderFactoryOptions = {}): AiProvider => {
+  if (forceFakeForTests === 'true') return fakeAiProvider;
   if (mode !== 'openai' || (isEmulator && emulatorLiveOpenAi !== 'true')) return fakeAiProvider;
   if (featuresEnabled !== 'true') {
     const config = readOpenAiRecommendationConfig();

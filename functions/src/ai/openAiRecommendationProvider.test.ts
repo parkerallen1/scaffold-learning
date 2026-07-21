@@ -262,6 +262,16 @@ describe('deterministic provider selection', () => {
         createOpenAi,
       }).name,
     ).toBe('openai');
+    expect(
+      createAiProvider({
+        mode: 'openai',
+        isEmulator: true,
+        emulatorLiveOpenAi: 'true',
+        featuresEnabled: 'true',
+        forceFakeForTests: 'true',
+        createOpenAi,
+      }).name,
+    ).toBe('fake');
   });
 
   it('does not construct the live client while the production kill switch is off', () => {

@@ -5,7 +5,7 @@ These Playwright tests cover the smallest high-confidence browser layer in the t
 - public route rendering and the unauthenticated teacher boundary;
 - the synthetic Build Week loop from an emulator teacher through student completion and back to the teacher’s evidence counts.
 
-They always build the client and Functions, serve the client preview on port 4173, and start Firebase Auth, Firestore, and Functions against the reserved `demo-scaffold-learning` project. Firebase Hosting is not started, so the harness cannot collide with a production hosting target. The test server supplies a clearly non-secret local PIN pepper and leaves the deterministic fake AI provider enabled. The stateful happy-path test clears only that local emulator project before it runs. Do not change the project ID or use real student data.
+They always build the client and Functions, serve the client preview on port 4173, and start Firebase Auth, Firestore, and Functions against the reserved `demo-scaffold-learning` project. Firebase Hosting is not started, so the harness cannot collide with a production hosting target. The test command supplies a clearly non-secret local PIN pepper and explicitly forces the deterministic fake AI provider, even when the developer has enabled live OpenAI for normal emulator use. This prevents browser tests from spending API credits or depending on network/model output. The stateful happy-path test clears only that local emulator project before it runs. Do not change the project ID or use real student data.
 
 ## Run
 

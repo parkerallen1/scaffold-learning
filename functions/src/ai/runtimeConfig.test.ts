@@ -21,4 +21,17 @@ describe('OpenAI runtime configuration', () => {
     expect(liveOpenAiRuntimeEnabled({ ...base, AI_EMULATOR_LIVE_OPENAI: 'true' })).toBe(true);
     expect(emulatorUsesLiveOpenAi({ ...base, AI_EMULATOR_LIVE_OPENAI: 'true' })).toBe(true);
   });
+
+  it('honors the deterministic test override before live settings', () => {
+    const environment = {
+      AI_PROVIDER: 'openai',
+      AI_FEATURES_ENABLED: 'true',
+      AI_EMULATOR_LIVE_OPENAI: 'true',
+      AI_FORCE_FAKE_FOR_TESTS: 'true',
+      FUNCTIONS_EMULATOR: 'true',
+    };
+
+    expect(liveOpenAiRuntimeEnabled(environment)).toBe(false);
+    expect(emulatorUsesLiveOpenAi(environment)).toBe(false);
+  });
 });

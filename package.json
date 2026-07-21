@@ -19,7 +19,7 @@
     "preview": "vite preview",
     "build:e2e": "VITE_USE_EMULATORS=true VITE_FIREBASE_API_KEY=demo-api-key VITE_FIREBASE_AUTH_DOMAIN=demo-scaffold-learning.firebaseapp.com VITE_FIREBASE_PROJECT_ID=demo-scaffold-learning VITE_FIREBASE_APP_ID=demo-app-id npm run build",
     "pree2e:emulators": "npm run setup:local",
-    "e2e:emulators": "firebase emulators:start --project demo-scaffold-learning --only auth,firestore,functions",
+    "e2e:emulators": "AI_FORCE_FAKE_FOR_TESTS=true firebase emulators:start --project demo-scaffold-learning --only auth,firestore,functions",
     "e2e:preview": "vite preview --host 127.0.0.1 --port 4173 --strictPort",
     "e2e": "npm run build:e2e && playwright test",
     "e2e:ui": "npm run build:e2e && playwright test --ui",
