@@ -47,29 +47,6 @@ export const TeacherHomePage = () => {
           </div>
         </header>
 
-        {user?.isAnonymous && (
-          <section className="mt-6 rounded-2xl border border-violet-200 bg-violet-50 p-6 shadow-sm">
-            <p className="text-sm font-semibold uppercase tracking-wide text-violet-700">
-              Start here · guided demo
-            </p>
-            <h2 className="mt-1 text-2xl font-bold">See personalization from both sides</h2>
-            <ol className="mt-4 grid gap-3 text-sm leading-6 text-slate-700 md:grid-cols-3">
-              <li className="rounded-xl bg-white p-4">
-                <span className="block font-bold text-violet-700">1 · Classrooms</span>
-                Two example classrooms are ready below, each with a copyable class code.
-              </li>
-              <li className="rounded-xl bg-white p-4">
-                <span className="block font-bold text-violet-700">2 · Student needs</span>
-                Each synthetic student has a different learning profile and approved supports.
-              </li>
-              <li className="rounded-xl bg-white p-4">
-                <span className="block font-bold text-violet-700">3 · Try their view</span>
-                Choose “Demo student’s experience” to see the greeting and accommodations they get.
-              </li>
-            </ol>
-          </section>
-        )}
-
         {user?.uid && <ClassroomWorkspace demoMode={demoTeacherEnabled} teacherId={user.uid} />}
       </div>
     </main>
