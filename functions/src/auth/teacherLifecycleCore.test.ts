@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { studentSafeIdentitySchema } from '@quiz-master/domain';
+import { studentSafeIdentitySchema } from '@scaffold-learning/domain';
 
 import {
   BUILD_WEEK_STUDENT_PIN,

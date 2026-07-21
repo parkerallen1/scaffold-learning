@@ -1,8 +1,8 @@
-# Quiz Master v2 — Product and Build Plan
+# Scaffold Learning v2 — Product and Build Plan
 
 ## 1. Product thesis
 
-Quiz Master is a teacher-guided work system for students who have trouble getting started, staying with a problem, reading directions, organizing multi-step work, or recovering after a mistake. It should help a student complete real teacher-assigned work with the least intrusive support that is useful.
+Scaffold Learning is a teacher-guided work system for students who have trouble getting started, staying with a problem, reading directions, organizing multi-step work, or recovering after a mistake. It should help a student complete real teacher-assigned work with the least intrusive support that is useful.
 
 The product is not an autonomous tutor, a diagnostic tool, or a behavior-monitoring system. The teacher owns assignments and support plans. AI may extract content, propose supports, explain patterns, and draft next steps, but a teacher approves anything that changes a student's experience.
 

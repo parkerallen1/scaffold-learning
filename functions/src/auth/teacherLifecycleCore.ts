@@ -10,7 +10,7 @@ import {
   teacherIdSchema,
   type StudentSafeIdentity,
   type TeacherId,
-} from '@quiz-master/domain';
+} from '@scaffold-learning/domain';
 
 const CLASS_CODE_ALPHABET = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
 const CLASS_CODE_LENGTH = 8;

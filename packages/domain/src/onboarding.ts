@@ -93,7 +93,7 @@ export const ONBOARDING_QUESTIONS = Object.freeze([
   {
     id: 'timerResponse',
     prompt: 'How do visible timers usually affect this student?',
-    helper: 'Timers in Quiz Master never submit or advance work.',
+    helper: 'Timers in Scaffold Learning never submit or advance work.',
     responseKind: 'singleSelect',
     options: [
       { value: 'calming', label: 'Usually calming' },

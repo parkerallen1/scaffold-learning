@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { recommendationResultSchema, supportSettingsSchema } from '@quiz-master/domain';
-import type { RecommendationInput } from '@quiz-master/domain';
+import { recommendationResultSchema, supportSettingsSchema } from '@scaffold-learning/domain';
+import type { RecommendationInput } from '@scaffold-learning/domain';
 
 import type { RecommendationManualFallbackError } from './contracts.js';
 import { FakeAiProvider } from './fakeAiProvider.js';

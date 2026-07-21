@@ -4,7 +4,7 @@ import {
   recommendationResultSchema,
   structuredObservationsSchema,
   syntheticIds,
-} from '@quiz-master/domain';
+} from '@scaffold-learning/domain';
 
 import { RecommendationManualFallbackError } from '../ai/contracts.js';
 import { fakeRecommendationFixture } from '../ai/fixtures.js';

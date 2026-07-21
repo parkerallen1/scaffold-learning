@@ -1,4 +1,4 @@
-import { recommendationResultSchema } from '@quiz-master/domain';
+import { recommendationResultSchema } from '@scaffold-learning/domain';
 
 export const fakeRecommendationFixture = Object.freeze(
   recommendationResultSchema.parse({

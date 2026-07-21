@@ -12,7 +12,7 @@ import {
   type RecommendationResult,
   type StructuredObservations,
   type TeacherId,
-} from '@quiz-master/domain';
+} from '@scaffold-learning/domain';
 
 import {
   RecommendationManualFallbackError,

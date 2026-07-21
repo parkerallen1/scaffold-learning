@@ -28,7 +28,7 @@ export type AnswerDraft = z.infer<typeof answerDraftSchema>;
 export type StoredStudentDraft = z.infer<typeof storedDraftSchema>;
 
 const storageKey = (studentId: string, sessionId: string, questionId: string): string =>
-  `quiz-master:student-draft:v1:${studentIdSchema.parse(studentId)}:${sessionIdSchema.parse(sessionId)}:${questionIdSchema.parse(questionId)}`;
+  `scaffold-learning:student-draft:v1:${studentIdSchema.parse(studentId)}:${sessionIdSchema.parse(sessionId)}:${questionIdSchema.parse(questionId)}`;
 
 export const readStudentDraft = (
   studentId: string,
@@ -75,7 +75,7 @@ export const clearStudentDraft = (
 
 export const clearStudentDraftsForStudent = (studentId: string): void => {
   try {
-    const prefix = `quiz-master:student-draft:v1:${studentIdSchema.parse(studentId)}:`;
+    const prefix = `scaffold-learning:student-draft:v1:${studentIdSchema.parse(studentId)}:`;
     const matchingKeys = Array.from({ length: localStorage.length }, (_, index) =>
       localStorage.key(index),
     ).filter((key): key is string => key !== null && key.startsWith(prefix));

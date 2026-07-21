@@ -1,6 +1,6 @@
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
 
-const PROJECT_ID = 'demo-quiz-master';
+const PROJECT_ID = 'demo-scaffold-learning';
 
 async function resetDemoEmulators(request: APIRequestContext) {
   const firestore = await request.delete(

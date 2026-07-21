@@ -7,7 +7,7 @@ import {
   SUPPORT_CATALOG,
   supportPlanVersionSchema,
   syntheticDomainFixtures,
-} from '@quiz-master/domain';
+} from '@scaffold-learning/domain';
 
 import {
   advanceStudentSessionState,

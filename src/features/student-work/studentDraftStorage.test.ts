@@ -36,7 +36,7 @@ describe('studentDraftStorage', () => {
 
   it('ignores malformed drafts and clears only the scoped question key', () => {
     localStorage.setItem(
-      `quiz-master:student-draft:v1:${studentId}:${sessionId}:${questionId}`,
+      `scaffold-learning:student-draft:v1:${studentId}:${sessionId}:${questionId}`,
       JSON.stringify({ answer: { kind: 'numeric', value: '2' }, pin: '1234', version: 1 }),
     );
     expect(readStudentDraft(studentId, sessionId, questionId)).toBeNull();
@@ -47,11 +47,11 @@ describe('studentDraftStorage', () => {
 
   it('removes only the signed-out student draft namespace', () => {
     localStorage.setItem(
-      `quiz-master:student-draft:v1:${studentId}:${sessionId}:${questionId}`,
+      `scaffold-learning:student-draft:v1:${studentId}:${sessionId}:${questionId}`,
       'student draft',
     );
     localStorage.setItem(
-      `quiz-master:student-draft:v1:student_other_01:${sessionId}:${questionId}`,
+      `scaffold-learning:student-draft:v1:student_other_01:${sessionId}:${questionId}`,
       'other draft',
     );
 

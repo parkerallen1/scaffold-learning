@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { analyzeIepDocumentInputSchema } from '@quiz-master/domain';
+import { analyzeIepDocumentInputSchema } from '@scaffold-learning/domain';
 
 import { createDemoIepProfileDraft } from './iepAnalysisCore.js';
 

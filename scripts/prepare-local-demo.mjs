@@ -6,7 +6,7 @@ const PUBLIC_ENV_EXAMPLE_PATH = '.env.example';
 const SECRET_ENV_PATH = 'functions/.secret.local';
 const SECRET_ENV_EXAMPLE_PATH = 'functions/.secret.local.example';
 const LOCAL_OPENAI_API_KEY = 'unused-in-deterministic-fake-emulator';
-const LOCAL_PIN_PEPPER = 'quiz-master-local-demo-only-not-a-production-secret';
+const LOCAL_PIN_PEPPER = 'scaffold-learning-local-demo-only-not-a-production-secret';
 
 const created = [];
 const updated = [];

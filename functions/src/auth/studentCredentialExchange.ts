@@ -5,7 +5,11 @@ import { logger } from 'firebase-functions';
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
 import { z } from 'zod';
 
-import { classroomIdSchema, studentIdSchema, studentSafeIdentitySchema } from '@quiz-master/domain';
+import {
+  classroomIdSchema,
+  studentIdSchema,
+  studentSafeIdentitySchema,
+} from '@scaffold-learning/domain';
 
 import {
   authThrottleKey,

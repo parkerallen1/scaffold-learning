@@ -44,7 +44,7 @@ setGlobalOptions({ maxInstances: 10, region: 'us-central1' });
 
 const healthcheckResultSchema = z.object({
   ok: z.literal(true),
-  service: z.literal('quiz-master-functions'),
+  service: z.literal('scaffold-learning-functions'),
   aiProvider: z.literal('fake'),
 });
 
@@ -53,7 +53,7 @@ export const healthcheck = onCall(
   () =>
     healthcheckResultSchema.parse({
       ok: true,
-      service: 'quiz-master-functions',
+      service: 'scaffold-learning-functions',
       aiProvider: fakeAiProvider.name,
     }),
 );

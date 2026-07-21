@@ -2,7 +2,7 @@ import {
   recommendationInputSchema,
   type RecommendationInput,
   type RecommendationResult,
-} from '@quiz-master/domain';
+} from '@scaffold-learning/domain';
 
 import type { AiProvider } from './contracts.js';
 import { fakeRecommendationFixture } from './fixtures.js';

@@ -1,4 +1,4 @@
-# Quiz Master v2 — Agent Execution Roadmap
+# Scaffold Learning v2 — Agent Execution Roadmap
 
 This document turns the product contract in `PLAN.md` into small, dependency-ordered work packets. One packet should normally equal one agent assignment and one logical commit.
 

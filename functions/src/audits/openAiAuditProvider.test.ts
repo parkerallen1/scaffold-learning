@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { syntheticDomainFixtures, syntheticIds } from '@quiz-master/domain';
+import { syntheticDomainFixtures, syntheticIds } from '@scaffold-learning/domain';
 
 import type { AuditManualFallbackError } from './auditContracts.js';
 import { buildAuditEvidence } from './auditCore.js';

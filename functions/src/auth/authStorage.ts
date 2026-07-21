@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { classroomIdSchema, studentIdSchema } from '@quiz-master/domain';
+import { classroomIdSchema, studentIdSchema } from '@scaffold-learning/domain';
 
 import { PIN_HASH_ALGORITHM } from './credentialCrypto.js';
 

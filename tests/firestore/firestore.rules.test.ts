@@ -19,7 +19,7 @@ import {
 } from 'firebase/firestore';
 import { afterAll, beforeAll, beforeEach, describe, it } from 'vitest';
 
-const PROJECT_ID = 'demo-quiz-master';
+const PROJECT_ID = 'demo-scaffold-learning';
 
 const classroomPath = (classroomId: string) => `classrooms/${classroomId}`;
 const studentPath = (classroomId: string, studentId: string) =>

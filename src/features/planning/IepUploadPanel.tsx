@@ -149,7 +149,7 @@ export const IepUploadPanel = ({
       <h1 className="mt-1 text-2xl font-bold">Import {studentName}’s IEP</h1>
       <p className="mt-3 text-sm text-slate-600">
         Upload a PDF, DOCX, or text file up to 5 MB. The document is analyzed once to propose a
-        classroom profile; the original file is not saved by Quiz Master.
+        classroom profile; the original file is not saved by Scaffold Learning.
       </p>
       <p className="mt-2 text-sm font-medium text-amber-800">
         Only upload a document you are authorized to use. You will review every recommendation

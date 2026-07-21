@@ -1,6 +1,6 @@
 # Callable API
 
-Quiz Master uses Firebase callable Functions in `us-central1`. Client services call them with Firebase Authentication and limited-use App Check tokens outside the emulator. Runtime schemas in `packages/domain` and `functions/src/**/**Core.ts` are authoritative; this document is a route map, not a duplicate schema definition.
+Scaffold Learning uses Firebase callable Functions in `us-central1`. Client services call them with Firebase Authentication and limited-use App Check tokens outside the emulator. Runtime schemas in `packages/domain` and `functions/src/**/**Core.ts` are authoritative; this document is a route map, not a duplicate schema definition.
 
 ## Common behavior
 

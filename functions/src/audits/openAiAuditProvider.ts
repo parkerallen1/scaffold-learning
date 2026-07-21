@@ -2,7 +2,7 @@ import OpenAI from 'openai';
 import { zodTextFormat } from 'openai/helpers/zod';
 import { z } from 'zod';
 
-import { SUPPORT_CATALOG, supportKeySchema } from '@quiz-master/domain';
+import { SUPPORT_CATALOG, supportKeySchema } from '@scaffold-learning/domain';
 
 import { openAiApiKey } from '../ai/openAiRecommendationProvider.js';
 import {

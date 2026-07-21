@@ -23,7 +23,7 @@ import {
   type StudentSafeIdentity,
   type SupportSettings,
   type TeacherId,
-} from '@quiz-master/domain';
+} from '@scaffold-learning/domain';
 
 import { studentPinPepper } from './authSecrets.js';
 import {

@@ -17,7 +17,7 @@ import {
   type SupportPlanVersion,
   type SupportSettings,
   type TeacherId,
-} from '@quiz-master/domain';
+} from '@scaffold-learning/domain';
 
 export class PlanningOwnershipError extends Error {
   constructor() {

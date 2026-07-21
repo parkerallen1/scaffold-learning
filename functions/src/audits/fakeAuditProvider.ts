@@ -1,4 +1,4 @@
-import { SUPPORT_CATALOG, auditRecommendationSchema } from '@quiz-master/domain';
+import { SUPPORT_CATALOG, auditRecommendationSchema } from '@scaffold-learning/domain';
 
 import type { AuditEvidencePacket, AuditProvider, AuditProviderDraft } from './auditContracts.js';
 

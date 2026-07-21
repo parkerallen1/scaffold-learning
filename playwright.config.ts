@@ -27,7 +27,7 @@ export default defineConfig({
           // Auth and Firestore can accept traffic before callable discovery finishes.
           // Gate the browser on an initialized Function so the first teacher bootstrap
           // cannot race the Functions emulator startup.
-          url: 'http://127.0.0.1:5001/demo-quiz-master/us-central1/healthcheck',
+          url: 'http://127.0.0.1:5001/demo-scaffold-learning/us-central1/healthcheck',
           reuseExistingServer: false,
           timeout: 120_000,
           stdout: 'pipe',

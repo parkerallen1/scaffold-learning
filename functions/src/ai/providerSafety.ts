@@ -2,8 +2,8 @@ import {
   checkRecommendationSafety,
   recommendationInputSchema,
   recommendationResultSchema,
-} from '@quiz-master/domain';
-import type { RecommendationInput, RecommendationResult } from '@quiz-master/domain';
+} from '@scaffold-learning/domain';
+import type { RecommendationInput, RecommendationResult } from '@scaffold-learning/domain';
 
 import { RecommendationManualFallbackError } from './contracts.js';
 

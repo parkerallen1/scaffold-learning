@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { teacherIdSchema, type TeacherId } from '@quiz-master/domain';
+import { teacherIdSchema, type TeacherId } from '@scaffold-learning/domain';
 
 import { runControlledAiOperation, type AiQuotaStore } from './operationalControls.js';
 import {

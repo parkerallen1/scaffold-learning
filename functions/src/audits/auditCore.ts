@@ -26,7 +26,7 @@ import {
   type SessionState,
   type SupportEvent,
   type TeacherId,
-} from '@quiz-master/domain';
+} from '@scaffold-learning/domain';
 
 import {
   AuditManualFallbackError,

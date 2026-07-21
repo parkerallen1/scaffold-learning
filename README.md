@@ -1,6 +1,6 @@
-# Quiz Master
+# Scaffold Learning
 
-Quiz Master is a teacher-guided work system for students who benefit from help starting, reading directions, remembering steps, sustaining attention, or recovering after a mistake. Teachers create assignments and approve support plans; students complete real work with only the supports approved for them.
+Scaffold Learning is a teacher-guided work system for students who benefit from help starting, reading directions, remembering steps, sustaining attention, or recovering after a mistake. Teachers create assignments and approve support plans; students complete real work with only the supports approved for them.
 
 This repository is the OpenAI Build Week education-pathway project and a synthetic-data prototype for a future school pilot. It is not a diagnostic tool, an autonomous tutor, or a production-ready student-record system.
 
@@ -39,8 +39,8 @@ Prerequisites:
 - Java 21 for the Firebase emulators and Firestore rules tests
 
 ```bash
-git clone https://github.com/parkerallen1/quiz-master.git
-cd quiz-master
+git clone https://github.com/parkerallen1/scaffold-learning.git
+cd scaffold-learning
 npm ci
 npm run setup:local
 npm run emulators:start
@@ -54,7 +54,7 @@ Production deployments continue to use random class codes, random PINs, and mask
 
 `setup:local` creates missing ignored emulator configuration and a local-only student PIN pepper; it
 never overwrites existing values. The checked-in environment template is locked to
-`demo-quiz-master`; the client refuses to mix a demo project with production mode. The emulator uses
+`demo-scaffold-learning`; the client refuses to mix a demo project with production mode. The emulator uses
 deterministic fake AI and does not send observations to OpenAI.
 
 ## Demo flow

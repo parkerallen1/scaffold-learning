@@ -14,7 +14,7 @@ import {
   type StudentSafeIdentity,
   type TeacherId,
   type TeacherOnlyStudentProfile,
-} from '@quiz-master/domain';
+} from '@scaffold-learning/domain';
 
 import { createAiProvider } from '../ai/providerFactory.js';
 import { openAiApiKey } from '../ai/openAiRecommendationProvider.js';

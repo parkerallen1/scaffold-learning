@@ -1,5 +1,5 @@
 {
-  "name": "quiz-master-functions",
+  "name": "scaffold-learning-functions",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -17,7 +17,7 @@
     "check": "npm run format:check && npm run typecheck"
   },
   "dependencies": {
-    "@quiz-master/domain": "*",
+    "@scaffold-learning/domain": "*",
     "firebase-admin": "14.2.0",
     "firebase-functions": "7.3.0",
     "openai": "6.48.0",

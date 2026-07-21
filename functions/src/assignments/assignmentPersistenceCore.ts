@@ -24,7 +24,7 @@ import {
   type StudentSafeIdentity,
   type SupportPlanVersion,
   type TeacherId,
-} from '@quiz-master/domain';
+} from '@scaffold-learning/domain';
 
 export const assignmentRevisionIdSchema = z
   .string()

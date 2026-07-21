@@ -15,8 +15,8 @@ import {
   readingChunksSettingsSchema,
   recommendationInputSchema,
   supportKeySchema,
-} from '@quiz-master/domain';
-import type { RecommendationInput, RecommendationResult } from '@quiz-master/domain';
+} from '@scaffold-learning/domain';
+import type { RecommendationInput, RecommendationResult } from '@scaffold-learning/domain';
 
 import type { AiProvider } from './contracts.js';
 import { RecommendationManualFallbackError } from './contracts.js';

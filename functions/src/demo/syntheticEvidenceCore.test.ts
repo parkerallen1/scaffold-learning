@@ -5,7 +5,7 @@ import {
   epochMillisSchema,
   publicQuestionSchema,
   syntheticDomainFixtures,
-} from '@quiz-master/domain';
+} from '@scaffold-learning/domain';
 
 import {
   assertSyntheticEvidenceEnvironment,
@@ -38,11 +38,11 @@ describe('synthetic evidence environment guard', () => {
     expect(() =>
       assertSyntheticEvidenceEnvironment({
         functionsEmulator: 'true',
-        projectId: 'demo-quiz-master',
+        projectId: 'demo-scaffold-learning',
       }),
     ).not.toThrow();
     expect(() =>
-      assertSyntheticEvidenceEnvironment({ projectId: 'demo-quiz-master' }),
+      assertSyntheticEvidenceEnvironment({ projectId: 'demo-scaffold-learning' }),
     ).toThrowError(
       expect.objectContaining<Partial<SyntheticEvidenceError>>({ reason: 'emulator-required' }),
     );

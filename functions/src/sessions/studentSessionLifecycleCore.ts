@@ -31,7 +31,7 @@ import {
   type SupportEvent,
   type SupportKey,
   type SupportPlanVersion,
-} from '@quiz-master/domain';
+} from '@scaffold-learning/domain';
 
 const MAX_CLIENT_EVENT_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 const MAX_CLIENT_EVENT_FUTURE_SKEW_MS = 5 * 60 * 1000;

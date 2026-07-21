@@ -1,5 +1,5 @@
-import { iepProfileDraftSchema } from '@quiz-master/domain';
-import type { AnalyzeIepDocumentInput, IepProfileDraft } from '@quiz-master/domain';
+import { iepProfileDraftSchema } from '@scaffold-learning/domain';
+import type { AnalyzeIepDocumentInput, IepProfileDraft } from '@scaffold-learning/domain';
 
 const decodedText = (input: AnalyzeIepDocumentInput): string => {
   if (input.mimeType !== 'text/plain') return input.fileName.toLowerCase();

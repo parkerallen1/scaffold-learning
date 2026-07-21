@@ -1,5 +1,5 @@
 {
-  "name": "quiz-master",
+  "name": "scaffold-learning",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -11,23 +11,23 @@
     "node": "^20.19.0 || >=22.12.0"
   },
   "scripts": {
-    "predev": "npm run build --workspace @quiz-master/domain",
+    "predev": "npm run build --workspace @scaffold-learning/domain",
     "dev": "vite",
-    "build": "npm run build --workspace @quiz-master/domain && npm run build:client && npm run build --workspace functions",
+    "build": "npm run build --workspace @scaffold-learning/domain && npm run build:client && npm run build --workspace functions",
     "build:client": "vite build",
     "preview": "vite preview",
-    "build:e2e": "VITE_USE_EMULATORS=true VITE_FIREBASE_API_KEY=demo-api-key VITE_FIREBASE_AUTH_DOMAIN=demo-quiz-master.firebaseapp.com VITE_FIREBASE_PROJECT_ID=demo-quiz-master VITE_FIREBASE_APP_ID=demo-app-id npm run build",
+    "build:e2e": "VITE_USE_EMULATORS=true VITE_FIREBASE_API_KEY=demo-api-key VITE_FIREBASE_AUTH_DOMAIN=demo-scaffold-learning.firebaseapp.com VITE_FIREBASE_PROJECT_ID=demo-scaffold-learning VITE_FIREBASE_APP_ID=demo-app-id npm run build",
     "pree2e:emulators": "npm run setup:local",
-    "e2e:emulators": "firebase emulators:start --project demo-quiz-master --only auth,firestore,functions",
+    "e2e:emulators": "firebase emulators:start --project demo-scaffold-learning --only auth,firestore,functions",
     "e2e:preview": "vite preview --host 127.0.0.1 --port 4173 --strictPort",
     "e2e": "npm run build:e2e && playwright test",
     "e2e:ui": "npm run build:e2e && playwright test --ui",
     "preemulators:start": "npm run setup:local",
-    "emulators:start": "npm run build && firebase emulators:start --project demo-quiz-master --only auth,firestore,functions,hosting",
-    "emulators:exec": "npm run build --workspace functions && firebase emulators:exec --project demo-quiz-master --only auth,firestore,functions",
-    "firebase:validate": "firebase emulators:exec --project demo-quiz-master --only firestore \"npm run test:firestore:rules\"",
-    "domain:clean": "npm run clean --workspace @quiz-master/domain",
-    "domain:check": "npm run check --workspace @quiz-master/domain",
+    "emulators:start": "npm run build && firebase emulators:start --project demo-scaffold-learning --only auth,firestore,functions,hosting",
+    "emulators:exec": "npm run build --workspace functions && firebase emulators:exec --project demo-scaffold-learning --only auth,firestore,functions",
+    "firebase:validate": "firebase emulators:exec --project demo-scaffold-learning --only firestore \"npm run test:firestore:rules\"",
+    "domain:clean": "npm run clean --workspace @scaffold-learning/domain",
+    "domain:check": "npm run check --workspace @scaffold-learning/domain",
     "functions:clean": "npm run clean --workspace functions",
     "functions:check": "npm run check --workspace functions",
     "setup:local": "node scripts/prepare-local-demo.mjs",
@@ -40,10 +40,10 @@
     "test": "vitest --exclude 'tests/firestore/**/*' --exclude 'tests/e2e/**/*'",
     "test:run": "vitest run --exclude 'tests/firestore/**/*' --exclude 'tests/e2e/**/*'",
     "test:firestore:rules": "vitest run tests/firestore",
-    "check": "npm run functions:clean && npm run domain:clean && npm run format:check && npm run lint && npm run typecheck && npm run domain:check && npm run build --workspace @quiz-master/domain && npm run functions:check && npm run test:run && npm run build && npm run check:client && npm run check:provider"
+    "check": "npm run functions:clean && npm run domain:clean && npm run format:check && npm run lint && npm run typecheck && npm run domain:check && npm run build --workspace @scaffold-learning/domain && npm run functions:check && npm run test:run && npm run build && npm run check:client && npm run check:provider"
   },
   "dependencies": {
-    "@quiz-master/domain": "*",
+    "@scaffold-learning/domain": "*",
     "firebase": "12.16.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"

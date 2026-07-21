@@ -33,7 +33,7 @@ import {
   type StudentSafeIdentity,
   type SupportEvent,
   type SupportPlanVersion,
-} from '@quiz-master/domain';
+} from '@scaffold-learning/domain';
 
 import {
   advanceStudentSessionInputSchema,

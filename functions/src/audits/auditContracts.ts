@@ -1,4 +1,8 @@
-import type { AuditRecommendation, EvidenceSummary, SupportSettings } from '@quiz-master/domain';
+import type {
+  AuditRecommendation,
+  EvidenceSummary,
+  SupportSettings,
+} from '@scaffold-learning/domain';
 
 export type AuditEventFact = Readonly<{
   eventId: string;

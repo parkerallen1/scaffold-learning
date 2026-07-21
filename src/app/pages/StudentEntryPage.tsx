@@ -164,7 +164,7 @@ export const StudentEntryPage = () => {
 
           {!demoTeacherEnabled && (
             <p className="mt-4 text-xs text-slate-600">
-              Quiz Master does not save your PIN in this browser.
+              Scaffold Learning does not save your PIN in this browser.
             </p>
           )}
         </section>

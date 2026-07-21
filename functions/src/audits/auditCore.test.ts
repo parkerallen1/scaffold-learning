@@ -7,7 +7,7 @@ import {
   syntheticDomainFixtures,
   syntheticIds,
   type AuditRecommendation,
-} from '@quiz-master/domain';
+} from '@scaffold-learning/domain';
 
 import {
   AuditManualFallbackError,

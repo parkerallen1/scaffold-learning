@@ -1,6 +1,6 @@
 {
   "projects": {
-    "default": "demo-quiz-master",
+    "default": "demo-scaffold-learning",
     "production": "quiz-master-pg"
   }
 }

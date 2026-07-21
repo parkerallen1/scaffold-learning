@@ -3,7 +3,7 @@ import { getFirestore } from 'firebase-admin/firestore';
 import { logger } from 'firebase-functions';
 import { z } from 'zod';
 
-import type { TeacherId } from '@quiz-master/domain';
+import type { TeacherId } from '@scaffold-learning/domain';
 
 import {
   buildAiTelemetry,

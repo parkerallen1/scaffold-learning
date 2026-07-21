@@ -2,7 +2,7 @@
 
 ## Context
 
-Quiz Master is a React/Firebase application with two trust levels: a teacher controls classroom data and approvals; a student receives a narrowly scoped identity for one classroom and student record. Firestore is authoritative. Browser storage is only a resilience cache for the active answer.
+Scaffold Learning is a React/Firebase application with two trust levels: a teacher controls classroom data and approvals; a student receives a narrowly scoped identity for one classroom and student record. Firestore is authoritative. Browser storage is only a resilience cache for the active answer.
 
 The design optimizes for a safe Build Week vertical slice, not for district-scale deployment.
 

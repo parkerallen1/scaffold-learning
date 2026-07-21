@@ -25,7 +25,7 @@ import {
   type SubmittedAnswer,
   type SupportEvent,
   type SupportKey,
-} from '@quiz-master/domain';
+} from '@scaffold-learning/domain';
 
 export const SYNTHETIC_EVIDENCE_VERSION = 1;
 export const SYNTHETIC_SCORABLE_RESPONSE_COUNT = 10;

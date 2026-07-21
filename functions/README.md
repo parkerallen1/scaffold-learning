@@ -11,6 +11,6 @@ npm run functions:check
 npm run build --workspace functions
 ```
 
-Start the local-only Firebase stack with `npm run emulators:start`. The default Firebase project alias is `demo-quiz-master`; production remains available only through the explicit `production` alias and must not be used by local scripts.
+Start the local-only Firebase stack with `npm run emulators:start`. The default Firebase project alias is `demo-scaffold-learning`; production remains available only through the explicit `production` alias and must not be used by local scripts.
 
 The Firestore emulator requires a local Java runtime. If `npm run firebase:validate` reports that `java -version` failed, install a Firebase-supported JDK before running emulator and rules tests. Frontend and Functions builds do not require Java.

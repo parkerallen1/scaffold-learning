@@ -6,7 +6,7 @@ export const NotFoundPage = () => (
         className="mt-4 inline-flex min-h-11 items-center font-semibold text-blue-700 hover:underline"
         href="/"
       >
-        Return to Quiz Master
+        Return to Scaffold Learning
       </a>
     </div>
   </main>

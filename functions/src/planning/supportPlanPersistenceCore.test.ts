@@ -8,7 +8,7 @@ import {
   supportPlanIdSchema,
   supportPlanVersionSchema,
   teacherIdSchema,
-} from '@quiz-master/domain';
+} from '@scaffold-learning/domain';
 
 import {
   activePointerFor,

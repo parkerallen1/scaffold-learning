@@ -1,4 +1,4 @@
-import type { RecommendationInput, RecommendationResult } from '@quiz-master/domain';
+import type { RecommendationInput, RecommendationResult } from '@scaffold-learning/domain';
 
 export interface AiProvider {
   readonly name: 'fake' | 'openai';

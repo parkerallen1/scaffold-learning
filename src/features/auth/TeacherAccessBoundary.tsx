@@ -34,7 +34,7 @@ const TeacherSignIn = () => {
             Teacher access
           </p>
           <h1 id="sign-in-title" className="text-3xl font-bold">
-            Sign in to Quiz Master
+            Sign in to Scaffold Learning
           </h1>
           <p className="mt-3 text-slate-600">
             Teacher accounts will own classes, student support plans, and assignment decisions.

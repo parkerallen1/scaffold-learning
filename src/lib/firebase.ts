@@ -30,12 +30,12 @@ if (env.VITE_USE_EMULATORS !== 'true' && env.VITE_USE_EMULATORS !== 'false') {
 const useEmulators = env.VITE_USE_EMULATORS === 'true';
 const projectId = requirePublicEnv('VITE_FIREBASE_PROJECT_ID');
 
-if (useEmulators && projectId !== 'demo-quiz-master') {
-  throw new Error('Emulator mode is restricted to the demo-quiz-master project ID.');
+if (useEmulators && projectId !== 'demo-scaffold-learning') {
+  throw new Error('Emulator mode is restricted to the demo-scaffold-learning project ID.');
 }
 
-if (!useEmulators && projectId === 'demo-quiz-master') {
-  throw new Error('The demo-quiz-master project ID may only be used with emulators.');
+if (!useEmulators && projectId === 'demo-scaffold-learning') {
+  throw new Error('The demo-scaffold-learning project ID may only be used with emulators.');
 }
 
 const firebaseConfig: FirebaseOptions = {
@@ -61,14 +61,14 @@ export const db = getFirestore(firebaseApp);
 export const functions = getFunctions(firebaseApp, 'us-central1');
 
 const runtimeState = globalThis as typeof globalThis & {
-  __QUIZ_MASTER_EMULATORS_CONNECTED__?: boolean;
+  __SCAFFOLD_LEARNING_EMULATORS_CONNECTED__?: boolean;
 };
 
-if (useEmulators && !runtimeState.__QUIZ_MASTER_EMULATORS_CONNECTED__) {
+if (useEmulators && !runtimeState.__SCAFFOLD_LEARNING_EMULATORS_CONNECTED__) {
   connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
   connectFirestoreEmulator(db, '127.0.0.1', 8080);
   connectFunctionsEmulator(functions, '127.0.0.1', 5001);
-  runtimeState.__QUIZ_MASTER_EMULATORS_CONNECTED__ = true;
+  runtimeState.__SCAFFOLD_LEARNING_EMULATORS_CONNECTED__ = true;
 }
 
 export const firebaseRuntime = Object.freeze({

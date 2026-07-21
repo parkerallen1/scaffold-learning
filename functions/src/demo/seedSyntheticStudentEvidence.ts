@@ -10,7 +10,7 @@ import {
   studentSafeIdentitySchema,
   supportPlanVersionSchema,
   type TeacherId,
-} from '@quiz-master/domain';
+} from '@scaffold-learning/domain';
 
 import {
   executeTeacherOperation,

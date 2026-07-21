@@ -1,1 +1,1 @@
-export * from '@quiz-master/domain';
+export * from '@scaffold-learning/domain';

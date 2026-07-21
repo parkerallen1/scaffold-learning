@@ -16,7 +16,7 @@ import {
   type AnalyzeIepDocumentInput,
   type IepProfileDraft,
   type TeacherId,
-} from '@quiz-master/domain';
+} from '@scaffold-learning/domain';
 
 import { openAiApiKey } from '../ai/openAiRecommendationProvider.js';
 import { AiOperationalControlError, runControlledAiOperation } from '../ai/operationalControls.js';
