@@ -34,6 +34,7 @@ describe('AssignmentAuthoringForm', () => {
     await user.type(screen.getByLabelText('Correct number'), '4');
     await user.type(screen.getByLabelText(/Approved hints/), 'Combine the hundredths first.');
     await user.click(screen.getByRole('button', { name: 'Add question' }));
+    expect(screen.getByText('4', { selector: 'p' })).toHaveTextContent('Correct answer: 4');
     await user.click(screen.getByRole('button', { name: 'Publish assignment' }));
 
     expect(onPublish).toHaveBeenCalledWith(
@@ -64,6 +65,20 @@ describe('AssignmentAuthoringForm', () => {
     expect(screen.getByText('Review (0)')).toBeInTheDocument();
   });
 
+  it('shows every accepted short-text answer in the review card', async () => {
+    const user = userEvent.setup();
+    render(<AssignmentAuthoringForm onPublish={vi.fn()} />);
+
+    await user.selectOptions(screen.getByLabelText('Response type'), 'shortText');
+    await user.type(screen.getByLabelText('Question'), 'Name a primary color.');
+    await user.type(screen.getByLabelText(/Accepted answers/), 'red{enter}blue{enter}yellow');
+    await user.click(screen.getByRole('button', { name: 'Add question' }));
+
+    expect(screen.getByText('red, blue, yellow', { selector: 'p' })).toHaveTextContent(
+      'Accepted answers: red, blue, yellow',
+    );
+  });
+
   it('allows removing a question before publication', async () => {
     const user = userEvent.setup();
     render(<AssignmentAuthoringForm onPublish={vi.fn()} />);
@@ -85,6 +100,7 @@ describe('AssignmentAuthoringForm', () => {
 
     expect(screen.getByLabelText('Assignment title')).toHaveValue('Imported fractions');
     expect(screen.getByText('Review (1)')).toBeInTheDocument();
+    expect(screen.getByText('2/4', { selector: 'p' })).toHaveTextContent('Correct answer: 2/4');
     await user.click(screen.getByRole('button', { name: 'Edit question 1' }));
     const question = screen.getByLabelText('Question');
     await user.clear(question);

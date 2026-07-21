@@ -21,6 +21,17 @@ const lines = (value: string) =>
     .map((item) => item.trim())
     .filter(Boolean);
 
+const answerForReview = (question: AssignmentDraft['questions'][number]) => {
+  if (question.questionType === 'numeric') return String(question.expectedValue);
+  if (question.questionType === 'multipleChoice') {
+    return (
+      question.choices.find((choice) => choice.id === question.correctChoiceId)?.label ??
+      'Correct choice unavailable'
+    );
+  }
+  return question.acceptedAnswers.join(', ');
+};
+
 const FieldError = ({ message }: { message?: string }) =>
   message ? (
     <p role="alert" className="mt-2 text-sm font-medium text-red-700">
@@ -249,6 +260,14 @@ export const AssignmentAuthoringForm = ({
                 </p>
                 <p className="mt-1 text-sm capitalize text-slate-600">
                   {question.questionType.replace(/([A-Z])/g, ' $1')}
+                </p>
+                <p className="mt-3 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-950">
+                  <span className="font-semibold">
+                    {question.questionType === 'shortText'
+                      ? 'Accepted answers:'
+                      : 'Correct answer:'}
+                  </span>{' '}
+                  {answerForReview(question)}
                 </p>
                 <button
                   type="button"
