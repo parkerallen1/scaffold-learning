@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
 
-import { SUPPORT_CATALOG } from '../../lib/domain';
 import { useAuth } from '../../features/auth/authContext';
 import {
   getStudentPlanningData,
@@ -71,22 +70,11 @@ export const TeacherPreviewPage = ({ search = window.location.search }: { search
           </p>
           <h1 className="mt-1 text-3xl font-bold">Hi, {firstName}!</h1>
           <p className="mt-2 text-slate-600">
-            Your teacher has made these accommodations available. You stay in control of when to use
-            them.
+            Take your time and use any tools you see when they are helpful.
           </p>
-          <ul className="mt-4 flex flex-wrap gap-2" aria-label="Available accommodations">
-            {(studentData.activePlan?.supports ?? []).map((support) => (
-              <li
-                key={support.supportKey}
-                className="rounded-full bg-violet-100 px-3 py-1.5 text-sm font-semibold text-violet-900"
-              >
-                {SUPPORT_CATALOG[support.supportKey].label}
-              </li>
-            ))}
-          </ul>
         </section>
       )}
-      <QuizRunner />
+      <QuizRunner supportPlan={studentData?.activePlan ?? undefined} />
     </main>
   );
 };
