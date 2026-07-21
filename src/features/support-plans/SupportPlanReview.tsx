@@ -316,9 +316,7 @@ export function SettingsEditor({ settings, onChange }: SettingsEditorProps) {
           <input
             type="checkbox"
             checked={settings.increasedSpacing}
-            onChange={(event) =>
-              onChange({ ...settings, increasedSpacing: event.target.checked })
-            }
+            onChange={(event) => onChange({ ...settings, increasedSpacing: event.target.checked })}
             className="h-5 w-5 accent-blue-700"
           />
           Add extra letter and word spacing

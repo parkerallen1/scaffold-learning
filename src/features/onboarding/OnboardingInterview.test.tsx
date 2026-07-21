@@ -68,9 +68,7 @@ describe('OnboardingInterview', () => {
     await user.click(screen.getByRole('button', { name: 'Next' }));
     await user.click(screen.getByRole('checkbox', { name: 'Waits without starting' }));
     await user.click(screen.getByRole('button', { name: 'Next' }));
-    await user.click(
-      screen.getByRole('checkbox', { name: 'Offer a neutral first-step prompt' }),
-    );
+    await user.click(screen.getByRole('checkbox', { name: 'Offer a neutral first-step prompt' }));
     await user.click(screen.getByRole('button', { name: 'Next' }));
     await user.click(screen.getByRole('checkbox', { name: 'Typing' }));
     await user.click(screen.getByRole('button', { name: 'Next' }));
