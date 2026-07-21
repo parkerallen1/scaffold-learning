@@ -55,7 +55,8 @@ Production deployments continue to use random class codes, random PINs, and mask
 `setup:local` creates missing ignored emulator configuration and a local-only student PIN pepper; it
 never overwrites existing values. The checked-in environment template is locked to
 `demo-scaffold-learning`; the client refuses to mix a demo project with production mode. The emulator uses
-deterministic fake AI and does not send observations to OpenAI.
+deterministic AI by default and does not send observations to OpenAI unless live local AI is explicitly
+enabled as described below.
 
 ## Demo flow
 
@@ -77,7 +78,21 @@ The application does not use a separate “ChatGPT API.” Teacher recommendatio
 IEP analysis, assignment drafting, and read-aloud run through the official OpenAI SDK. There is no
 active Gemini provider, client, credential, or dependency.
 
-Local development always selects the fake providers. For a reviewed production deployment:
+Local development selects deterministic providers by default. To use the real OpenAI integrations in
+the emulator, keep the API key only in `functions/.secret.local` and set the following in the ignored
+`functions/.env.local` file, then restart the emulator:
+
+```dotenv
+AI_PROVIDER=openai
+AI_FEATURES_ENABLED=true
+AI_EMULATOR_LIVE_OPENAI=true
+```
+
+This enables live support recommendations, IEP analysis, assignment drafting, evidence audits, and
+text-to-speech. These requests consume API usage. Set `AI_EMULATOR_LIVE_OPENAI=false` to return to the
+deterministic demo.
+
+For a reviewed production deployment:
 
 ```bash
 firebase functions:secrets:set OPENAI_API_KEY
@@ -93,6 +108,42 @@ other reviewed AI workflows keep their server-side defaults. Optional model over
 Never put `OPENAI_API_KEY` in `.env.local`, a `VITE_*` variable, or client source. OpenAI requests use structured outputs, `store: false`, bounded timeouts, no retries, and post-response safety validation.
 
 Live recommendation and audit calls share a transactional per-teacher ceiling of 5 calls per minute and 50 calls per UTC day. Disabled or exhausted automation returns the existing manual teacher workflow without calling OpenAI. Operational logs contain only provider, operation, prompt version, model, status category, and latency; they exclude prompts, observations, answers, identities, provider error text, PINs, and secrets.
+
+## Built with Codex and GPT-5.6
+
+Scaffold Learning was built during OpenAI Build Week in an ongoing Codex collaboration using
+GPT-5.6. Codex was instrumental in getting it across the finish line. I had tried to build the idea
+in several other ways, including AI Studio and Claude Code, but those attempts stalled for different
+reasons. Codex was the first workflow that let me carry the product all the way from an evolving idea
+to an end-to-end web application that I could repeatedly run, inspect, test, and improve.
+
+That continuity mattered because Scaffold Learning is not a single model call or a thin interface.
+The teacher and student experiences, Firebase backend, privacy boundaries, support-plan logic, and
+the different OpenAI API workflows all have to agree with one another. Codex helped turn that whole
+system into a working vertical slice by:
+
+- translating teacher feedback and annotated screenshots into small, reviewable product changes;
+- designing the teacher, student, support-planning, assignment, and evidence workflows as one
+  coherent experience;
+- implementing typed Firebase boundaries, Firestore authorization rules, OpenAI structured-output
+  adapters, and deterministic emulator providers;
+- pressure-testing safety decisions, including teacher approval before supports go live, synthetic
+  demo data, server-only answer keys and credentials, and a manual fallback when AI is unavailable;
+- writing and running the verification suite while committing each logical change separately.
+
+The ability to work across the entire repository was especially important for integrating different
+OpenAI capabilities for different jobs: structured support recommendations, IEP document analysis,
+assignment generation, evidence review, and text-to-speech. Codex helped implement those server-side
+paths, connect them to editable teacher workflows, and test the deterministic fallbacks and safety
+boundaries around them. That end-to-end building and testing loop was necessary to make the app feel
+like one usable product instead of a collection of disconnected AI demos.
+
+The most important product decision was to keep AI in a proposal role. GPT-5.6 can help extract an
+IEP draft, recommend supports from a fixed catalog, draft assignments, and audit evidence, but a
+teacher reviews and approves every student-facing change. For a reliable and privacy-safe review,
+the included emulator uses deterministic providers and pre-populated synthetic classrooms. The
+production adapters demonstrate how the same reviewed workflows connect to the OpenAI Responses and
+text-to-speech APIs without exposing an API key to the browser.
 
 ## Verification
 
@@ -150,3 +201,7 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md), [API.md](./API.md), and [COMPONENTS.md
 - Add a teacher-facing synthetic seed/reset control; Playwright resets only its isolated emulator state programmatically.
 
 Do not use real student data until those gates are complete.
+
+## License
+
+Scaffold Learning is available under the [MIT License](./LICENSE).
