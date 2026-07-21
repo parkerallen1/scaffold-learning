@@ -103,7 +103,7 @@ const StudentRow = ({
   onResetPin: (student: StudentSafeIdentity) => void;
   student: StudentSafeIdentity;
 }) => (
-  <li className="relative rounded-xl border border-slate-200 p-4 pb-16">
+  <li className="rounded-xl border border-slate-200 p-4">
     <div className="flex flex-wrap items-start justify-between gap-3">
       <div className="min-w-0">
         <p className="font-semibold text-slate-900">{student.displayName}</p>
@@ -118,13 +118,7 @@ const StudentRow = ({
         </div>
       )}
     </div>
-    {student.demoStory && (
-      <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">
-        <span className="font-semibold text-slate-800">Synthetic student story:</span>{' '}
-        {student.demoStory}
-      </p>
-    )}
-    <div className="mt-4 flex flex-wrap gap-2 pr-12">
+    <div className="mt-4 flex flex-wrap gap-2">
       {demoMode && (
         <a
           href={`/teacher/preview?classroomId=${encodeURIComponent(classroom.id)}&studentId=${encodeURIComponent(student.id)}`}
@@ -153,11 +147,25 @@ const StudentRow = ({
               {student.status === 'disabled' ? 'Reset PIN & enable' : 'Reset PIN'}
             </button>
           )}
+        </>
+      )}
+    </div>
+    {(student.demoStory || classroom.status === 'active') && (
+      <div className="mt-8 flex items-end justify-between gap-4">
+        {student.demoStory ? (
+          <p className="max-w-3xl flex-1 text-sm leading-6 text-slate-600">
+            <span className="font-semibold text-slate-800">Synthetic student story:</span>{' '}
+            {student.demoStory}
+          </p>
+        ) : (
+          <span />
+        )}
+        {classroom.status === 'active' && (
           <button
             type="button"
             onClick={() => onDisable(student)}
             disabled={isWorking || student.status === 'disabled'}
-            className="absolute bottom-4 right-4 flex h-9 w-9 items-center justify-center rounded-md text-red-700 hover:bg-red-50 disabled:opacity-40"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-red-700 hover:bg-red-50 disabled:opacity-40"
             aria-label="Disable access"
             title={`Remove ${student.displayName} from this classroom`}
           >
@@ -172,9 +180,9 @@ const StudentRow = ({
               <path d="M3 6h18M8 6V4h8v2m-9 0 1 14h8l1-14M10 10v6m4-6v6" />
             </svg>
           </button>
-        </>
-      )}
-    </div>
+        )}
+      </div>
+    )}
   </li>
 );
 

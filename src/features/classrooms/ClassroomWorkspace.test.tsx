@@ -164,7 +164,15 @@ describe('ClassroomWorkspace', () => {
       'href',
       '/teacher/preview?classroomId=classroom-1&studentId=student-1',
     );
-    expect(screen.getByText(/Alex benefits from a focused screen/)).toBeInTheDocument();
+    const story = screen.getByText(/Alex benefits from a focused screen/);
+    const removeButton = screen.getByRole('button', { name: 'Disable access' });
+    expect(story).toBeInTheDocument();
+    expect(story.parentElement).toBe(removeButton.parentElement);
+    expect(
+      screen
+        .getByRole('link', { name: "Demo Alex Student's experience" })
+        .compareDocumentPosition(story) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
     await user.click(handleCopy);
     expect(clipboardSpy).toHaveBeenCalledWith('alex_student');
     expect(handleCopy).toHaveTextContent('Copied');
