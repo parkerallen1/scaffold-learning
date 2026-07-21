@@ -7,7 +7,7 @@ import { ScratchCanvas } from './ScratchCanvas';
 import type { ScratchCanvasHandle } from './ScratchCanvas';
 
 describe('ScratchCanvas', () => {
-  it('draws with pointer events, captures the pointer, and clears imperatively', () => {
+  it('scales pointer coordinates to the canvas bitmap on a narrower rendered surface', () => {
     const ref = createRef<ScratchCanvasHandle>();
     render(
       <ScratchCanvas ref={ref} questionIndex={0}>
@@ -19,6 +19,8 @@ describe('ScratchCanvas', () => {
     const context = canvas.getContext('2d')!;
     const setPointerCapture = vi.fn();
     const releasePointerCapture = vi.fn();
+    canvas.width = 600;
+    canvas.height = 400;
 
     Object.defineProperties(canvas, {
       setPointerCapture: { configurable: true, value: setPointerCapture },
@@ -64,8 +66,8 @@ describe('ScratchCanvas', () => {
     expect(canvas.style.touchAction).toBe('none');
     expect(setPointerCapture).toHaveBeenCalledWith(7);
     expect(context.beginPath).toHaveBeenCalled();
-    expect(context.moveTo).toHaveBeenCalledWith(20, 30);
-    expect(context.lineTo).toHaveBeenCalledWith(40, 60);
+    expect(context.moveTo).toHaveBeenCalledWith(40, 60);
+    expect(context.lineTo).toHaveBeenCalledWith(80, 120);
     expect(context.stroke).toHaveBeenCalled();
     expect(context.closePath).toHaveBeenCalled();
     expect(releasePointerCapture).toHaveBeenCalledWith(7);
