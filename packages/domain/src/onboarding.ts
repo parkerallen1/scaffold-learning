@@ -18,23 +18,17 @@ type OnboardingQuestion = Readonly<{
   id: OnboardingQuestionId;
   prompt: string;
   helper: string;
-  responseKind: 'longText' | 'shortList' | 'singleSelect' | 'multiSelect';
-  options?: readonly Readonly<{ value: string; label: string }>[];
+  responseKind: 'singleSelect' | 'multiSelect';
+  options: readonly Readonly<{ value: string; label: string }>[];
+  allowOther: true;
   optional: true;
 }>;
 
 export const ONBOARDING_QUESTIONS = Object.freeze([
   {
-    id: 'independentWork',
-    prompt: 'When this student works independently, what usually goes well?',
-    helper: 'Describe observable strengths or routines. You can skip any question.',
-    responseKind: 'longText',
-    optional: true,
-  },
-  {
     id: 'barriers',
-    prompt: 'Which parts of independent work tend to create the most friction?',
-    helper: 'Choose only what you have observed; this is not a diagnosis.',
+    prompt: 'Where does independent work create the most friction?',
+    helper: 'Choose everything you have observed. This describes classroom needs, not a diagnosis.',
     responseKind: 'multiSelect',
     options: [
       { value: 'readingDirections', label: 'Reading directions' },
@@ -45,26 +39,47 @@ export const ONBOARDING_QUESTIONS = Object.freeze([
       { value: 'sustainingAttention', label: 'Sustaining attention' },
       { value: 'handlingMistakes', label: 'Handling mistakes' },
     ],
+    allowOther: true,
     optional: true,
   },
   {
     id: 'stuckLooksLike',
-    prompt: 'What does getting stuck look like for this student?',
-    helper: 'For example: rereads, waits, guesses, erases repeatedly, or leaves the task.',
-    responseKind: 'longText',
+    prompt: 'What does getting stuck usually look like?',
+    helper: 'Choose the observable behaviors you see most often.',
+    responseKind: 'multiSelect',
+    options: [
+      { value: 'Rereads the same directions', label: 'Rereads the same directions' },
+      { value: 'Waits without starting', label: 'Waits without starting' },
+      { value: 'Guesses quickly', label: 'Guesses quickly' },
+      { value: 'Erases or restarts repeatedly', label: 'Erases or restarts repeatedly' },
+      {
+        value: 'Leaves the task or changes activities',
+        label: 'Leaves the task or changes activities',
+      },
+    ],
+    allowOther: true,
     optional: true,
   },
   {
     id: 'helpfulStrategies',
-    prompt: 'What teacher strategies have helped this student re-engage?',
-    helper: 'Add brief, concrete strategies one at a time.',
-    responseKind: 'shortList',
+    prompt: 'What helps this student re-engage?',
+    helper: 'Select strategies that have worked in class.',
+    responseKind: 'multiSelect',
+    options: [
+      { value: 'Show one step at a time.', label: 'Show one step at a time' },
+      { value: 'Offer a neutral first-step prompt.', label: 'Offer a neutral first-step prompt' },
+      { value: 'Read directions aloud on request.', label: 'Read directions aloud on request' },
+      { value: 'Provide a comparable example.', label: 'Provide a comparable example' },
+      { value: 'Offer an optional short break.', label: 'Offer an optional short break' },
+      { value: 'Reduce visual distractions.', label: 'Reduce visual distractions' },
+    ],
+    allowOther: true,
     optional: true,
   },
   {
     id: 'responsePreferences',
     prompt: 'How does this student most comfortably show an answer?',
-    helper: 'Select observed preferences; the assignment still determines valid response types.',
+    helper: 'Select observed preferences; assignments still determine valid response types.',
     responseKind: 'multiSelect',
     options: [
       { value: 'typing', label: 'Typing' },
@@ -72,6 +87,7 @@ export const ONBOARDING_QUESTIONS = Object.freeze([
       { value: 'speech', label: 'Speaking' },
       { value: 'handwriting', label: 'Handwriting' },
     ],
+    allowOther: true,
     optional: true,
   },
   {
@@ -85,12 +101,13 @@ export const ONBOARDING_QUESTIONS = Object.freeze([
       { value: 'stressful', label: 'Usually stressful' },
       { value: 'unknown', label: 'Not sure yet' },
     ],
+    allowOther: true,
     optional: true,
   },
   {
     id: 'adultPrompting',
     prompt: 'How often does this student need an adult prompt to continue?',
-    helper: 'Use your typical independent-work setting as the reference.',
+    helper: 'Use a typical independent-work setting as the reference.',
     responseKind: 'singleSelect',
     options: [
       { value: 'none', label: 'Rarely or never' },
@@ -98,20 +115,22 @@ export const ONBOARDING_QUESTIONS = Object.freeze([
       { value: 'frequent', label: 'Frequently' },
       { value: 'unknown', label: 'Not sure yet' },
     ],
-    optional: true,
-  },
-  {
-    id: 'interestsAndConsiderations',
-    prompt: 'What interests, language preferences, or sensory considerations are useful to know?',
-    helper: 'Include only information that is useful for choosing how the app presents work.',
-    responseKind: 'longText',
+    allowOther: true,
     optional: true,
   },
   {
     id: 'neverDo',
-    prompt: 'What should the app never do for this student?',
-    helper: 'For example: play audio automatically, show a timer, or hide all directions.',
-    responseKind: 'shortList',
+    prompt: 'What should the app avoid for this student?',
+    helper: 'Select any experience that would be unhelpful or stressful.',
+    responseKind: 'multiSelect',
+    options: [
+      { value: 'Do not play audio automatically.', label: 'Playing audio automatically' },
+      { value: 'Do not show a countdown timer.', label: 'Showing a countdown timer' },
+      { value: 'Do not hide all directions.', label: 'Hiding all directions' },
+      { value: 'Do not auto-advance after an attempt.', label: 'Advancing automatically' },
+      { value: 'Do not reveal an answer in a hint.', label: 'Revealing answers in hints' },
+    ],
+    allowOther: true,
     optional: true,
   },
 ] as const satisfies readonly OnboardingQuestion[]);

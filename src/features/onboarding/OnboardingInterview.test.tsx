@@ -17,40 +17,46 @@ describe('OnboardingInterview', () => {
 
     expect(screen.getByRole('heading')).toHaveFocus();
     await user.click(screen.getByRole('button', { name: 'Skip question' }));
-    expect(screen.getByText('Question 2 of 9')).toBeInTheDocument();
+    expect(screen.getByText('Question 2 of 7')).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Back' }));
-    const response = screen.getByRole('textbox');
-    await user.type(response, 'Starts familiar math independently.');
+    await user.click(screen.getByRole('checkbox', { name: 'Getting started' }));
     await user.click(screen.getByRole('button', { name: 'Next' }));
     await advanceToReview(user);
 
     expect(
       screen.getByRole('heading', { name: 'Review observations for Sam' }),
     ).toBeInTheDocument();
-    expect(screen.getByText('Starts familiar math independently.')).toBeInTheDocument();
+    expect(screen.getByText('Getting started')).toBeInTheDocument();
 
     await user.click(
       screen.getByRole('button', {
-        name: 'Edit: When this student works independently, what usually goes well?',
+        name: 'Edit: Where does independent work create the most friction?',
       }),
     );
-    await user.clear(screen.getByRole('textbox'));
-    await user.type(screen.getByRole('textbox'), 'Begins short math routines without prompting.');
+    await user.click(screen.getByRole('checkbox', { name: 'Getting started' }));
+    await user.click(screen.getByRole('checkbox', { name: 'Reading directions' }));
     await user.click(screen.getByRole('button', { name: 'Review answers' }));
 
-    expect(screen.getByText('Begins short math routines without prompting.')).toBeInTheDocument();
+    expect(screen.getByText('Reading directions')).toBeInTheDocument();
   });
 
-  it('keeps the teacher on the current question when a response violates the schema', async () => {
+  it('offers a concise Other response on every question', async () => {
     const user = userEvent.setup();
     render(<OnboardingInterview onComplete={vi.fn()} />);
 
-    await user.type(screen.getByRole('textbox'), 'a'.repeat(501));
-    await user.click(screen.getByRole('button', { name: 'Next' }));
+    for (let questionNumber = 1; questionNumber <= 7; questionNumber += 1) {
+      expect(screen.getByLabelText('Other')).toBeInTheDocument();
+      if (questionNumber < 7) {
+        await user.click(screen.getByRole('button', { name: 'Skip question' }));
+      }
+    }
 
-    expect(screen.getByRole('alert')).toHaveTextContent(/500 character/i);
-    expect(screen.getByText('Question 1 of 9')).toBeInTheDocument();
+    await user.click(screen.getByLabelText('Other'));
+    const other = screen.getByRole('textbox', {
+      name: 'Other response for: What should the app avoid for this student?',
+    });
+    expect(other).toHaveAttribute('maxlength', '180');
   });
 
   it('produces a schema-shaped profile draft without a raw transcript', async () => {
@@ -58,23 +64,21 @@ describe('OnboardingInterview', () => {
     const onComplete = vi.fn();
     render(<OnboardingInterview onComplete={onComplete} />);
 
-    await user.type(screen.getByRole('textbox'), 'Works independently on familiar examples.');
-    await user.click(screen.getByRole('button', { name: 'Next' }));
     await user.click(screen.getByRole('checkbox', { name: 'Getting started' }));
     await user.click(screen.getByRole('button', { name: 'Next' }));
-    await user.click(screen.getByRole('button', { name: 'Skip question' }));
-    await user.type(
-      screen.getByRole('textbox'),
-      'Offer the first step\nCheck in after two minutes',
+    await user.click(screen.getByRole('checkbox', { name: 'Waits without starting' }));
+    await user.click(screen.getByRole('button', { name: 'Next' }));
+    await user.click(
+      screen.getByRole('checkbox', { name: 'Offer a neutral first-step prompt' }),
     );
     await user.click(screen.getByRole('button', { name: 'Next' }));
     await user.click(screen.getByRole('checkbox', { name: 'Typing' }));
     await user.click(screen.getByRole('button', { name: 'Next' }));
     await user.click(screen.getByRole('radio', { name: 'Usually stressful' }));
     await user.click(screen.getByRole('button', { name: 'Next' }));
-    await user.click(screen.getByRole('button', { name: 'Skip question' }));
-    await user.click(screen.getByRole('button', { name: 'Skip question' }));
-    await user.type(screen.getByRole('textbox'), 'Play audio automatically');
+    await user.click(screen.getByRole('radio', { name: 'Occasionally' }));
+    await user.click(screen.getByRole('button', { name: 'Next' }));
+    await user.click(screen.getByRole('checkbox', { name: 'Playing audio automatically' }));
     await user.click(screen.getByRole('button', { name: 'Review answers' }));
 
     expect(screen.getByText(/there is no raw chat transcript/i)).toBeInTheDocument();
@@ -86,13 +90,13 @@ describe('OnboardingInterview', () => {
 
     expect(onComplete).toHaveBeenCalledWith({
       observations: {
-        independentWork: 'Works independently on familiar examples.',
         barriers: ['gettingStarted'],
-        helpfulStrategies: ['Offer the first step', 'Check in after two minutes'],
+        stuckLooksLike: 'Waits without starting',
+        helpfulStrategies: ['Offer a neutral first-step prompt.'],
         responsePreferences: ['typing'],
         timerResponse: 'stressful',
-        adultPrompting: 'unknown',
-        neverDo: ['Play audio automatically'],
+        adultPrompting: 'occasional',
+        neverDo: ['Do not play audio automatically.'],
       },
       teacherSummary: 'Sam benefits from a clear first step.',
     });

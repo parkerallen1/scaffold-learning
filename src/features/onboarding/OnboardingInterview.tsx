@@ -16,43 +16,99 @@ interface OnboardingInterviewProps {
   onComplete: (draft: OnboardingProfileDraft) => void;
 }
 
+type OtherDrafts = Partial<Record<OnboardingQuestionId, string>>;
+type OtherSelections = Partial<Record<OnboardingQuestionId, boolean>>;
+
 const EMPTY_OBSERVATIONS = structuredObservationsSchema.parse({});
 
 const compactObservations = (observations: StructuredObservations) =>
   Object.fromEntries(Object.entries(observations).filter(([, value]) => value !== undefined));
 
-const TEXT_FIELDS = new Set<OnboardingQuestionId>([
-  'independentWork',
-  'stuckLooksLike',
-  'interestsAndConsiderations',
-]);
+const questionFor = (questionId: OnboardingQuestionId) =>
+  ONBOARDING_QUESTIONS.find(({ id }) => id === questionId);
 
-const formatValue = (questionId: OnboardingQuestionId, observations: StructuredObservations) => {
-  const value = observations[questionId];
+const splitStuckBehaviors = (value: string | undefined) =>
+  value
+    ? value
+        .split('\n')
+        .map((item) => item.trim())
+        .filter(Boolean)
+    : [];
 
-  if (Array.isArray(value)) {
-    if (value.length === 0) return 'Skipped';
-    const question = ONBOARDING_QUESTIONS.find(({ id }) => id === questionId);
-    const options = question && 'options' in question ? question.options : undefined;
-    return value
-      .map((item) => options?.find((option) => option.value === item)?.label ?? item)
-      .join(', ');
+const selectedValues = (
+  questionId: OnboardingQuestionId,
+  observations: StructuredObservations,
+): readonly string[] => {
+  switch (questionId) {
+    case 'barriers':
+      return observations.barriers;
+    case 'stuckLooksLike':
+      return splitStuckBehaviors(observations.stuckLooksLike);
+    case 'helpfulStrategies':
+      return observations.helpfulStrategies;
+    case 'responsePreferences':
+      return observations.responsePreferences;
+    case 'neverDo':
+      return observations.neverDo;
+    default:
+      return [];
   }
+};
 
-  if (!value || value === 'unknown') return 'Skipped';
-  const question = ONBOARDING_QUESTIONS.find(({ id }) => id === questionId);
-  const options = question && 'options' in question ? question.options : undefined;
-  return options?.find((option) => option.value === value)?.label ?? value;
+const initialOtherState = (initialObservations?: Partial<StructuredObservations>) => {
+  const drafts: OtherDrafts = {};
+  const selected: OtherSelections = {};
+  if (!initialObservations) return { drafts, selected };
+
+  for (const question of ONBOARDING_QUESTIONS) {
+    if (question.responseKind !== 'multiSelect') continue;
+    const known = new Set<string>(question.options.map(({ value }) => value));
+    const current = selectedValues(
+      question.id,
+      structuredObservationsSchema.parse({ ...EMPTY_OBSERVATIONS, ...initialObservations }),
+    );
+    const custom = current.filter((value) => !known.has(value));
+    if (custom.length > 0) {
+      drafts[question.id] = custom.join('; ');
+      selected[question.id] = true;
+    }
+  }
+  return { drafts, selected };
+};
+
+const formatValue = (
+  questionId: OnboardingQuestionId,
+  observations: StructuredObservations,
+  otherDrafts: OtherDrafts,
+) => {
+  const question = questionFor(questionId);
+  if (!question) return 'Skipped';
+  const value = observations[questionId];
+  const values = Array.isArray(value)
+    ? value
+    : question.responseKind === 'multiSelect' && typeof value === 'string'
+      ? splitStuckBehaviors(value)
+      : value && value !== 'unknown'
+        ? [value]
+        : [];
+  const labels = values.map(
+    (item) => question.options.find((option) => option.value === item)?.label ?? item,
+  );
+  const other = otherDrafts[questionId]?.trim();
+  if (other) labels.push(`Other: ${other}`);
+  return labels.length > 0 ? labels.join(', ') : 'Skipped';
 };
 
 const clearQuestion = (
   observations: StructuredObservations,
   questionId: OnboardingQuestionId,
 ): StructuredObservations => {
-  if (questionId === 'barriers' || questionId === 'responsePreferences') {
-    return { ...observations, [questionId]: [] };
-  }
-  if (questionId === 'helpfulStrategies' || questionId === 'neverDo') {
+  if (
+    questionId === 'barriers' ||
+    questionId === 'responsePreferences' ||
+    questionId === 'helpfulStrategies' ||
+    questionId === 'neverDo'
+  ) {
     return { ...observations, [questionId]: [] };
   }
   if (questionId === 'timerResponse' || questionId === 'adultPrompting') {
@@ -61,19 +117,50 @@ const clearQuestion = (
   return { ...observations, [questionId]: undefined };
 };
 
+const withOtherResponses = (
+  observations: StructuredObservations,
+  otherDrafts: OtherDrafts,
+): StructuredObservations => {
+  const next = { ...observations };
+  const context: string[] = [];
+
+  for (const question of ONBOARDING_QUESTIONS) {
+    const other = otherDrafts[question.id]?.trim();
+    if (!other) continue;
+    if (question.id === 'stuckLooksLike') {
+      const values = splitStuckBehaviors(next.stuckLooksLike);
+      next.stuckLooksLike = (values.includes(other) ? values : [...values, other]).join('\n');
+    } else if (question.id === 'helpfulStrategies') {
+      if (!next.helpfulStrategies.includes(other)) {
+        next.helpfulStrategies = [...next.helpfulStrategies, other];
+      }
+    } else if (question.id === 'neverDo') {
+      if (!next.neverDo.includes(other)) next.neverDo = [...next.neverDo, other];
+    } else {
+      context.push(`${question.prompt} Other response: ${other}`);
+    }
+  }
+
+  if (context.length > 0) {
+    next.interestsAndConsiderations = [next.interestsAndConsiderations, ...context]
+      .filter(Boolean)
+      .join('\n');
+  }
+  return next;
+};
+
 export function OnboardingInterview({
   initialTeacherSummary = '',
   studentName = 'this student',
   initialObservations,
   onComplete,
 }: OnboardingInterviewProps) {
+  const initialOther = useMemo(() => initialOtherState(initialObservations), [initialObservations]);
   const [observations, setObservations] = useState<StructuredObservations>(() =>
     structuredObservationsSchema.parse({ ...EMPTY_OBSERVATIONS, ...initialObservations }),
   );
-  const [listDrafts, setListDrafts] = useState(() => ({
-    helpfulStrategies: initialObservations?.helpfulStrategies?.join('\n') ?? '',
-    neverDo: initialObservations?.neverDo?.join('\n') ?? '',
-  }));
+  const [otherDrafts, setOtherDrafts] = useState<OtherDrafts>(initialOther.drafts);
+  const [otherSelections, setOtherSelections] = useState<OtherSelections>(initialOther.selected);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isReviewing, setIsReviewing] = useState(false);
   const [returnToReview, setReturnToReview] = useState(false);
@@ -82,31 +169,11 @@ export function OnboardingInterview({
   const headingRef = useRef<HTMLHeadingElement>(null);
 
   const question = ONBOARDING_QUESTIONS[currentIndex];
-  const progressLabel = useMemo(
-    () => `Question ${currentIndex + 1} of ${ONBOARDING_QUESTIONS.length}`,
-    [currentIndex],
-  );
+  const progressLabel = `Question ${currentIndex + 1} of ${ONBOARDING_QUESTIONS.length}`;
 
   useEffect(() => {
     headingRef.current?.focus();
   }, [currentIndex, isReviewing]);
-
-  const updateText = (value: string) => {
-    if (!TEXT_FIELDS.has(question.id)) return;
-    setObservations((current) => ({ ...current, [question.id]: value }));
-    setError(null);
-  };
-
-  const updateList = (value: string) => {
-    if (question.id !== 'helpfulStrategies' && question.id !== 'neverDo') return;
-    setListDrafts((current) => ({ ...current, [question.id]: value }));
-    const items = value
-      .split('\n')
-      .map((item) => item.trim())
-      .filter(Boolean);
-    setObservations((current) => ({ ...current, [question.id]: items }));
-    setError(null);
-  };
 
   const toggleMultiSelect = (value: string, checked: boolean) => {
     if (question.id === 'barriers') {
@@ -117,8 +184,7 @@ export function OnboardingInterview({
           ? [...current.barriers, typedValue]
           : current.barriers.filter((item) => item !== typedValue),
       }));
-    }
-    if (question.id === 'responsePreferences') {
+    } else if (question.id === 'responsePreferences') {
       const typedValue = value as StructuredObservations['responsePreferences'][number];
       setObservations((current) => ({
         ...current,
@@ -126,18 +192,37 @@ export function OnboardingInterview({
           ? [...current.responsePreferences, typedValue]
           : current.responsePreferences.filter((item) => item !== typedValue),
       }));
+    } else if (question.id === 'stuckLooksLike') {
+      setObservations((current) => {
+        const values = splitStuckBehaviors(current.stuckLooksLike);
+        return {
+          ...current,
+          stuckLooksLike: (checked
+            ? [...values, value]
+            : values.filter((item) => item !== value)
+          ).join('\n'),
+        };
+      });
+    } else if (question.id === 'helpfulStrategies' || question.id === 'neverDo') {
+      setObservations((current) => ({
+        ...current,
+        [question.id]: checked
+          ? [...current[question.id], value]
+          : current[question.id].filter((item) => item !== value),
+      }));
     }
     setError(null);
   };
 
   const selectSingle = (value: string) => {
+    setOtherSelections((current) => ({ ...current, [question.id]: false }));
+    setOtherDrafts((current) => ({ ...current, [question.id]: '' }));
     if (question.id === 'timerResponse') {
       setObservations((current) => ({
         ...current,
         timerResponse: value as StructuredObservations['timerResponse'],
       }));
-    }
-    if (question.id === 'adultPrompting') {
+    } else if (question.id === 'adultPrompting') {
       setObservations((current) => ({
         ...current,
         adultPrompting: value as StructuredObservations['adultPrompting'],
@@ -146,27 +231,28 @@ export function OnboardingInterview({
     setError(null);
   };
 
-  const validateCurrentQuestion = () => {
-    const result = structuredObservationsSchema.safeParse(compactObservations(observations));
-    if (result.success) return true;
-
-    const issue = result.error.issues.find((candidate) => candidate.path[0] === question.id);
-    if (!issue) return true;
-    setError(issue.message);
-    return false;
+  const toggleOther = (checked: boolean) => {
+    setOtherSelections((current) => ({ ...current, [question.id]: checked }));
+    if (!checked) setOtherDrafts((current) => ({ ...current, [question.id]: '' }));
+    if (question.responseKind === 'singleSelect') {
+      if (question.id === 'timerResponse') {
+        setObservations((current) => ({ ...current, timerResponse: 'unknown' }));
+      } else if (question.id === 'adultPrompting') {
+        setObservations((current) => ({ ...current, adultPrompting: 'unknown' }));
+      }
+    }
+    setError(null);
   };
 
   const advance = (event: FormEvent) => {
     event.preventDefault();
-    if (!validateCurrentQuestion()) return;
     setError(null);
-
     if (returnToReview || currentIndex === ONBOARDING_QUESTIONS.length - 1) {
       setIsReviewing(true);
       setReturnToReview(false);
-      return;
+    } else {
+      setCurrentIndex((index) => index + 1);
     }
-    setCurrentIndex((index) => index + 1);
   };
 
   const goBack = () => {
@@ -174,23 +260,22 @@ export function OnboardingInterview({
     if (returnToReview) {
       setReturnToReview(false);
       setIsReviewing(true);
-      return;
+    } else {
+      setCurrentIndex((index) => Math.max(0, index - 1));
     }
-    setCurrentIndex((index) => Math.max(0, index - 1));
   };
 
   const skip = () => {
-    if (question.id === 'helpfulStrategies' || question.id === 'neverDo') {
-      setListDrafts((current) => ({ ...current, [question.id]: '' }));
-    }
     setObservations((current) => clearQuestion(current, question.id));
+    setOtherSelections((current) => ({ ...current, [question.id]: false }));
+    setOtherDrafts((current) => ({ ...current, [question.id]: '' }));
     setError(null);
     if (returnToReview || currentIndex === ONBOARDING_QUESTIONS.length - 1) {
       setIsReviewing(true);
       setReturnToReview(false);
-      return;
+    } else {
+      setCurrentIndex((index) => index + 1);
     }
-    setCurrentIndex((index) => index + 1);
   };
 
   const editQuestion = (questionId: OnboardingQuestionId) => {
@@ -202,9 +287,11 @@ export function OnboardingInterview({
 
   const finish = (event: FormEvent) => {
     event.preventDefault();
-    const parsed = structuredObservationsSchema.safeParse(compactObservations(observations));
+    const parsed = structuredObservationsSchema.safeParse(
+      compactObservations(withOtherResponses(observations, otherDrafts)),
+    );
     if (!parsed.success) {
-      setError('Review the highlighted responses before creating this draft.');
+      setError('One or more Other responses are too long. Shorten them before continuing.');
       return;
     }
     if (teacherSummary.length > 1000) {
@@ -227,7 +314,7 @@ export function OnboardingInterview({
           Review observations for {studentName}
         </h1>
         <p className="mt-3 text-sm text-slate-600">
-          These observations can guide support suggestions, but they are not a diagnosis. Only the
+          These selections can guide support suggestions, but they are not a diagnosis. Only the
           structured answers and summary below are included—there is no raw chat transcript.
         </p>
 
@@ -235,8 +322,8 @@ export function OnboardingInterview({
           {ONBOARDING_QUESTIONS.map((reviewQuestion) => (
             <div key={reviewQuestion.id} className="rounded-xl border border-slate-200 p-4">
               <dt className="font-semibold text-slate-900">{reviewQuestion.prompt}</dt>
-              <dd className="mt-1 whitespace-pre-wrap text-sm text-slate-600">
-                {formatValue(reviewQuestion.id, observations)}
+              <dd className="mt-1 text-sm text-slate-600">
+                {formatValue(reviewQuestion.id, observations, otherDrafts)}
               </dd>
               <button
                 type="button"
@@ -255,7 +342,7 @@ export function OnboardingInterview({
             Teacher summary (optional)
           </label>
           <p id="teacher-summary-help" className="mt-1 text-sm text-slate-600">
-            Edit this concise summary before it is used to request support recommendations.
+            Add a concise note before requesting support recommendations.
           </p>
           <textarea
             id="teacher-summary"
@@ -293,6 +380,8 @@ export function OnboardingInterview({
   }
 
   const currentValue = observations[question.id];
+  const currentSelectedValues = selectedValues(question.id, observations);
+  const otherSelected = otherSelections[question.id] === true;
 
   return (
     <section className="mx-auto w-full max-w-2xl rounded-2xl bg-white p-6 shadow-lg">
@@ -303,70 +392,66 @@ export function OnboardingInterview({
       <p id="question-helper" className="mt-3 text-sm text-slate-600">
         {question.helper}
       </p>
-      <p className="mt-2 text-sm font-medium text-slate-700">
-        Focus on classroom observations. This interview is not a diagnosis.
-      </p>
 
       <form onSubmit={advance} className="mt-6">
-        {question.responseKind === 'longText' && (
-          <label className="block">
-            <span className="sr-only">Response</span>
-            <textarea
-              aria-describedby="question-helper"
-              value={typeof currentValue === 'string' ? currentValue : ''}
-              onChange={(event) => updateText(event.target.value)}
-              className="min-h-40 w-full rounded-lg border border-slate-300 p-3 text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
-            />
-          </label>
-        )}
-
-        {question.responseKind === 'shortList' && (
-          <label className="block">
-            <span className="text-sm font-semibold text-slate-800">One item per line</span>
-            <textarea
-              aria-describedby="question-helper"
-              value={
-                question.id === 'helpfulStrategies' || question.id === 'neverDo'
-                  ? listDrafts[question.id]
-                  : ''
-              }
-              onChange={(event) => updateList(event.target.value)}
-              className="mt-2 min-h-40 w-full rounded-lg border border-slate-300 p-3 text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
-            />
-          </label>
-        )}
-
-        {(question.responseKind === 'multiSelect' || question.responseKind === 'singleSelect') && (
-          <fieldset aria-describedby="question-helper" className="space-y-3">
-            <legend className="sr-only">Choose a response</legend>
-            {question.options?.map((option) => {
-              const isMulti = question.responseKind === 'multiSelect';
-              const checked = Array.isArray(currentValue)
-                ? currentValue.includes(option.value as never)
-                : currentValue === option.value;
-              return (
-                <label
-                  key={option.value}
-                  className="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border border-slate-200 px-4 py-3 text-slate-800 has-checked:border-blue-600 has-checked:bg-blue-50"
-                >
-                  <input
-                    type={isMulti ? 'checkbox' : 'radio'}
-                    name={question.id}
-                    value={option.value}
-                    checked={checked}
-                    onChange={(event) =>
-                      isMulti
-                        ? toggleMultiSelect(option.value, event.target.checked)
-                        : selectSingle(option.value)
-                    }
-                    className="h-5 w-5 accent-blue-700"
-                  />
-                  <span>{option.label}</span>
-                </label>
-              );
-            })}
-          </fieldset>
-        )}
+        <fieldset aria-describedby="question-helper" className="space-y-3">
+          <legend className="sr-only">Choose a response</legend>
+          {question.options.map((option) => {
+            const isMulti = question.responseKind === 'multiSelect';
+            const checked = isMulti
+              ? currentSelectedValues.includes(option.value)
+              : currentValue === option.value && !otherSelected;
+            return (
+              <label
+                key={option.value}
+                className="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border border-slate-200 px-4 py-3 text-slate-800 has-checked:border-blue-600 has-checked:bg-blue-50"
+              >
+                <input
+                  type={isMulti ? 'checkbox' : 'radio'}
+                  name={question.id}
+                  value={option.value}
+                  checked={checked}
+                  onChange={(event) =>
+                    isMulti
+                      ? toggleMultiSelect(option.value, event.target.checked)
+                      : selectSingle(option.value)
+                  }
+                  className="h-5 w-5 accent-blue-700"
+                />
+                <span>{option.label}</span>
+              </label>
+            );
+          })}
+          <div className="rounded-lg border border-slate-200 px-4 py-3 has-checked:border-blue-600 has-checked:bg-blue-50">
+            <label className="flex min-h-8 cursor-pointer items-center gap-3 text-slate-800">
+              <input
+                type={question.responseKind === 'multiSelect' ? 'checkbox' : 'radio'}
+                name={question.id}
+                checked={otherSelected}
+                onChange={(event) => toggleOther(event.target.checked)}
+                className="h-5 w-5 accent-blue-700"
+              />
+              <span>Other</span>
+            </label>
+            {otherSelected && (
+              <input
+                autoFocus
+                aria-label={`Other response for: ${question.prompt}`}
+                value={otherDrafts[question.id] ?? ''}
+                onChange={(event) => {
+                  setOtherDrafts((current) => ({
+                    ...current,
+                    [question.id]: event.target.value,
+                  }));
+                  setError(null);
+                }}
+                maxLength={180}
+                placeholder="Add a brief classroom observation"
+                className="mt-3 block w-full rounded-md border border-slate-300 bg-white px-3 py-2"
+              />
+            )}
+          </div>
+        </fieldset>
 
         {error && (
           <p role="alert" className="mt-3 text-sm font-medium text-red-700">

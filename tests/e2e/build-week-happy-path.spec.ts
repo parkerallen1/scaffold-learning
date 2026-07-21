@@ -63,11 +63,9 @@ test.describe('Build Week teacher-guided learning loop', () => {
       teacherPage.getByRole('heading', { name: `Support plan for ${studentName}` }),
     ).toBeVisible();
     await teacherPage.getByRole('button', { name: 'Start observation interview' }).click();
-    await teacherPage
-      .getByRole('textbox', { name: 'Response' })
-      .fill('The student starts after one clear direction and checks completed work.');
+    await teacherPage.getByRole('checkbox', { name: 'Getting started' }).click();
     await teacherPage.getByRole('button', { name: 'Next' }).click();
-    for (let remaining = 8; remaining > 0; remaining -= 1) {
+    for (let remaining = 6; remaining > 0; remaining -= 1) {
       await teacherPage.getByRole('button', { name: 'Skip question' }).click();
     }
     await expect(

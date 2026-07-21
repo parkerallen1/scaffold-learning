@@ -6,7 +6,7 @@ describe('ONBOARDING_QUESTIONS', () => {
   it('covers each structured observation once in a skippable sequence', () => {
     const ids = ONBOARDING_QUESTIONS.map((question) => question.id);
 
-    expect(ids).toHaveLength(9);
+    expect(ids).toHaveLength(7);
     expect(new Set(ids).size).toBe(ids.length);
     expect(ids.every((id) => onboardingQuestionIdSchema.safeParse(id).success)).toBe(true);
     expect(ONBOARDING_QUESTIONS.every((question) => question.optional)).toBe(true);
@@ -23,10 +23,10 @@ describe('ONBOARDING_QUESTIONS', () => {
 
   it('provides accessible labels for every selectable value', () => {
     for (const question of ONBOARDING_QUESTIONS) {
-      if ('options' in question) {
-        expect(question.options.length).toBeGreaterThan(0);
-        expect(question.options.every((option) => option.label.trim().length > 0)).toBe(true);
-      }
+      expect(question.options.length).toBeGreaterThan(0);
+      expect(question.options.every((option) => option.label.trim().length > 0)).toBe(true);
+      expect(question.allowOther).toBe(true);
+      expect(['singleSelect', 'multiSelect']).toContain(question.responseKind);
     }
   });
 });
