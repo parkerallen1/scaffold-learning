@@ -3,6 +3,8 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
 import App from './app/App';
+import { supportPlanVersionSchema } from './lib/domain';
+import { QuizRunner } from './features/quiz/QuizRunner';
 import { speak } from './services/speech';
 
 vi.mock('./services/speech', () => ({
@@ -57,5 +59,47 @@ describe('App', () => {
     render(<App pathname="/demo" />);
     expect(screen.queryByRole('button', { name: 'Prototype Settings' })).not.toBeInTheDocument();
     expect(screen.queryByText('Background Color')).not.toBeInTheDocument();
+  });
+
+  it('shows the complete question before a student chooses chunked directions', async () => {
+    const user = userEvent.setup();
+    const supportPlan = supportPlanVersionSchema.parse({
+      approvedAt: 1,
+      approvedBy: 'teacher_demo_01',
+      classroomId: 'classroom_demo_01',
+      id: 'plan_demo_01',
+      source: 'manual',
+      studentId: 'student_demo_01',
+      supersedesId: null,
+      supports: [
+        {
+          chunkMode: 'sentence',
+          enabled: true,
+          revealAllAllowed: true,
+          supportKey: 'readingChunks',
+        },
+      ],
+      version: 1,
+    });
+
+    render(<QuizRunner supportPlan={supportPlan} />);
+
+    expect(
+      screen.getByRole('heading', {
+        name: 'Use mental math to find the sum or difference. 4.25 + 1.36 + 2.75 = ___',
+      }),
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Show one part at a time' }));
+    expect(
+      screen.getByRole('heading', { name: 'Use mental math to find the sum or difference.' }),
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Show full question' }));
+    expect(
+      screen.getByRole('heading', {
+        name: 'Use mental math to find the sum or difference. 4.25 + 1.36 + 2.75 = ___',
+      }),
+    ).toBeInTheDocument();
   });
 });
