@@ -82,9 +82,7 @@ test.describe('Build Week teacher-guided learning loop', () => {
     await teacherPage.getByRole('button', { name: 'Approve Reading chunks' }).click();
     await acceptNextDialog(teacherPage);
     await teacherPage.getByRole('button', { name: 'Save approved plan' }).click();
-    await expect(teacherPage.getByRole('status')).toContainText(
-      'Support plan version 1 is now active.',
-    );
+    await expect(teacherPage.getByText('Support plan is now active.')).toBeVisible();
 
     await teacherPage.goto('/teacher/assignments');
     await teacherPage.getByLabel('Active classroom').selectOption({ label: classroomName });
