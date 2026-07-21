@@ -21,8 +21,12 @@ own voice and provide:
 
 Use synthetic data only. Follow the root README quick start, open `http://127.0.0.1:5002`, choose
 **Teacher**, and select **Explore the demo**. The standard emulator is deterministic and does not
-need an API key. To test real OpenAI responses locally, follow the optional live-emulator instructions
-in the README and supply a separate OpenAI API key.
+need an API key. Reviewers who want real OpenAI results can follow the README's
+**Optional reviewer path: test real OpenAI results** section and supply a key from their own API
+project. That section identifies the two ignored local configuration files, the three required live
+switches, visible workflows to exercise, the success log to expect, and how to return to deterministic
+mode. `npm run e2e` intentionally uses fake AI; live integrations are tested manually with
+`npm run emulators:start`.
 
 ## Demo video plan
 

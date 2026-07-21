@@ -92,6 +92,50 @@ This enables live support recommendations, IEP analysis, assignment drafting, ev
 text-to-speech. These requests consume API usage. Set `AI_EMULATOR_LIVE_OPENAI=false` to return to the
 deterministic demo.
 
+### Optional reviewer path: test real OpenAI results
+
+The application is fully usable with its deterministic provider, so reviewers do not need an API
+key. Reviewers who want to exercise the real integrations can use a key from their own OpenAI API
+project. API usage and any associated charges belong to that project.
+
+1. Create an API key from the [OpenAI API keys page](https://platform.openai.com/api-keys). Make sure
+   the API project has available usage or billing.
+2. Run `npm ci` and `npm run setup:local` from the repository root.
+3. Open the ignored `functions/.secret.local` file and replace only its `OPENAI_API_KEY=` line:
+
+   ```dotenv
+   OPENAI_API_KEY=your_api_key_here
+   ```
+
+   Leave the generated `STUDENT_PIN_PEPPER` value in place.
+4. Set these values in the ignored `functions/.env.local` file:
+
+   ```dotenv
+   AI_PROVIDER=openai
+   AI_FEATURES_ENABLED=true
+   AI_EMULATOR_LIVE_OPENAI=true
+   ```
+
+5. Start or restart the app with `npm run emulators:start`, then open
+   `http://127.0.0.1:5002`. Use only synthetic student data and documents.
+6. Try one or more live workflows:
+   - complete a teacher observation interview and request support recommendations;
+   - upload a synthetic IEP and create a profile draft;
+   - generate an editable assignment from a prompt or supported document;
+   - use read-aloud in a student demo; or
+   - run an evidence audit after enough synthetic work exists.
+7. A successful server log includes `"provider":"openai"` and `"status":"completed"`. The key
+   never appears in that log or in the browser bundle.
+
+Do not use `npm run e2e` to verify live output. The automated browser suite deliberately forces the
+fake provider so it remains repeatable, offline-capable, and free of API charges. If a manual live
+request fails, confirm the three switches above, API project usage, and key value, then restart the
+emulators. After testing, set `AI_EMULATOR_LIVE_OPENAI=false` or remove the local key.
+
+OpenAI recommends storing API keys in environment variables or a server-side secret manager rather
+than source code or a public repository; see the
+[OpenAI production best practices](https://developers.openai.com/api/docs/guides/production-best-practices#api-keys).
+
 For a reviewed production deployment:
 
 ```bash
