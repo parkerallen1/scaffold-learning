@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -101,11 +101,19 @@ describe('AssignmentAuthoringForm', () => {
     expect(screen.getByLabelText('Assignment title')).toHaveValue('Imported fractions');
     expect(screen.getByText('Review (1)')).toBeInTheDocument();
     expect(screen.getByText('2/4', { selector: 'p' })).toHaveTextContent('Correct answer: 2/4');
-    await user.click(screen.getByRole('button', { name: 'Edit question 1' }));
-    const question = screen.getByLabelText('Question');
+    const editButton = screen.getByRole('button', { name: 'Edit question 1' });
+    const reviewCard = editButton.closest('li');
+    expect(reviewCard).not.toBeNull();
+    await user.click(editButton);
+    const inlineEditor = within(reviewCard!).getByRole('group', { name: 'Edit question 1' });
+    expect(
+      within(screen.getByRole('group', { name: 'Add a question' })).getByLabelText('Question'),
+    ).toHaveValue('');
+    expect(screen.getByRole('button', { name: 'Publish assignment' })).toBeDisabled();
+    const question = within(inlineEditor).getByLabelText('Question');
     await user.clear(question);
     await user.type(question, 'Which fraction is equivalent to one half?');
-    await user.click(screen.getByRole('button', { name: 'Save question changes' }));
+    await user.click(within(inlineEditor).getByRole('button', { name: 'Save question changes' }));
     await user.click(screen.getByRole('button', { name: 'Publish assignment' }));
 
     expect(onPublish).toHaveBeenCalledWith(
