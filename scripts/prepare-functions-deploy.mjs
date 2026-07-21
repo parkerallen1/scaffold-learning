@@ -1,4 +1,12 @@
-import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  cpSync,
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -46,6 +54,32 @@ writeJson(join(deployDirectory, 'domain', 'package.json'), {
   exports: domainPackage.exports,
   dependencies: domainPackage.dependencies,
 });
+
+// Firebase analyzes the generated entry point locally before it creates the upload archive.
+// Link each direct dependency from the workspace install for that analysis. firebase.json excludes
+// node_modules from upload, and Cloud Build installs the self-contained dependencies declared above.
+const localDependencies = {
+  ...functionsPackage.dependencies,
+  '@scaffold-learning/domain': domainDirectory,
+};
+
+for (const [dependencyName, configuredTarget] of Object.entries(localDependencies)) {
+  const candidates =
+    typeof configuredTarget === 'string' && configuredTarget.startsWith(repositoryRoot)
+      ? [configuredTarget]
+      : [
+          join(functionsDirectory, 'node_modules', dependencyName),
+          join(repositoryRoot, 'node_modules', dependencyName),
+        ];
+  const target = candidates.find((candidate) => existsSync(candidate));
+  if (!target) {
+    throw new Error(`Missing installed Functions dependency: ${dependencyName}`);
+  }
+
+  const link = join(deployDirectory, 'node_modules', dependencyName);
+  mkdirSync(dirname(link), { recursive: true });
+  symlinkSync(target, link, 'dir');
+}
 
 for (const fileName of ['.env.local', '.env.quiz-master-pg', '.secret.local']) {
   const source = join(functionsDirectory, fileName);
