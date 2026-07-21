@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
 
 import { useAuth } from './authContext';
 
@@ -10,6 +10,18 @@ const AuthError = ({ message }: { message: string }) => (
 
 const TeacherSignIn = () => {
   const { demoTeacherEnabled, error, isWorking, signInAsDemoTeacher, signInWithGoogle } = useAuth();
+  const startedRequestedDemo = useRef(false);
+
+  useEffect(() => {
+    if (
+      demoTeacherEnabled &&
+      new URLSearchParams(window.location.search).get('demo') === '1' &&
+      !startedRequestedDemo.current
+    ) {
+      startedRequestedDemo.current = true;
+      void signInAsDemoTeacher();
+    }
+  }, [demoTeacherEnabled, signInAsDemoTeacher]);
 
   return (
     <main className="min-h-screen bg-slate-50 p-6 text-slate-900">

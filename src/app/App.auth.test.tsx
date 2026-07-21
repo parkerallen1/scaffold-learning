@@ -103,6 +103,7 @@ const loadAuthRoute = async (
 
 describe('authentication shell', () => {
   beforeEach(() => {
+    window.history.replaceState({}, '', '/');
     authHarness.demoTeacherEnabled = true;
     authHarness.onError = null;
     authHarness.onUserChange = null;
@@ -141,6 +142,15 @@ describe('authentication shell', () => {
     await user.click(screen.getByRole('button', { name: 'Explore the demo' }));
 
     expect(authHarness.signInDemoTeacher).toHaveBeenCalledOnce();
+    expect(screen.getByRole('heading', { name: 'Welcome, Demo teacher' })).toBeInTheDocument();
+  });
+
+  it('starts the teacher demo directly when requested from the home page', async () => {
+    window.history.replaceState({}, '', '/teacher?demo=1');
+    await loadAuthRoute('/teacher');
+    act(() => authHarness.onUserChange?.(null));
+
+    await waitFor(() => expect(authHarness.signInDemoTeacher).toHaveBeenCalledOnce());
     expect(screen.getByRole('heading', { name: 'Welcome, Demo teacher' })).toBeInTheDocument();
   });
 

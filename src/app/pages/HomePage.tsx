@@ -35,12 +35,12 @@ export const HomePage = () => (
         <div className="mt-8 border-t border-slate-200 pt-6">
           <a
             className="inline-flex min-h-11 items-center font-semibold text-blue-700 hover:underline"
-            href="/demo"
+            href="/teacher?demo=1"
           >
-            Open the synthetic quiz demo
+            Explore the demo
           </a>
           <p className="mt-1 text-sm text-slate-500">
-            For demonstration only—do not enter student data.
+            Open a ready-to-use teacher workspace with synthetic classrooms and students.
           </p>
         </div>
       </section>

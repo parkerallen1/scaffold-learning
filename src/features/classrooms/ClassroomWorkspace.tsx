@@ -107,8 +107,8 @@ const StudentRow = ({
   onResetPin: (student: StudentSafeIdentity) => void;
   student: StudentSafeIdentity;
 }) => (
-  <li className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 p-4">
-    <div>
+  <li className="grid gap-4 rounded-xl border border-slate-200 p-4 lg:grid-cols-[minmax(0,1fr)_auto]">
+    <div className="min-w-0">
       <p className="font-semibold text-slate-900">{student.displayName}</p>
       <p className="mt-1 text-xs text-slate-500">
         <span className="capitalize">{student.status}</span> · Access version {student.authVersion}
@@ -119,16 +119,19 @@ const StudentRow = ({
           {student.demoStory}
         </p>
       )}
-      {demoMode && (
-        <div className="mt-3 flex flex-wrap gap-2" aria-label="Build Week student credentials">
-          {student.studentHandle && (
-            <CopyableCredential label="Student handle" value={student.studentHandle} />
-          )}
-          <CopyableCredential label="Student PIN" value={BUILD_WEEK_STUDENT_PIN} />
-        </div>
-      )}
     </div>
-    <div className="flex flex-wrap gap-2">
+    {demoMode && (
+      <div
+        className="flex flex-wrap content-start justify-start gap-2 lg:justify-end"
+        aria-label="Build Week student credentials"
+      >
+        {student.studentHandle && (
+          <CopyableCredential label="Student handle" value={student.studentHandle} />
+        )}
+        <CopyableCredential label="Student PIN" value={BUILD_WEEK_STUDENT_PIN} />
+      </div>
+    )}
+    <div className="flex flex-wrap gap-2 lg:col-span-2">
       {demoMode && (
         <a
           href={`/teacher/preview?classroomId=${encodeURIComponent(classroom.id)}&studentId=${encodeURIComponent(student.id)}`}
@@ -391,39 +394,39 @@ export const ClassroomWorkspace = ({
                     {selectedClassroom.status} classroom
                   </p>
                   <h2 className="mt-1 text-2xl font-bold">{selectedClassroom.name}</h2>
-                  {selectedClassroom.classCode && (
-                    <div className="mt-3">
-                      <CopyableCredential label="Class code" value={selectedClassroom.classCode} />
-                    </div>
-                  )}
                 </div>
-                {selectedClassroom.status === 'active' && (
-                  <details className="relative rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm">
-                    <summary className="cursor-pointer font-semibold text-slate-700">
-                      ⓘ Classroom options
-                    </summary>
-                    <div className="mt-3 flex flex-col gap-2 border-t border-slate-200 pt-3">
-                      {!demoMode && (
+                <div className="flex flex-wrap items-start justify-end gap-3">
+                  {selectedClassroom.classCode && (
+                    <CopyableCredential label="Class code" value={selectedClassroom.classCode} />
+                  )}
+                  {selectedClassroom.status === 'active' && (
+                    <details className="relative rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm">
+                      <summary className="cursor-pointer font-semibold text-slate-700">
+                        ⓘ Classroom options
+                      </summary>
+                      <div className="mt-3 flex flex-col gap-2 border-t border-slate-200 pt-3">
+                        {!demoMode && (
+                          <button
+                            type="button"
+                            onClick={handleRotateCode}
+                            disabled={pendingAction !== null}
+                            className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold hover:bg-white disabled:opacity-50"
+                          >
+                            Rotate class code
+                          </button>
+                        )}
                         <button
                           type="button"
-                          onClick={handleRotateCode}
+                          onClick={handleArchive}
                           disabled={pendingAction !== null}
-                          className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold hover:bg-white disabled:opacity-50"
+                          className="rounded-lg border border-red-300 px-3 py-2 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50"
                         >
-                          Rotate class code
+                          Archive classroom
                         </button>
-                      )}
-                      <button
-                        type="button"
-                        onClick={handleArchive}
-                        disabled={pendingAction !== null}
-                        className="rounded-lg border border-red-300 px-3 py-2 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50"
-                      >
-                        Archive classroom
-                      </button>
-                    </div>
-                  </details>
-                )}
+                      </div>
+                    </details>
+                  )}
+                </div>
               </div>
               {selectedClassroom.status === 'archived' && (
                 <p className="mt-4 rounded-lg bg-amber-50 p-3 text-sm text-amber-900">
@@ -431,35 +434,6 @@ export const ClassroomWorkspace = ({
                 </p>
               )}
             </section>
-
-            {selectedClassroom.status === 'active' && (
-              <section className="rounded-2xl bg-white p-6 shadow-md">
-                <h3 className="text-xl font-bold">Add a student</h3>
-                <p className="mt-1 text-sm text-slate-600">
-                  Enter a classroom-only display name. A unique student handle will be generated
-                  automatically.
-                </p>
-                <form className="mt-4" onSubmit={handleCreateStudent}>
-                  <label className="text-sm font-semibold text-slate-700">
-                    Display name
-                    <input
-                      required
-                      value={studentName}
-                      onChange={(event) => setStudentName(event.target.value)}
-                      maxLength={80}
-                      className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2"
-                    />
-                  </label>
-                  <button
-                    type="submit"
-                    disabled={pendingAction !== null}
-                    className="mt-3 w-full rounded-lg bg-emerald-700 px-4 py-3 font-semibold text-white hover:bg-emerald-800 disabled:opacity-50"
-                  >
-                    {pendingAction === 'create-student' ? 'Creating student…' : 'Create student'}
-                  </button>
-                </form>
-              </section>
-            )}
 
             <section className="rounded-2xl bg-white p-6 shadow-md">
               <h3 className="text-xl font-bold">Students</h3>
@@ -492,6 +466,35 @@ export const ClassroomWorkspace = ({
                 ))}
               </ul>
             </section>
+
+            {selectedClassroom.status === 'active' && (
+              <section className="rounded-2xl bg-white p-6 shadow-md">
+                <h3 className="text-xl font-bold">Add a student</h3>
+                <p className="mt-1 text-sm text-slate-600">
+                  Enter a classroom-only display name. A unique student handle will be generated
+                  automatically.
+                </p>
+                <form className="mt-4" onSubmit={handleCreateStudent}>
+                  <label className="text-sm font-semibold text-slate-700">
+                    Display name
+                    <input
+                      required
+                      value={studentName}
+                      onChange={(event) => setStudentName(event.target.value)}
+                      maxLength={80}
+                      className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2"
+                    />
+                  </label>
+                  <button
+                    type="submit"
+                    disabled={pendingAction !== null}
+                    className="mt-3 w-full rounded-lg bg-emerald-700 px-4 py-3 font-semibold text-white hover:bg-emerald-800 disabled:opacity-50"
+                  >
+                    {pendingAction === 'create-student' ? 'Creating student…' : 'Create student'}
+                  </button>
+                </form>
+              </section>
+            )}
           </>
         )}
       </div>
