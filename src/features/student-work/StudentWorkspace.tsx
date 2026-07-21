@@ -10,7 +10,7 @@ import type {
   SupportPlanVersion,
 } from '@/lib/domain';
 import { choiceIdSchema, idempotencyKeySchema } from '@/lib/domain';
-import { speak } from '@/services/speech';
+import { speak, stopSpeaking } from '@/services/speech';
 import { ScratchCanvas } from '@/features/quiz/components/ScratchCanvas';
 import { InterestRewardContent } from '@/features/support-plans/InterestRewardContent';
 
@@ -91,10 +91,15 @@ const splitPrompt = (prompt: string, mode: 'sentence' | 'step'): readonly string
   return sentences.length > 0 ? sentences : [prompt];
 };
 
-const feedbackFor = (outcome: AttemptEvent['outcome'] | null): string | null => {
+const feedbackFor = (
+  outcome: AttemptEvent['outcome'] | null,
+  hintAvailable: boolean,
+): string | null => {
   if (outcome === 'correct') return 'Your answer was recorded as a match.';
   if (outcome === 'incorrect') {
-    return 'Incorrect. You can try again or show it for review later.';
+    return hintAvailable
+      ? 'Incorrect. Check one step, try a hint, or save this question for review.'
+      : 'Incorrect. Check one step, try again, or save this question for review.';
   }
   if (outcome === 'teacherReview') return 'Your answer was saved for your teacher to review.';
   return null;
@@ -139,10 +144,29 @@ const QuestionWork = ({
   const [isBusy, setIsBusy] = useState(false);
   const [answerError, setAnswerError] = useState<string | null>(null);
   const [supportNotice, setSupportNotice] = useState<string | null>(null);
-  const [activeSupports, setActiveSupports] = useState<ReadonlySet<SupportKey>>(new Set());
+  const [activeSupports, setActiveSupports] = useState<ReadonlySet<SupportKey>>(
+    () =>
+      new Set(
+        supportPlan.supports
+          .filter(
+            (support) =>
+              support.enabled &&
+              ['calmPacing', 'dyslexiaFont', 'flexibleResponse', 'readingChunks'].includes(
+                support.supportKey,
+              ),
+          )
+          .map(({ supportKey }) => supportKey),
+      ),
+  );
   const [chunkCount, setChunkCount] = useState<number | null>(null);
   const [focusView, setFocusView] = useState(false);
   const [shownHints, setShownHints] = useState(0);
+  const [attemptCount, setAttemptCount] = useState(questionAttempts.length);
+  const [timerVisible, setTimerVisible] = useState(true);
+  const [useOpenDyslexic, setUseOpenDyslexic] = useState(true);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [showBreakOffer, setShowBreakOffer] = useState(false);
+  const [isOnBreak, setIsOnBreak] = useState(false);
   const startedAtRef = useRef<number | null>(null);
 
   const readAloud = supportPlan.supports.find(
@@ -163,6 +187,12 @@ const QuestionWork = ({
   const calmPacing = supportPlan.supports.find(
     (support) => support.supportKey === 'calmPacing' && support.enabled,
   );
+  const flexibleResponse = supportPlan.supports.find(
+    (support) => support.supportKey === 'flexibleResponse' && support.enabled,
+  );
+  const breakPrompt = supportPlan.supports.find(
+    (support) => support.supportKey === 'breakPrompt' && support.enabled,
+  );
   const interestReward = supportPlan.supports.find(
     (support) => support.supportKey === 'interestReward' && support.enabled,
   );
@@ -171,6 +201,15 @@ const QuestionWork = ({
       ? calmPacing.durationSeconds
       : null;
   const [timerSeconds, setTimerSeconds] = useState(configuredTimerSeconds ?? 0);
+  const [speechRate, setSpeechRate] = useState(
+    readAloud?.supportKey === 'readAloud' ? readAloud.speed : 1,
+  );
+  const [responseMode, setResponseMode] = useState<'typing' | 'selection'>(
+    flexibleResponse?.supportKey === 'flexibleResponse' ? flexibleResponse.preferredMode : 'typing',
+  );
+  const [breakSecondsRemaining, setBreakSecondsRemaining] = useState(
+    breakPrompt?.supportKey === 'breakPrompt' ? breakPrompt.durationSeconds : 0,
+  );
   const chunks = splitPrompt(
     question.prompt,
     chunking?.supportKey === 'readingChunks' ? chunking.chunkMode : 'sentence',
@@ -180,6 +219,7 @@ const QuestionWork = ({
 
   useEffect(() => {
     startedAtRef.current = Date.now();
+    return () => stopSpeaking();
   }, []);
 
   useEffect(() => {
@@ -193,6 +233,14 @@ const QuestionWork = ({
   }, [calmPacing]);
 
   useEffect(() => {
+    if (!isOnBreak || breakSecondsRemaining <= 0) return;
+    const timer = window.setInterval(() => {
+      setBreakSecondsRemaining((current) => Math.max(0, current - 1));
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [breakSecondsRemaining, isOnBreak]);
+
+  useEffect(() => {
     writeStudentDraft(studentId, session.id, question.id, {
       answer: draft,
       pendingSubmissionKey:
@@ -203,10 +251,7 @@ const QuestionWork = ({
   }, [draft, pendingSubmissionKey, question.id, session.id, studentId]);
 
   const logSupport = useCallback(
-    async (
-      supportKey: Extract<SupportKey, 'focusView' | 'hintLadder' | 'readAloud' | 'readingChunks'>,
-      action: 'activated' | 'completed' | 'dismissed' | 'shown',
-    ) => {
+    async (supportKey: SupportKey, action: 'activated' | 'completed' | 'dismissed' | 'shown') => {
       setActiveSupports((current) => new Set([...current, supportKey]));
       try {
         await recordStudentSupportEvent({
@@ -260,8 +305,21 @@ const QuestionWork = ({
       });
       setHasAttempt(true);
       setOutcome(response.event.outcome);
+      const nextAttemptCount = attemptCount + 1;
+      setAttemptCount(nextAttemptCount);
       setPendingSubmissionKey(null);
       onSessionChange(response.session);
+      if (
+        response.event.outcome === 'incorrect' &&
+        breakPrompt?.supportKey === 'breakPrompt' &&
+        nextAttemptCount % breakPrompt.afterAttempts === 0
+      ) {
+        setShowBreakOffer(true);
+        void logSupport('breakPrompt', 'shown');
+      }
+      if (response.event.outcome === 'correct' && interestReward?.supportKey === 'interestReward') {
+        void logSupport('interestReward', 'shown');
+      }
     } catch {
       setAnswerError('Your answer is still on this device. Reconnect and submit again.');
     } finally {
@@ -282,18 +340,82 @@ const QuestionWork = ({
     }
   };
 
-  const visiblePrompt =
-    chunkCount === null || chunkCount >= chunks.length
-      ? question.prompt
-      : chunks.slice(0, chunkCount).join(' ');
+  const visibleChunkCount =
+    chunking?.supportKey === 'readingChunks' ? (chunkCount ?? 1) : chunks.length;
+  const isPromptChunked = visibleChunkCount < chunks.length;
+  const visiblePrompt = isPromptChunked
+    ? `${chunks.slice(0, visibleChunkCount).join(' ')} …`
+    : question.prompt;
+
+  const enterKeypadValue = (key: string) => {
+    if (draft.kind !== 'numeric') return;
+    let value = draft.value;
+    if (key === 'clear') value = '';
+    else if (key === 'backspace') value = value.slice(0, -1);
+    else if (key === '-') value = value.startsWith('-') ? value.slice(1) : `-${value}`;
+    else if (key === '.' && !value.includes('.')) value = `${value || '0'}.`;
+    else if (/^\d$/.test(key)) value += key;
+    updateDraft({ ...draft, value });
+  };
+
+  const handleReadAloud = async () => {
+    if (isSpeaking) return;
+    setIsSpeaking(true);
+    setSupportNotice(null);
+    void logSupport('readAloud', 'activated');
+    try {
+      await speak(question.prompt, speechRate);
+    } catch {
+      setSupportNotice('Read aloud is unavailable right now.');
+    } finally {
+      setIsSpeaking(false);
+    }
+  };
+
+  if (isOnBreak && breakPrompt?.supportKey === 'breakPrompt') {
+    const breakComplete = breakSecondsRemaining === 0;
+    return (
+      <section
+        aria-labelledby="break-heading"
+        className="mx-auto max-w-2xl rounded-2xl bg-emerald-50 p-8 text-center shadow-md"
+      >
+        <p className="text-sm font-semibold uppercase tracking-wide text-emerald-700">
+          Optional pause
+        </p>
+        <h2 id="break-heading" className="mt-2 text-3xl font-bold text-slate-900">
+          {breakComplete ? 'Your break is complete' : 'Take a quiet break'}
+        </h2>
+        <p className="mt-4 text-2xl font-semibold tabular-nums text-emerald-900">
+          {Math.floor(breakSecondsRemaining / 60)}:
+          {String(breakSecondsRemaining % 60).padStart(2, '0')}
+        </p>
+        <p className="mt-3 text-slate-700">
+          Return whenever you feel ready. Your answer and place are saved.
+        </p>
+        <button
+          type="button"
+          onClick={() => {
+            setIsOnBreak(false);
+            setShowBreakOffer(false);
+            void logSupport('breakPrompt', breakComplete ? 'completed' : 'dismissed');
+          }}
+          className="mt-6 rounded-lg bg-emerald-700 px-5 py-3 font-semibold text-white hover:bg-emerald-800"
+        >
+          Return to problem
+        </button>
+      </section>
+    );
+  }
 
   return (
     <section
       className={`${focusView ? 'mx-auto max-w-2xl' : ''} ${
-        dyslexiaFont?.supportKey === 'dyslexiaFont' ? 'font-dyslexia' : ''
+        dyslexiaFont?.supportKey === 'dyslexiaFont' && useOpenDyslexic ? 'font-dyslexia' : ''
       }`}
       style={
-        dyslexiaFont?.supportKey === 'dyslexiaFont' && dyslexiaFont.increasedSpacing
+        dyslexiaFont?.supportKey === 'dyslexiaFont' &&
+        useOpenDyslexic &&
+        dyslexiaFont.increasedSpacing
           ? { letterSpacing: '0.035em', wordSpacing: '0.12em' }
           : undefined
       }
@@ -302,12 +424,14 @@ const QuestionWork = ({
       <div className="rounded-2xl bg-white p-6 shadow-md">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="text-sm font-semibold text-emerald-700">Problem {question.order + 1}</p>
-          {calmPacing?.supportKey === 'calmPacing' && calmPacing.timerMode !== 'off' && (
-            <p className="rounded-full bg-slate-100 px-3 py-1 text-sm font-medium text-slate-600">
-              {calmPacing.timerMode === 'elapsed' ? 'Time' : 'Pace'} {Math.floor(timerSeconds / 60)}
-              :{String(timerSeconds % 60).padStart(2, '0')}
-            </p>
-          )}
+          {calmPacing?.supportKey === 'calmPacing' &&
+            calmPacing.timerMode !== 'off' &&
+            timerVisible && (
+              <p className="rounded-full bg-slate-100 px-3 py-1 text-sm font-medium text-slate-600">
+                {calmPacing.timerMode === 'elapsed' ? 'Time' : 'Pace'}{' '}
+                {Math.floor(timerSeconds / 60)}:{String(timerSeconds % 60).padStart(2, '0')}
+              </p>
+            )}
         </div>
         <h2 id="current-question" className="mt-2 text-2xl font-bold leading-relaxed">
           {visiblePrompt}
@@ -315,38 +439,74 @@ const QuestionWork = ({
 
         <div aria-label="Question tools" className="mt-5 flex flex-wrap gap-2">
           {readAloud?.supportKey === 'readAloud' && (
-            <button
-              type="button"
-              aria-label="Read aloud"
-              className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold hover:bg-slate-50"
-              onClick={() => {
-                void logSupport('readAloud', 'activated');
-                void speak(question.prompt, readAloud.speed).catch(() =>
-                  setSupportNotice('Read aloud is unavailable right now.'),
-                );
-              }}
-            >
-              Read aloud{' '}
-              <span aria-hidden="true" className="font-normal text-slate-500">
-                (AI voice)
-              </span>
-            </button>
+            <>
+              <button
+                type="button"
+                aria-label="Read aloud"
+                disabled={isSpeaking}
+                className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold hover:bg-slate-50 disabled:opacity-60"
+                onClick={() => void handleReadAloud()}
+              >
+                {isSpeaking ? 'Reading…' : 'Read aloud'}
+              </button>
+              {isSpeaking && (
+                <button
+                  type="button"
+                  className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold hover:bg-slate-50"
+                  onClick={() => {
+                    stopSpeaking();
+                    setIsSpeaking(false);
+                    void logSupport('readAloud', 'dismissed');
+                  }}
+                >
+                  Stop reading
+                </button>
+              )}
+              <label className="flex items-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold">
+                Reading speed
+                <select
+                  aria-label="Reading speed"
+                  value={speechRate}
+                  onChange={(event) => {
+                    stopSpeaking();
+                    setIsSpeaking(false);
+                    setSpeechRate(Number(event.target.value));
+                    void logSupport('readAloud', 'shown');
+                  }}
+                  className="bg-transparent font-normal"
+                >
+                  <option value={0.75}>Slower</option>
+                  <option value={0.9}>Calm</option>
+                  <option value={1}>Normal</option>
+                  <option value={1.15}>Faster</option>
+                  <option value={1.25}>Fast</option>
+                </select>
+              </label>
+            </>
           )}
           {chunking?.supportKey === 'readingChunks' && (
             <>
+              <p
+                className="flex items-center px-1 text-sm font-medium text-slate-600"
+                role="status"
+              >
+                Part {visibleChunkCount} of {chunks.length}
+              </p>
               <button
                 type="button"
                 className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold hover:bg-slate-50"
                 onClick={() => {
                   setChunkCount((current) =>
-                    current === null ? 1 : Math.min(chunks.length, current + 1),
+                    (current ?? 1) >= chunks.length
+                      ? 1
+                      : Math.min(chunks.length, (current ?? 1) + 1),
                   );
                   void logSupport('readingChunks', 'shown');
                 }}
               >
-                {chunkCount === null ? 'Show one part at a time' : 'Show next part'}
+                {visibleChunkCount < chunks.length ? 'Show next part' : 'Start with one part'}
               </button>
-              {chunkCount !== null && chunkCount < chunks.length && (
+              {visibleChunkCount < chunks.length && chunking.revealAllAllowed && (
                 <button
                   type="button"
                   className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold hover:bg-slate-50"
@@ -373,6 +533,32 @@ const QuestionWork = ({
               {focusView ? 'Exit focus view' : 'Use focus view'}
             </button>
           )}
+          {calmPacing?.supportKey === 'calmPacing' && calmPacing.timerMode !== 'off' && (
+            <button
+              type="button"
+              aria-pressed={!timerVisible}
+              className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold hover:bg-slate-50"
+              onClick={() => {
+                setTimerVisible((current) => !current);
+                void logSupport('calmPacing', timerVisible ? 'dismissed' : 'shown');
+              }}
+            >
+              {timerVisible ? 'Hide time' : 'Show time'}
+            </button>
+          )}
+          {dyslexiaFont?.supportKey === 'dyslexiaFont' && (
+            <button
+              type="button"
+              aria-pressed={!useOpenDyslexic}
+              className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold hover:bg-slate-50"
+              onClick={() => {
+                setUseOpenDyslexic((current) => !current);
+                void logSupport('dyslexiaFont', 'shown');
+              }}
+            >
+              {useOpenDyslexic ? 'Use standard font' : 'Use alternate reading font'}
+            </button>
+          )}
           {hints?.supportKey === 'hintLadder' && shownHints < hintLimit && (
             <button
               type="button"
@@ -386,6 +572,12 @@ const QuestionWork = ({
             </button>
           )}
         </div>
+
+        {focusView && (
+          <p role="status" className="mt-3 text-sm font-medium text-emerald-800">
+            Focus view is on. Progress, help, and exit controls remain available.
+          </p>
+        )}
 
         {shownHints > 0 && (
           <ol
@@ -418,34 +610,95 @@ const QuestionWork = ({
 
         <form className="mt-6" onSubmit={(event) => void handleSubmit(event)}>
           {question.questionType === 'numeric' && draft.kind === 'numeric' && (
-            <div
-              className="grid gap-3 sm:grid-cols-2"
-              aria-describedby={answerError ? 'student-answer-error' : undefined}
-            >
-              <label className="font-semibold">
-                Your answer
-                <input
-                  autoComplete="off"
-                  inputMode="decimal"
-                  value={draft.value}
-                  aria-invalid={answerError ? true : undefined}
-                  aria-describedby={answerError ? 'student-answer-error' : undefined}
-                  onChange={(event) => updateDraft({ ...draft, value: event.target.value })}
-                  className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-3"
-                />
-              </label>
-              {question.unitLabel !== undefined && (
+            <>
+              {flexibleResponse?.supportKey === 'flexibleResponse' &&
+                flexibleResponse.allowStudentChoice && (
+                  <fieldset className="mb-4">
+                    <legend className="text-sm font-semibold text-slate-700">How to answer</legend>
+                    <div className="mt-2 flex gap-2">
+                      {(['typing', 'selection'] as const).map((mode) => (
+                        <button
+                          key={mode}
+                          type="button"
+                          aria-pressed={responseMode === mode}
+                          className={`rounded-lg border px-3 py-2 text-sm font-semibold ${
+                            responseMode === mode
+                              ? 'border-emerald-700 bg-emerald-50 text-emerald-900'
+                              : 'border-slate-300 hover:bg-slate-50'
+                          }`}
+                          onClick={() => {
+                            setResponseMode(mode);
+                            void logSupport('flexibleResponse', 'activated');
+                          }}
+                        >
+                          {mode === 'typing' ? 'Keyboard' : 'Number pad'}
+                        </button>
+                      ))}
+                    </div>
+                  </fieldset>
+                )}
+              <div
+                className="grid gap-3 sm:grid-cols-2"
+                aria-describedby={answerError ? 'student-answer-error' : undefined}
+              >
                 <label className="font-semibold">
-                  Unit ({question.unitLabel})
+                  Your answer
                   <input
                     autoComplete="off"
-                    value={draft.unit}
-                    onChange={(event) => updateDraft({ ...draft, unit: event.target.value })}
+                    inputMode={responseMode === 'selection' ? 'none' : 'decimal'}
+                    readOnly={responseMode === 'selection'}
+                    value={draft.value}
+                    aria-invalid={answerError ? true : undefined}
+                    aria-describedby={answerError ? 'student-answer-error' : undefined}
+                    onChange={(event) => updateDraft({ ...draft, value: event.target.value })}
                     className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-3"
                   />
                 </label>
-              )}
-            </div>
+                {question.unitLabel !== undefined && (
+                  <label className="font-semibold">
+                    Unit ({question.unitLabel})
+                    <input
+                      autoComplete="off"
+                      value={draft.unit}
+                      onChange={(event) => updateDraft({ ...draft, unit: event.target.value })}
+                      className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-3"
+                    />
+                  </label>
+                )}
+              </div>
+              {flexibleResponse?.supportKey === 'flexibleResponse' &&
+                responseMode === 'selection' && (
+                  <div
+                    aria-label="On-screen number pad"
+                    className="mt-3 grid max-w-sm grid-cols-3 gap-2"
+                  >
+                    {['7', '8', '9', '4', '5', '6', '1', '2', '3', '-', '0', '.'].map((key) => (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => enterKeypadValue(key)}
+                        className="rounded-lg border border-slate-300 bg-slate-50 px-4 py-3 font-semibold hover:bg-slate-100"
+                      >
+                        {key}
+                      </button>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() => enterKeypadValue('backspace')}
+                      className="col-span-2 rounded-lg border border-slate-300 px-4 py-3 font-semibold hover:bg-slate-50"
+                    >
+                      Delete last
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => enterKeypadValue('clear')}
+                      className="rounded-lg border border-slate-300 px-4 py-3 font-semibold hover:bg-slate-50"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                )}
+            </>
           )}
           {question.questionType === 'multipleChoice' && draft.kind === 'choice' && (
             <fieldset aria-describedby={answerError ? 'student-answer-error' : undefined}>
@@ -488,10 +741,41 @@ const QuestionWork = ({
               <ErrorNotice message={answerError} />
             </div>
           )}
-          {feedbackFor(outcome) && (
+          {feedbackFor(outcome, shownHints < hintLimit) && (
             <p role="status" className="mt-4 rounded-xl bg-blue-50 p-4 text-blue-900">
-              {feedbackFor(outcome)}
+              {feedbackFor(outcome, shownHints < hintLimit)}
             </p>
+          )}
+          {showBreakOffer && breakPrompt?.supportKey === 'breakPrompt' && (
+            <aside className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+              <p className="font-semibold text-emerald-950">Want a short break?</p>
+              <p className="mt-1 text-sm text-emerald-900">
+                Your answer and place will stay right here.
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setBreakSecondsRemaining(breakPrompt.durationSeconds);
+                    setIsOnBreak(true);
+                    void logSupport('breakPrompt', 'activated');
+                  }}
+                  className="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white"
+                >
+                  Take a break
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowBreakOffer(false);
+                    void logSupport('breakPrompt', 'dismissed');
+                  }}
+                  className="rounded-lg border border-emerald-700 px-4 py-2 text-sm font-semibold text-emerald-900"
+                >
+                  Keep working
+                </button>
+              </div>
+            </aside>
           )}
           {outcome === 'correct' && interestReward?.supportKey === 'interestReward' && (
             <InterestRewardContent settings={interestReward} className="mt-4" />

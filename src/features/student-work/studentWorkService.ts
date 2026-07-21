@@ -13,6 +13,7 @@ import { httpsCallable } from 'firebase/functions';
 import { z } from 'zod';
 
 import {
+  SUPPORT_KEYS,
   assignmentTargetIdFor,
   assignmentTargetSchema,
   attemptEventSchema,
@@ -299,7 +300,10 @@ export const submitStudentAttempt = (
 ): Promise<Readonly<{ duplicate: boolean; event: AttemptEvent; session: SessionState }>> =>
   safely(ACTION_ERROR, async () => {
     const input = {
-      activeSupports: z.array(supportKeySchema).max(7).parse(rawInput.activeSupports),
+      activeSupports: z
+        .array(supportKeySchema)
+        .max(SUPPORT_KEYS.length)
+        .parse(rawInput.activeSupports),
       clientOccurredAt: z.number().int().nonnegative().parse(rawInput.clientOccurredAt),
       elapsedMs: z.number().int().nonnegative().max(86_400_000).parse(rawInput.elapsedMs),
       idempotencyKey: idempotencyKeySchema.parse(rawInput.idempotencyKey),

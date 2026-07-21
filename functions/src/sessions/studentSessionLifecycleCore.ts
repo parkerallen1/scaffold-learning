@@ -3,6 +3,7 @@ import { createHash } from 'node:crypto';
 import { z } from 'zod';
 
 import {
+  SUPPORT_KEYS,
   assignmentTargetIdSchema,
   attemptEventSchema,
   checkSubmittedAnswer,
@@ -55,7 +56,7 @@ export const submitStudentAttemptInputSchema = z
     questionId: questionIdSchema,
     idempotencyKey: idempotencyKeySchema,
     submittedAnswer: submittedAnswerSchema,
-    activeSupports: z.array(supportKeySchema).max(7).readonly(),
+    activeSupports: z.array(supportKeySchema).max(SUPPORT_KEYS.length).readonly(),
     clientOccurredAt: epochMillisSchema,
     elapsedMs: z.number().int().nonnegative().max(86_400_000),
   })

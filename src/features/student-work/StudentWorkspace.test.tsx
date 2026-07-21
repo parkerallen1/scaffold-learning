@@ -19,6 +19,7 @@ const harness = vi.hoisted(() => ({
   questions: vi.fn(),
   recordSupport: vi.fn(),
   speak: vi.fn(),
+  stopSpeaking: vi.fn(),
   start: vi.fn(),
   submit: vi.fn(),
   transition: vi.fn(),
@@ -36,7 +37,7 @@ vi.mock('./studentWorkService', () => ({
   transitionStudentSession: harness.transition,
 }));
 
-vi.mock('@/services/speech', () => ({ speak: harness.speak }));
+vi.mock('@/services/speech', () => ({ speak: harness.speak, stopSpeaking: harness.stopSpeaking }));
 vi.mock('@/features/quiz/components/ScratchCanvas', () => ({
   ScratchCanvas: () => <div aria-label="Scratch work area" />,
 }));
@@ -158,7 +159,9 @@ describe('StudentWorkspace', () => {
     );
 
     await user.click(await screen.findByRole('button', { name: 'Open assignment' }));
-    const questionHeading = await screen.findByText(firstQuestion.prompt);
+    const questionHeading = await screen.findByRole('heading', {
+      name: 'First read the problem. …',
+    });
     expect(questionHeading).toBeInTheDocument();
     expect(questionHeading.closest('section')).toHaveClass('font-dyslexia');
     expect(questionHeading.closest('section')).toHaveStyle({
@@ -171,8 +174,9 @@ describe('StudentWorkspace', () => {
     expect(harness.speak).toHaveBeenCalledWith(firstQuestion.prompt, 1);
     await user.click(screen.getByRole('button', { name: 'Show hint 1' }));
     expect(screen.getByText(/Hint 1: Use equal groups/)).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Show one part at a time' }));
-    expect(screen.getByRole('heading', { name: 'First read the problem.' })).toBeInTheDocument();
+    expect(screen.getByText('Part 1 of 2')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Show next part' }));
+    expect(screen.getByRole('heading', { name: firstQuestion.prompt })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Use focus view' }));
     expect(screen.queryByLabelText('Scratch work area')).not.toBeInTheDocument();
 
@@ -195,6 +199,65 @@ describe('StudentWorkspace', () => {
     await user.click(screen.getByRole('button', { name: 'Show and review later' }));
     expect(await screen.findByText(secondQuestion.prompt)).toBeInTheDocument();
     expect(screen.getByLabelText('Four')).toBeInTheDocument();
+  });
+
+  it('keeps pacing, font, response, and break controls optional for the student', async () => {
+    const user = userEvent.setup();
+    const learnerChoicePlan = supportPlanVersionSchema.parse({
+      ...supportPlan,
+      supports: [
+        ...supportPlan.supports,
+        {
+          allowStudentChoice: true,
+          enabled: true,
+          preferredMode: 'typing',
+          supportKey: 'flexibleResponse',
+        },
+        { enabled: true, supportKey: 'calmPacing', timerMode: 'elapsed' },
+        {
+          afterAttempts: 1,
+          durationSeconds: 30,
+          enabled: true,
+          skippable: true,
+          supportKey: 'breakPrompt',
+        },
+      ],
+    });
+    harness.start.mockResolvedValue({ resumed: false, session, supportPlan: learnerChoicePlan });
+    harness.submit.mockResolvedValue({
+      duplicate: false,
+      event: { outcome: 'incorrect' },
+      session,
+    });
+
+    render(
+      <StudentWorkspace
+        classroomId={classroomId}
+        isSigningOut={false}
+        onSignOut={vi.fn()}
+        studentId={studentId}
+      />,
+    );
+
+    await user.click(await screen.findByRole('button', { name: 'Open assignment' }));
+    expect(screen.getByText(/^Time 0:00$/)).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Hide time' }));
+    expect(screen.queryByText(/^Time /)).not.toBeInTheDocument();
+
+    const questionSection = screen.getByRole('heading', { name: /First read/ }).closest('section');
+    expect(questionSection).toHaveClass('font-dyslexia');
+    await user.click(screen.getByRole('button', { name: 'Use standard font' }));
+    expect(questionSection).not.toHaveClass('font-dyslexia');
+
+    await user.click(screen.getByRole('button', { name: 'Number pad' }));
+    await user.click(screen.getByRole('button', { name: '5' }));
+    expect(screen.getByLabelText('Your answer')).toHaveValue('5');
+    await user.click(screen.getByRole('button', { name: 'Submit answer' }));
+    expect(await screen.findByText('Want a short break?')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Take a break' }));
+    expect(await screen.findByRole('heading', { name: 'Take a quiet break' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Return to problem' }));
+    expect(screen.getByRole('heading', { name: /First read/ })).toBeInTheDocument();
   });
 
   it('keeps a typed answer and retry key locally when submission loses the network', async () => {

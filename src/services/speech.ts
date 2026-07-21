@@ -8,27 +8,43 @@ const synthesizeSpeech = httpsCallable<
 >(functions, 'synthesizeSpeech', firebaseRuntime.callableOptions);
 
 let activeAudio: HTMLAudioElement | null = null;
+let stopActiveAudio: (() => void) | null = null;
+
+export const stopSpeaking = (): void => {
+  stopActiveAudio?.();
+  stopActiveAudio = null;
+  activeAudio = null;
+  if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+};
 
 const playOpenAiSpeech = async (text: string, rate: number): Promise<void> => {
   const response = await synthesizeSpeech({ text, speed: Math.min(2, Math.max(0.5, rate)) });
   const binary = atob(response.data.audioBase64);
   const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0));
   const url = URL.createObjectURL(new Blob([bytes], { type: response.data.mimeType }));
-  activeAudio?.pause();
+  stopSpeaking();
   const audio = new Audio(url);
   activeAudio = audio;
   await new Promise<void>((resolve, reject) => {
-    audio.onended = () => {
+    let settled = false;
+    const finish = (result: 'resolve' | 'reject') => {
+      if (settled) return;
+      settled = true;
+      audio.pause();
       URL.revokeObjectURL(url);
       if (activeAudio === audio) activeAudio = null;
-      resolve();
+      stopActiveAudio = null;
+      if (result === 'resolve') resolve();
+      else reject(new Error('The generated audio could not be played.'));
+    };
+    stopActiveAudio = () => finish('resolve');
+    audio.onended = () => {
+      finish('resolve');
     };
     audio.onerror = () => {
-      URL.revokeObjectURL(url);
-      if (activeAudio === audio) activeAudio = null;
-      reject(new Error('The generated audio could not be played.'));
+      finish('reject');
     };
-    void audio.play().catch(reject);
+    void audio.play().catch(() => finish('reject'));
   });
 };
 
@@ -44,7 +60,10 @@ const playBrowserSpeech = (text: string, rate: number): Promise<void> => {
     utterance.rate = Math.min(2, Math.max(0.5, rate));
 
     utterance.onend = () => resolve();
-    utterance.onerror = () => reject(new Error('The browser could not read this question aloud.'));
+    utterance.onerror = (event) => {
+      if (event.error === 'canceled' || event.error === 'interrupted') resolve();
+      else reject(new Error('The browser could not read this question aloud.'));
+    };
 
     window.speechSynthesis.speak(utterance);
   });

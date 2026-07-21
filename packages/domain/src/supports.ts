@@ -25,14 +25,15 @@ export type SupportKey = z.infer<typeof supportKeySchema>;
 export const SUPPORT_CATALOG = Object.freeze({
   readAloud: {
     label: 'Read aloud',
-    description: 'Replayable browser speech with speed control.',
+    description: 'Student-controlled read aloud with replay, stop, and adjustable speed.',
     caution: 'Audio starts only after the student asks for it and never plays automatically.',
     evidenceSignals: ['activated', 'replayed', 'speedChanged'],
     defaultSettings: { supportKey: 'readAloud', enabled: true, speed: 1 },
   },
   readingChunks: {
     label: 'Reading chunks',
-    description: 'Reveal directions by sentence or teacher-approved step.',
+    description:
+      'Start with one direction segment, keep completed segments visible, or reveal all.',
     caution: 'Always preserve the original wording and let the student reveal all directions.',
     evidenceSignals: ['shown', 'chunkAdvanced', 'revealAll'],
     defaultSettings: {
@@ -44,7 +45,7 @@ export const SUPPORT_CATALOG = Object.freeze({
   },
   focusView: {
     label: 'Focus view',
-    description: 'Hide nonessential controls for one problem.',
+    description: 'Let the student simplify one problem while keeping progress, help, and exit.',
     caution: 'Progress, help, and exit controls must remain available.',
     evidenceSignals: ['activated', 'dismissed'],
     defaultSettings: {
@@ -55,7 +56,7 @@ export const SUPPORT_CATALOG = Object.freeze({
   },
   hintLadder: {
     label: 'Hint ladder',
-    description: 'Offer increasingly specific teacher-approved help.',
+    description: 'Reveal one progressively more specific, teacher-approved hint at a time.',
     caution: 'Early hints must not reveal the answer or replace the learning target.',
     evidenceSignals: ['tierShown', 'attemptAfterHint', 'completed'],
     defaultSettings: {
@@ -67,7 +68,8 @@ export const SUPPORT_CATALOG = Object.freeze({
   },
   flexibleResponse: {
     label: 'Flexible response',
-    description: 'Use an approved response presentation.',
+    description:
+      'Offer keyboard or on-screen response controls when they preserve the learning goal.',
     caution: 'Do not change the response format when doing so changes the learning target.',
     evidenceSignals: ['modeSelected', 'modeChanged'],
     defaultSettings: {
@@ -79,14 +81,14 @@ export const SUPPORT_CATALOG = Object.freeze({
   },
   calmPacing: {
     label: 'Calm pacing',
-    description: 'Use no timer or a non-expiring visual cue.',
+    description: 'Use no timer or a non-expiring time display the student can hide.',
     caution: 'A timer reaching zero must never submit, advance, or block the student.',
     evidenceSignals: ['timerShown', 'timerHidden'],
     defaultSettings: { supportKey: 'calmPacing', enabled: true, timerMode: 'off' },
   },
   breakPrompt: {
     label: 'Break prompt',
-    description: 'Offer an optional short pause after effort.',
+    description: 'Offer an optional, skippable pause after repeated effort.',
     caution: 'Breaks are optional, skippable, and never framed as a consequence.',
     evidenceSignals: ['shown', 'activated', 'dismissed', 'completed'],
     defaultSettings: {
@@ -99,7 +101,7 @@ export const SUPPORT_CATALOG = Object.freeze({
   },
   dyslexiaFont: {
     label: 'Dyslexia-friendly font',
-    description: 'Use the OpenDyslexic typeface with optional extra letter and word spacing.',
+    description: 'Offer OpenDyslexic or standard sans-serif as a student reading preference.',
     caution:
       'No single typeface works for every reader; keep the original wording and normal browser zoom controls.',
     evidenceSignals: ['applied'],
@@ -112,7 +114,7 @@ export const SUPPORT_CATALOG = Object.freeze({
   interestReward: {
     label: 'Interest-based encouragement',
     description:
-      'Show teacher-selected text, images, or audio connected to the student’s interests after a correct answer.',
+      'Show action-oriented teacher text, images, or audio connected to the student’s interests after progress.',
     caution:
       'Keep the message private, age-appropriate, and encouraging rather than contingent or punitive.',
     evidenceSignals: ['shown'],

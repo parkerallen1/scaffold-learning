@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { QUESTIONS } from '../../constants';
-import { speak } from '../../services/speech';
+import { speak, stopSpeaking } from '../../services/speech';
 import type { Question } from '../../types';
 import type { SupportPlanVersion } from '../../lib/domain';
 import { InterestRewardContent } from '../support-plans/InterestRewardContent';
@@ -21,6 +21,14 @@ export const QuizRunner = ({ supportPlan }: { supportPlan?: SupportPlanVersion }
   const [isLoadingSpeech, setIsLoadingSpeech] = useState<boolean>(false);
   const [speechError, setSpeechError] = useState<string | null>(null);
   const [showChunkedDirections, setShowChunkedDirections] = useState(true);
+  const [timerVisible, setTimerVisible] = useState(true);
+  const [useOpenDyslexic, setUseOpenDyslexic] = useState(true);
+  const [speechRate, setSpeechRate] = useState(1);
+  const [responseMode, setResponseMode] = useState<'typing' | 'selection'>('typing');
+  const [incorrectAttempts, setIncorrectAttempts] = useState(0);
+  const [showBreakOffer, setShowBreakOffer] = useState(false);
+  const [isOnBreak, setIsOnBreak] = useState(false);
+  const [breakSecondsRemaining, setBreakSecondsRemaining] = useState(0);
   const scratchCanvasRef = useRef<ScratchCanvasHandle>(null);
 
   const currentQuestion: Question = questions[currentQuestionIndex];
@@ -31,6 +39,8 @@ export const QuizRunner = ({ supportPlan }: { supportPlan?: SupportPlanVersion }
   const focusView = support('focusView');
   const calmPacing = support('calmPacing');
   const dyslexiaFont = support('dyslexiaFont');
+  const flexibleResponse = support('flexibleResponse');
+  const breakPrompt = support('breakPrompt');
   const interestReward = support('interestReward');
   const initialTimer =
     calmPacing?.supportKey === 'calmPacing' && calmPacing.timerMode === 'nonExpiringCountdown'
@@ -54,6 +64,8 @@ export const QuizRunner = ({ supportPlan }: { supportPlan?: SupportPlanVersion }
       setAnswerOutcome(null);
       setShowChunkedDirections(true);
       setTimerSeconds(initialTimer);
+      setIncorrectAttempts(0);
+      setShowBreakOffer(false);
       clearCanvas();
     } else {
       setIsFinished(true);
@@ -72,6 +84,17 @@ export const QuizRunner = ({ supportPlan }: { supportPlan?: SupportPlanVersion }
     return () => window.clearInterval(timer);
   }, [calmPacing, currentQuestionIndex, isFinished]);
 
+  useEffect(() => () => stopSpeaking(), []);
+
+  useEffect(() => {
+    if (!isOnBreak || breakSecondsRemaining <= 0) return;
+    const timer = window.setInterval(
+      () => setBreakSecondsRemaining((current) => Math.max(0, current - 1)),
+      1000,
+    );
+    return () => window.clearInterval(timer);
+  }, [breakSecondsRemaining, isOnBreak]);
+
   const handleAnswerChange = (answer: string) => {
     setUserAnswer(answer);
     setAnswerOutcome(null);
@@ -80,6 +103,11 @@ export const QuizRunner = ({ supportPlan }: { supportPlan?: SupportPlanVersion }
   const handleAnswerSubmit = () => {
     const answerIsCorrect = isAnswerCorrect(currentQuestion, userAnswer);
     setAnswerOutcome(answerIsCorrect ? 'correct' : 'incorrect');
+    if (!answerIsCorrect && breakPrompt?.supportKey === 'breakPrompt') {
+      const nextAttempts = incorrectAttempts + 1;
+      setIncorrectAttempts(nextAttempts);
+      if (nextAttempts % breakPrompt.afterAttempts === 0) setShowBreakOffer(true);
+    }
   };
 
   const handleRestart = () => {
@@ -88,6 +116,8 @@ export const QuizRunner = ({ supportPlan }: { supportPlan?: SupportPlanVersion }
     setAnswerOutcome(null);
     setIsFinished(false);
     setShowChunkedDirections(true);
+    setIncorrectAttempts(0);
+    setShowBreakOffer(false);
     clearCanvas();
   };
 
@@ -97,7 +127,7 @@ export const QuizRunner = ({ supportPlan }: { supportPlan?: SupportPlanVersion }
     setSpeechError(null);
     try {
       await (readAloud?.supportKey === 'readAloud'
-        ? speak(currentQuestion.question, readAloud.speed)
+        ? speak(currentQuestion.question, speechRate)
         : speak(currentQuestion.question));
     } catch (error) {
       console.error('Error with TTS:', error);
@@ -105,16 +135,18 @@ export const QuizRunner = ({ supportPlan }: { supportPlan?: SupportPlanVersion }
     } finally {
       setIsLoadingSpeech(false);
     }
-  }, [currentQuestion.question, isLoadingSpeech, readAloud]);
+  }, [currentQuestion.question, isLoadingSpeech, readAloud, speechRate]);
+
+  const fontIsActive = dyslexiaFont?.supportKey === 'dyslexiaFont' && useOpenDyslexic;
 
   return (
     <section
       aria-labelledby="quiz-runner-title"
       className={`relative flex min-h-screen flex-col items-center justify-center bg-gray-100 p-4 text-gray-800 dark:bg-gray-900 dark:text-gray-200 sm:p-6 md:p-8 ${
-        dyslexiaFont?.supportKey === 'dyslexiaFont' ? 'font-dyslexia' : 'font-sans'
+        fontIsActive ? 'font-dyslexia' : 'font-sans'
       }`}
       style={
-        dyslexiaFont?.supportKey === 'dyslexiaFont' && dyslexiaFont.increasedSpacing
+        fontIsActive && dyslexiaFont.increasedSpacing
           ? { letterSpacing: '0.035em', wordSpacing: '0.12em' }
           : undefined
       }
@@ -129,13 +161,38 @@ export const QuizRunner = ({ supportPlan }: { supportPlan?: SupportPlanVersion }
       >
         {calmPacing?.supportKey === 'calmPacing' &&
           calmPacing.timerMode !== 'off' &&
-          !isFinished && (
+          !isFinished &&
+          timerVisible && (
             <p className="absolute right-5 top-5 z-10 rounded-full bg-slate-100 px-3 py-1 text-sm font-medium text-slate-600 dark:bg-slate-700 dark:text-slate-200">
               {calmPacing.timerMode === 'elapsed' ? 'Time' : 'Pace'} {Math.floor(timerSeconds / 60)}
               :{String(timerSeconds % 60).padStart(2, '0')}
             </p>
           )}
-        {isFinished ? (
+        {isOnBreak && breakPrompt?.supportKey === 'breakPrompt' ? (
+          <div className="m-auto max-w-xl p-8 text-center">
+            <p className="text-sm font-semibold uppercase tracking-wide text-emerald-700">
+              Optional pause
+            </p>
+            <h2 className="mt-2 text-3xl font-bold">
+              {breakSecondsRemaining === 0 ? 'Your break is complete' : 'Take a quiet break'}
+            </h2>
+            <p className="mt-4 text-2xl font-semibold tabular-nums">
+              {Math.floor(breakSecondsRemaining / 60)}:
+              {String(breakSecondsRemaining % 60).padStart(2, '0')}
+            </p>
+            <p className="mt-3">Return whenever you feel ready. Your answer is saved.</p>
+            <button
+              type="button"
+              onClick={() => {
+                setIsOnBreak(false);
+                setShowBreakOffer(false);
+              }}
+              className="mt-6 rounded-lg bg-emerald-700 px-5 py-3 font-semibold text-white"
+            >
+              Return to problem
+            </button>
+          </div>
+        ) : isFinished ? (
           <CompletionScreen onRestart={handleRestart} />
         ) : (
           <>
@@ -147,17 +204,67 @@ export const QuizRunner = ({ supportPlan }: { supportPlan?: SupportPlanVersion }
               speechError={speechError}
               totalQuestions={questions.length}
             />
-            {readingChunks?.supportKey === 'readingChunks' && (
-              <button
-                type="button"
-                onClick={() => setShowChunkedDirections((current) => !current)}
-                className="mx-6 mt-4 self-start rounded-lg border border-blue-700 px-4 py-2 text-sm font-semibold text-blue-800 dark:text-blue-200"
-              >
-                {showChunkedDirections
-                  ? 'Show the rest of the question'
-                  : 'Show one part at a time'}
-              </button>
-            )}
+            <div className="mx-6 mt-4 flex flex-wrap gap-2">
+              {readingChunks?.supportKey === 'readingChunks' && (
+                <button
+                  type="button"
+                  onClick={() => setShowChunkedDirections((current) => !current)}
+                  className="rounded-lg border border-blue-700 px-4 py-2 text-sm font-semibold text-blue-800 dark:text-blue-200"
+                >
+                  {showChunkedDirections
+                    ? 'Show the rest of the question'
+                    : 'Show one part at a time'}
+                </button>
+              )}
+              {readAloud?.supportKey === 'readAloud' && (
+                <>
+                  {isLoadingSpeech && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        stopSpeaking();
+                        setIsLoadingSpeech(false);
+                      }}
+                      className="rounded-lg border border-blue-700 px-4 py-2 text-sm font-semibold text-blue-800"
+                    >
+                      Stop reading
+                    </button>
+                  )}
+                  <label className="flex items-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold">
+                    Reading speed
+                    <select
+                      aria-label="Reading speed"
+                      value={speechRate}
+                      onChange={(event) => setSpeechRate(Number(event.target.value))}
+                      className="bg-transparent font-normal"
+                    >
+                      <option value={0.75}>Slower</option>
+                      <option value={0.9}>Calm</option>
+                      <option value={1}>Normal</option>
+                      <option value={1.15}>Faster</option>
+                    </select>
+                  </label>
+                </>
+              )}
+              {calmPacing?.supportKey === 'calmPacing' && calmPacing.timerMode !== 'off' && (
+                <button
+                  type="button"
+                  onClick={() => setTimerVisible((current) => !current)}
+                  className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold"
+                >
+                  {timerVisible ? 'Hide time' : 'Show time'}
+                </button>
+              )}
+              {dyslexiaFont?.supportKey === 'dyslexiaFont' && (
+                <button
+                  type="button"
+                  onClick={() => setUseOpenDyslexic((current) => !current)}
+                  className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold"
+                >
+                  {useOpenDyslexic ? 'Use standard font' : 'Use alternate reading font'}
+                </button>
+              )}
+            </div>
             <ScratchCanvas ref={scratchCanvasRef} questionIndex={currentQuestionIndex}>
               <AnswerPanel
                 answer={userAnswer}
@@ -166,8 +273,39 @@ export const QuizRunner = ({ supportPlan }: { supportPlan?: SupportPlanVersion }
                 onAnswerChange={handleAnswerChange}
                 onNext={handleNextQuestion}
                 onSubmit={handleAnswerSubmit}
+                allowResponseChoice={
+                  flexibleResponse?.supportKey === 'flexibleResponse' &&
+                  flexibleResponse.allowStudentChoice
+                }
+                responseMode={responseMode}
+                onResponseModeChange={setResponseMode}
               />
             </ScratchCanvas>
+            {showBreakOffer && breakPrompt?.supportKey === 'breakPrompt' && (
+              <aside className="mx-6 mb-6 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-950">
+                <p className="font-semibold">Want a short break?</p>
+                <p className="mt-1 text-sm">Your answer and place will stay right here.</p>
+                <div className="mt-3 flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setBreakSecondsRemaining(breakPrompt.durationSeconds);
+                      setIsOnBreak(true);
+                    }}
+                    className="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white"
+                  >
+                    Take a break
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowBreakOffer(false)}
+                    className="rounded-lg border border-emerald-700 px-4 py-2 text-sm font-semibold"
+                  >
+                    Keep working
+                  </button>
+                </div>
+              </aside>
+            )}
             {answerOutcome === 'correct' && interestReward?.supportKey === 'interestReward' && (
               <InterestRewardContent settings={interestReward} className="mx-6 mb-6" />
             )}

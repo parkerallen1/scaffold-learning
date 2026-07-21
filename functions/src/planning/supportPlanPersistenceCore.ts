@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import {
+  SUPPORT_KEYS,
   classroomIdSchema,
   classroomSchema,
   createNextSupportPlanVersion,
@@ -35,7 +36,7 @@ export class SupportPlanTransitionError extends Error {
 
 export const supportSettingsListSchema = z
   .array(supportSettingsSchema)
-  .max(7)
+  .max(SUPPORT_KEYS.length)
   .superRefine((supports, context) => {
     const keys = supports.map((support) => support.supportKey);
     if (new Set(keys).size !== keys.length) {

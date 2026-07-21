@@ -9,6 +9,7 @@ import { speak } from './services/speech';
 
 vi.mock('./services/speech', () => ({
   speak: vi.fn().mockResolvedValue(undefined),
+  stopSpeaking: vi.fn(),
 }));
 
 vi.mock('./features/auth/authService', () => ({
