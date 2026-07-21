@@ -19,8 +19,11 @@ describe('ScratchCanvas', () => {
     const context = canvas.getContext('2d')!;
     const setPointerCapture = vi.fn();
     const releasePointerCapture = vi.fn();
+    const undoButton = screen.getByRole('button', { name: 'Undo' });
     canvas.width = 600;
     canvas.height = 400;
+
+    expect(undoButton).toBeDisabled();
 
     Object.defineProperties(canvas, {
       setPointerCapture: { configurable: true, value: setPointerCapture },
@@ -71,6 +74,28 @@ describe('ScratchCanvas', () => {
     expect(context.stroke).toHaveBeenCalled();
     expect(context.closePath).toHaveBeenCalled();
     expect(releasePointerCapture).toHaveBeenCalledWith(7);
+    expect(undoButton).toBeEnabled();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Clear' }));
+    expect(undoButton).toBeEnabled();
+
+    fireEvent.click(undoButton);
+
+    expect(undoButton).toBeEnabled();
+    fireEvent.click(undoButton);
+
+    expect(undoButton).toBeDisabled();
+    expect(context.drawImage).toHaveBeenLastCalledWith(
+      expect.any(HTMLCanvasElement),
+      0,
+      0,
+      600,
+      400,
+      0,
+      0,
+      600,
+      400,
+    );
 
     act(() => ref.current?.clear());
 
