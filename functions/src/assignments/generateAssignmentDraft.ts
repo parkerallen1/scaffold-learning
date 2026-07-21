@@ -14,6 +14,7 @@ import {
 
 import { openAiApiKey } from '../ai/openAiRecommendationProvider.js';
 import { AiOperationalControlError, runControlledAiOperation } from '../ai/operationalControls.js';
+import { emulatorUsesLiveOpenAi, liveOpenAiRuntimeEnabled } from '../ai/runtimeConfig.js';
 import {
   executeTeacherOperation,
   requireOwnedClassroom,
@@ -197,10 +198,10 @@ const generateWithOpenAi = async (input: z.infer<typeof inputSchema>) => {
 const generate = async (teacherId: TeacherId, input: z.infer<typeof inputSchema>) => {
   const classroomSnapshot = await firestore.collection('classrooms').doc(input.classroomId).get();
   requireOwnedClassroom(classroomSnapshot, teacherId, true);
-  if (process.env.FUNCTIONS_EMULATOR === 'true') {
+  if (process.env.FUNCTIONS_EMULATOR === 'true' && !emulatorUsesLiveOpenAi()) {
     return { draft: demoDraft(input.prompt, input.file?.fileName) };
   }
-  if (process.env.AI_PROVIDER !== 'openai' || process.env.AI_FEATURES_ENABLED !== 'true') {
+  if (!liveOpenAiRuntimeEnabled()) {
     throw new HttpsError('failed-precondition', 'Assignment generation is not configured.');
   }
   try {

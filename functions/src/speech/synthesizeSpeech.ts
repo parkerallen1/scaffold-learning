@@ -3,6 +3,7 @@ import { HttpsError, onCall } from 'firebase-functions/v2/https';
 import { z } from 'zod';
 
 import { openAiApiKey } from '../ai/openAiRecommendationProvider.js';
+import { liveOpenAiRuntimeEnabled } from '../ai/runtimeConfig.js';
 
 const inputSchema = z
   .object({
@@ -27,13 +28,8 @@ export const synthesizeSpeech = onCall(
     if (!parsed.success) throw new HttpsError('invalid-argument', 'The speech request is invalid.');
 
     const key = openAiApiKey.value();
-    const emulatorHasLiveKey =
-      process.env.FUNCTIONS_EMULATOR === 'true' && key !== '' && !key.startsWith('unused-');
-    const productionEnabled =
-      process.env.FUNCTIONS_EMULATOR !== 'true' &&
-      process.env.AI_PROVIDER === 'openai' &&
-      process.env.AI_FEATURES_ENABLED === 'true';
-    if (!emulatorHasLiveKey && !productionEnabled) {
+    const hasUsableKey = key !== '' && !key.startsWith('unused-');
+    if (!liveOpenAiRuntimeEnabled() || !hasUsableKey) {
       throw new HttpsError('failed-precondition', 'OpenAI speech is not configured.');
     }
 

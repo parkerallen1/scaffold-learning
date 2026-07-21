@@ -237,7 +237,7 @@ describe('deterministic provider selection', () => {
     ).toBe(true);
   });
 
-  it('keeps fake as the default and forces it in the emulator', () => {
+  it('keeps fake as the default and requires an explicit emulator live-AI switch', () => {
     const createOpenAi = vi.fn(
       () => new OpenAiRecommendationProvider(requesterReturning(safeResult), config),
     );
@@ -245,6 +245,15 @@ describe('deterministic provider selection', () => {
     expect(createAiProvider({ createOpenAi }).name).toBe('fake');
     expect(createAiProvider({ mode: 'openai', isEmulator: true, createOpenAi }).name).toBe('fake');
     expect(createOpenAi).not.toHaveBeenCalled();
+    expect(
+      createAiProvider({
+        mode: 'openai',
+        isEmulator: true,
+        emulatorLiveOpenAi: 'true',
+        featuresEnabled: 'true',
+        createOpenAi,
+      }).name,
+    ).toBe('openai');
     expect(
       createAiProvider({
         mode: 'openai',

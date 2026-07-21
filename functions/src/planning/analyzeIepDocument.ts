@@ -20,6 +20,7 @@ import {
 
 import { openAiApiKey } from '../ai/openAiRecommendationProvider.js';
 import { AiOperationalControlError, runControlledAiOperation } from '../ai/operationalControls.js';
+import { emulatorUsesLiveOpenAi, liveOpenAiRuntimeEnabled } from '../ai/runtimeConfig.js';
 import {
   executeTeacherOperation,
   LifecycleNotFoundError,
@@ -146,10 +147,10 @@ const analyzeWithOpenAi = async (input: AnalyzeIepDocumentInput): Promise<IepPro
 const analyze = async (teacherId: TeacherId, input: AnalyzeIepDocumentInput) => {
   await authorizeStudent(teacherId, input);
 
-  if (process.env.FUNCTIONS_EMULATOR === 'true') {
+  if (process.env.FUNCTIONS_EMULATOR === 'true' && !emulatorUsesLiveOpenAi()) {
     return { profileDraft: createDemoIepProfileDraft(input) };
   }
-  if (process.env.AI_PROVIDER !== 'openai' || process.env.AI_FEATURES_ENABLED !== 'true') {
+  if (!liveOpenAiRuntimeEnabled()) {
     throw new HttpsError(
       'failed-precondition',
       'Document analysis is not configured. Use the quick observation questions instead.',

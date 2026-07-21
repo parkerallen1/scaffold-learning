@@ -158,7 +158,7 @@ describe('OpenAI audit request contract', () => {
 });
 
 describe('deterministic audit provider selection', () => {
-  it('keeps fake as default and forces fake in the emulator', () => {
+  it('keeps fake as default and requires an explicit emulator live-AI switch', () => {
     const createOpenAi = vi.fn(
       () => new OpenAiAuditProvider(requesterReturning(safeTransportResult), config),
     );
@@ -168,6 +168,15 @@ describe('deterministic audit provider selection', () => {
       'fake',
     );
     expect(createOpenAi).not.toHaveBeenCalled();
+    expect(
+      createAuditProvider({
+        mode: 'openai',
+        isEmulator: true,
+        emulatorLiveOpenAi: 'true',
+        featuresEnabled: 'true',
+        createOpenAi,
+      }).name,
+    ).toBe('openai');
     expect(
       createAuditProvider({
         mode: 'openai',

@@ -9,6 +9,7 @@ import {
 export interface AiProviderFactoryOptions {
   mode?: string;
   isEmulator?: boolean;
+  emulatorLiveOpenAi?: string;
   featuresEnabled?: string;
   createOpenAi?: () => AiProvider;
 }
@@ -16,10 +17,11 @@ export interface AiProviderFactoryOptions {
 export const createAiProvider = ({
   mode = process.env.AI_PROVIDER,
   isEmulator = process.env.FUNCTIONS_EMULATOR === 'true',
+  emulatorLiveOpenAi = process.env.AI_EMULATOR_LIVE_OPENAI,
   featuresEnabled = process.env.AI_FEATURES_ENABLED,
   createOpenAi = createConfiguredOpenAiRecommendationProvider,
 }: AiProviderFactoryOptions = {}): AiProvider => {
-  if (mode !== 'openai' || isEmulator) return fakeAiProvider;
+  if (mode !== 'openai' || (isEmulator && emulatorLiveOpenAi !== 'true')) return fakeAiProvider;
   if (featuresEnabled !== 'true') {
     const config = readOpenAiRecommendationConfig();
     return Object.freeze({

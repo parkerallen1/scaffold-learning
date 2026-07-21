@@ -5,6 +5,8 @@ const PUBLIC_ENV_PATH = '.env.local';
 const PUBLIC_ENV_EXAMPLE_PATH = '.env.example';
 const SECRET_ENV_PATH = 'functions/.secret.local';
 const SECRET_ENV_EXAMPLE_PATH = 'functions/.secret.local.example';
+const FUNCTIONS_ENV_PATH = 'functions/.env.local';
+const FUNCTIONS_ENV_DEFAULT = `# Keep deterministic providers unless live local OpenAI is explicitly enabled.\nAI_PROVIDER=fake\nAI_FEATURES_ENABLED=false\nAI_EMULATOR_LIVE_OPENAI=false\n`;
 const LOCAL_OPENAI_API_KEY = 'unused-in-deterministic-fake-emulator';
 const LOCAL_PIN_PEPPER = 'scaffold-learning-local-demo-only-not-a-production-secret';
 
@@ -17,6 +19,14 @@ if (!existsSync(PUBLIC_ENV_PATH)) {
     mode: 0o600,
   });
   created.push(PUBLIC_ENV_PATH);
+}
+
+if (!existsSync(FUNCTIONS_ENV_PATH)) {
+  await writeFile(FUNCTIONS_ENV_PATH, FUNCTIONS_ENV_DEFAULT, {
+    encoding: 'utf8',
+    mode: 0o600,
+  });
+  created.push(FUNCTIONS_ENV_PATH);
 }
 
 const secretExisted = existsSync(SECRET_ENV_PATH);
