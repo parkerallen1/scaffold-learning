@@ -435,7 +435,6 @@ export function OnboardingInterview({
             </label>
             {otherSelected && (
               <input
-                autoFocus
                 aria-label={`Other response for: ${question.prompt}`}
                 value={otherDrafts[question.id] ?? ''}
                 onChange={(event) => {
