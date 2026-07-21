@@ -118,6 +118,7 @@ const supportPlan = supportPlanVersionSchema.parse({
     { chunkMode: 'sentence', enabled: true, revealAllAllowed: true, supportKey: 'readingChunks' },
     { enabled: true, hideNonessentialChrome: true, supportKey: 'focusView' },
     { allowAnalogousExample: true, enabled: true, maxTier: 2, supportKey: 'hintLadder' },
+    { enabled: true, increasedSpacing: true, supportKey: 'dyslexiaFont' },
   ],
   version: 1,
 });
@@ -157,7 +158,13 @@ describe('StudentWorkspace', () => {
     );
 
     await user.click(await screen.findByRole('button', { name: 'Open assignment' }));
-    expect(await screen.findByText(firstQuestion.prompt)).toBeInTheDocument();
+    const questionHeading = await screen.findByText(firstQuestion.prompt);
+    expect(questionHeading).toBeInTheDocument();
+    expect(questionHeading.closest('section')).toHaveClass('font-dyslexia');
+    expect(questionHeading.closest('section')).toHaveStyle({
+      letterSpacing: '0.035em',
+      wordSpacing: '0.12em',
+    });
     expect(screen.getByLabelText('Scratch work area')).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Read aloud' }));

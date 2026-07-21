@@ -110,10 +110,13 @@ export const QuizRunner = ({ supportPlan }: { supportPlan?: SupportPlanVersion }
     <section
       aria-labelledby="quiz-runner-title"
       className={`relative flex min-h-screen flex-col items-center justify-center bg-gray-100 p-4 text-gray-800 dark:bg-gray-900 dark:text-gray-200 sm:p-6 md:p-8 ${
-        dyslexiaFont?.supportKey === 'dyslexiaFont'
-          ? 'font-[Verdana,Arial,sans-serif] tracking-wide'
-          : 'font-sans'
+        dyslexiaFont?.supportKey === 'dyslexiaFont' ? 'font-dyslexia' : 'font-sans'
       }`}
+      style={
+        dyslexiaFont?.supportKey === 'dyslexiaFont' && dyslexiaFont.increasedSpacing
+          ? { letterSpacing: '0.035em', wordSpacing: '0.12em' }
+          : undefined
+      }
     >
       <h1 id="quiz-runner-title" className="sr-only">
         Synthetic quiz practice

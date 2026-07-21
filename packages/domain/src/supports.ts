@@ -99,8 +99,9 @@ export const SUPPORT_CATALOG = Object.freeze({
   },
   dyslexiaFont: {
     label: 'Dyslexia-friendly font',
-    description: 'Use a clear sans-serif typeface with extra letter and word spacing.',
-    caution: 'Keep the original wording and let the student use normal browser zoom controls.',
+    description: 'Use the OpenDyslexic typeface with optional extra letter and word spacing.',
+    caution:
+      'No single typeface works for every reader; keep the original wording and normal browser zoom controls.',
     evidenceSignals: ['applied'],
     defaultSettings: {
       supportKey: 'dyslexiaFont',

@@ -70,8 +70,8 @@ const describeStudentExperience = (settings: SupportSettings) => {
       return `An optional ${settings.durationSeconds}-second break is offered after ${settings.afterAttempts} attempts. The student can skip it.`;
     case 'dyslexiaFont':
       return settings.increasedSpacing
-        ? 'A clear sans-serif typeface is used with extra letter and word spacing.'
-        : 'A clear sans-serif typeface is used with standard spacing.';
+        ? 'OpenDyslexic is used with extra letter and word spacing.'
+        : 'OpenDyslexic is used with standard spacing.';
     case 'interestReward':
       return `After a correct answer, the student sees: “${settings.rewardMessage}”`;
   }

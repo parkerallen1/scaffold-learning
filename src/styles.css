@@ -1,3 +1,5 @@
+@import '@fontsource/opendyslexic/400.css';
+@import '@fontsource/opendyslexic/700.css';
 @import 'tailwindcss';
 
 @custom-variant dark (&:where(.dark, .dark *));
@@ -23,6 +25,10 @@
 
 :where(input, select, textarea)[class~='border-slate-300'] {
   border-color: #64748b;
+}
+
+.font-dyslexia {
+  font-family: 'OpenDyslexic', Verdana, Arial, sans-serif;
 }
 
 @media (prefers-reduced-motion: reduce) {

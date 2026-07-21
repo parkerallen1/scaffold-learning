@@ -289,7 +289,7 @@ const QuestionWork = ({
   return (
     <section
       className={`${focusView ? 'mx-auto max-w-2xl' : ''} ${
-        dyslexiaFont?.supportKey === 'dyslexiaFont' ? 'font-[Verdana,Arial,sans-serif]' : ''
+        dyslexiaFont?.supportKey === 'dyslexiaFont' ? 'font-dyslexia' : ''
       }`}
       style={
         dyslexiaFont?.supportKey === 'dyslexiaFont' && dyslexiaFont.increasedSpacing
