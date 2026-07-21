@@ -15,6 +15,7 @@ export const SUPPORT_KEYS = [
   'flexibleResponse',
   'calmPacing',
   'breakPrompt',
+  'dyslexiaFont',
 ] as const;
 
 export const supportKeySchema = z.enum(SUPPORT_KEYS);
@@ -93,6 +94,17 @@ export const SUPPORT_CATALOG = Object.freeze({
       afterAttempts: 3,
       durationSeconds: 120,
       skippable: true,
+    },
+  },
+  dyslexiaFont: {
+    label: 'Dyslexia-friendly font',
+    description: 'Use a clear sans-serif typeface with extra letter and word spacing.',
+    caution: 'Keep the original wording and let the student use normal browser zoom controls.',
+    evidenceSignals: ['applied'],
+    defaultSettings: {
+      supportKey: 'dyslexiaFont',
+      enabled: true,
+      increasedSpacing: true,
     },
   },
 } as const satisfies Readonly<
@@ -181,6 +193,14 @@ export const breakPromptSettingsSchema = z
   })
   .strict();
 
+export const dyslexiaFontSettingsSchema = z
+  .object({
+    supportKey: z.literal('dyslexiaFont'),
+    enabled: enabledSchema,
+    increasedSpacing: z.boolean().default(true),
+  })
+  .strict();
+
 export const supportSettingsSchema = z.discriminatedUnion('supportKey', [
   readAloudSettingsSchema,
   readingChunksSettingsSchema,
@@ -189,6 +209,7 @@ export const supportSettingsSchema = z.discriminatedUnion('supportKey', [
   flexibleResponseSettingsSchema,
   calmPacingSettingsSchema,
   breakPromptSettingsSchema,
+  dyslexiaFontSettingsSchema,
 ]);
 
 export const supportSettingsSnapshotSchema = supportSettingsSchema.readonly();

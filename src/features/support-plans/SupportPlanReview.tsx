@@ -68,6 +68,10 @@ const describeStudentExperience = (settings: SupportSettings) => {
       return `A ${settings.durationSeconds}-second visual countdown is available. Reaching zero never submits or moves on.`;
     case 'breakPrompt':
       return `An optional ${settings.durationSeconds}-second break is offered after ${settings.afterAttempts} attempts. The student can skip it.`;
+    case 'dyslexiaFont':
+      return settings.increasedSpacing
+        ? 'A clear sans-serif typeface is used with extra letter and word spacing.'
+        : 'A clear sans-serif typeface is used with standard spacing.';
   }
 };
 
@@ -305,6 +309,20 @@ export function SettingsEditor({ settings, onChange }: SettingsEditorProps) {
           </label>
           <p className="text-sm text-slate-600">The student can always skip the break.</p>
         </>
+      )}
+
+      {settings.supportKey === 'dyslexiaFont' && (
+        <label className="flex min-h-11 items-center gap-3 text-sm font-medium text-slate-800">
+          <input
+            type="checkbox"
+            checked={settings.increasedSpacing}
+            onChange={(event) =>
+              onChange({ ...settings, increasedSpacing: event.target.checked })
+            }
+            className="h-5 w-5 accent-blue-700"
+          />
+          Add extra letter and word spacing
+        </label>
       )}
     </fieldset>
   );

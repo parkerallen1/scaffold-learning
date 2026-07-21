@@ -156,6 +156,9 @@ const QuestionWork = ({
   const hints = supportPlan.supports.find(
     (support) => support.supportKey === 'hintLadder' && support.enabled,
   );
+  const dyslexiaFont = supportPlan.supports.find(
+    (support) => support.supportKey === 'dyslexiaFont' && support.enabled,
+  );
   const chunks = splitPrompt(
     question.prompt,
     chunking?.supportKey === 'readingChunks' ? chunking.chunkMode : 'sentence',
@@ -263,7 +266,17 @@ const QuestionWork = ({
       : chunks.slice(0, chunkCount).join(' ');
 
   return (
-    <section className={focusView ? 'mx-auto max-w-2xl' : ''} aria-labelledby="current-question">
+    <section
+      className={`${focusView ? 'mx-auto max-w-2xl' : ''} ${
+        dyslexiaFont?.supportKey === 'dyslexiaFont' ? 'font-[Verdana,Arial,sans-serif]' : ''
+      }`}
+      style={
+        dyslexiaFont?.supportKey === 'dyslexiaFont' && dyslexiaFont.increasedSpacing
+          ? { letterSpacing: '0.035em', wordSpacing: '0.12em' }
+          : undefined
+      }
+      aria-labelledby="current-question"
+    >
       <div className="rounded-2xl bg-white p-6 shadow-md">
         <p className="text-sm font-semibold text-emerald-700">Problem {question.order + 1}</p>
         <h2 id="current-question" className="mt-2 text-2xl font-bold leading-relaxed">

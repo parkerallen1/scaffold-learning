@@ -32,7 +32,7 @@ describe('synthetic domain fixtures', () => {
 describe('support catalog boundaries', () => {
   it('distinguishes the Build Week core from the full fixed catalog', () => {
     expect(CORE_SUPPORT_KEYS).toEqual(['readAloud', 'readingChunks', 'focusView', 'hintLadder']);
-    expect(SUPPORT_KEYS).toHaveLength(7);
+    expect(SUPPORT_KEYS).toHaveLength(8);
   });
 
   it('starts AI recommendations in proposed state', () => {

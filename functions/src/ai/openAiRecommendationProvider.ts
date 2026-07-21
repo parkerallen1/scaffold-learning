@@ -6,6 +6,7 @@ import { z } from 'zod';
 import {
   SUPPORT_CATALOG,
   breakPromptSettingsSchema,
+  dyslexiaFontSettingsSchema,
   flexibleResponseSettingsSchema,
   focusViewSettingsSchema,
   hintLadderSettingsSchema,
@@ -54,6 +55,7 @@ const openAiSupportSettingsSchema = z.discriminatedUnion('supportKey', [
   flexibleResponseSettingsSchema,
   openAiCalmPacingSettingsSchema,
   breakPromptSettingsSchema,
+  dyslexiaFontSettingsSchema,
 ]);
 
 const openAiSupportRecommendationSchema = z
