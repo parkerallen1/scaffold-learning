@@ -141,15 +141,22 @@ than source code or a public repository; see the
 For a reviewed production deployment:
 
 ```bash
-firebase functions:secrets:set OPENAI_API_KEY
+firebase functions:secrets:set OPENAI_API_KEY --project quiz-master-pg
+firebase functions:secrets:set STUDENT_PIN_PEPPER --project quiz-master-pg
 ```
 
-Set the Functions runtime variables `AI_PROVIDER=openai` and `AI_FEATURES_ENABLED=true`. The second
-variable is a production kill switch: live OpenAI calls remain disabled unless its value is exactly
-`true`. Assignment drafting defaults to `gpt-5.6-luna`, read-aloud uses `gpt-4o-mini-tts`, and the
-other reviewed AI workflows keep their server-side defaults. Optional model overrides include
-`OPENAI_ASSIGNMENT_MODEL`, `OPENAI_RECOMMENDATION_MODEL`, `OPENAI_AUDIT_MODEL`, and
-`OPENAI_IEP_MODEL`.
+Create the ignored `functions/.env.quiz-master-pg` file with `AI_PROVIDER=openai` and
+`AI_FEATURES_ENABLED=true`. The second variable is a production kill switch: live OpenAI calls
+remain disabled unless its value is exactly `true`. `npm run build:functions-deploy` creates the
+self-contained, ignored `functions-deploy` source directory used by Firebase; do not edit that
+generated directory directly. Assignment drafting defaults to `gpt-5.6-luna`, read-aloud uses
+`gpt-4o-mini-tts`, and the other reviewed AI workflows keep their server-side defaults. Optional
+model overrides include `OPENAI_ASSIGNMENT_MODEL`, `OPENAI_RECOMMENDATION_MODEL`,
+`OPENAI_AUDIT_MODEL`, and `OPENAI_IEP_MODEL`.
+
+The production browser configuration belongs in the ignored file
+`<repository-root>/.env.production.local`. Its `VITE_*` Firebase and App Check values are public
+client configuration; never put either server secret in that file.
 
 Never put `OPENAI_API_KEY` in `.env.local`, a `VITE_*` variable, or client source. OpenAI requests use structured outputs, `store: false`, bounded timeouts, no retries, and post-response safety validation.
 

@@ -19,6 +19,8 @@ firebase-debug.log*
 firestore-debug.log*
 ui-debug.log*
 functions/lib/
+functions-deploy/*
+!functions-deploy/.gitkeep
 packages/*/dist/
 playwright-report/
 test-results/

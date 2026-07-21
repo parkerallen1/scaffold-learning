@@ -10,6 +10,7 @@ export default tseslint.config(
     ignores: [
       'coverage/**',
       'dist/**',
+      'functions-deploy/**',
       'functions/lib/**',
       'node_modules/**',
       'packages/*/dist/**',
