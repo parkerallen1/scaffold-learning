@@ -12,7 +12,8 @@ import {
   saveStudentProfile,
   type StudentPlanningData,
 } from '@/features/planning/planningService';
-import { SupportPlanReview } from '@/features/support-plans/SupportPlanReview';
+import { uploadInterestRewardMedia } from '@/features/support-plans/interestRewardMedia';
+import { SettingsEditor, SupportPlanReview } from '@/features/support-plans/SupportPlanReview';
 import {
   SUPPORT_CATALOG,
   SUPPORT_KEYS,
@@ -94,6 +95,7 @@ export const TeacherStudentPlanningPage = ({
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isWorking, setIsWorking] = useState(false);
+  const [isUploadingInterestMedia, setIsUploadingInterestMedia] = useState(false);
   const [isEditingActivePlan, setIsEditingActivePlan] = useState(false);
   const [manualSupports, setManualSupports] = useState<SupportSettings[]>([]);
 
@@ -214,8 +216,23 @@ export const TeacherStudentPlanningPage = ({
       const support = manualSupports.find((candidate) => candidate.supportKey === supportKey);
       return support ? [support] : [];
     });
-    void completePlanReview(orderedSupports);
+    const parsedSupports: SupportSettings[] = [];
+    for (const support of orderedSupports) {
+      const parsed = supportSettingsSchema.safeParse(support);
+      if (!parsed.success) {
+        setError(
+          support.supportKey === 'interestReward'
+            ? 'Add encouragement text or at least one image or audio clip before saving.'
+            : 'Review the selected support settings before saving.',
+        );
+        return;
+      }
+      parsedSupports.push(parsed.data);
+    }
+    void completePlanReview(parsedSupports);
   };
+
+  const uploadEncouragementMedia = (file: File) => uploadInterestRewardMedia({ ...identity, file });
 
   const revertTo = async (planId: string, version: number) => {
     if (isWorking || data === null) return;
@@ -341,6 +358,7 @@ export const TeacherStudentPlanningPage = ({
           key={`${data.profile?.updatedAt ?? 'profile'}-${recommendations.length}`}
           recommendations={recommendations}
           recommendationError={recommendationError}
+          onUploadInterestMedia={uploadEncouragementMedia}
           onComplete={(supports) => void completePlanReview(supports)}
         />
       </div>
@@ -456,7 +474,7 @@ export const TeacherStudentPlanningPage = ({
                 saveManualPlan();
               }}
             >
-              <fieldset disabled={isWorking}>
+              <fieldset disabled={isWorking || isUploadingInterestMedia}>
                 <legend className="text-sm font-semibold text-slate-700">
                   Select the supports that should be live for this student.
                 </legend>
@@ -497,11 +515,28 @@ export const TeacherStudentPlanningPage = ({
                     );
                   })}
                 </ul>
+                {manualSupports.map((support) =>
+                  support.supportKey === 'interestReward' ? (
+                    <SettingsEditor
+                      key={support.supportKey}
+                      settings={support}
+                      onUploadInterestMedia={uploadEncouragementMedia}
+                      onUploadStateChange={setIsUploadingInterestMedia}
+                      onChange={(settings) =>
+                        setManualSupports((current) =>
+                          current.map((candidate) =>
+                            candidate.supportKey === settings.supportKey ? settings : candidate,
+                          ),
+                        )
+                      }
+                    />
+                  ) : null,
+                )}
               </fieldset>
               <div className="mt-5 flex flex-wrap justify-end gap-3">
                 <button
                   type="button"
-                  disabled={isWorking}
+                  disabled={isWorking || isUploadingInterestMedia}
                   onClick={() => setIsEditingActivePlan(false)}
                   className="rounded-lg border border-slate-300 px-4 py-2 font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
                 >
@@ -509,10 +544,14 @@ export const TeacherStudentPlanningPage = ({
                 </button>
                 <button
                   type="submit"
-                  disabled={isWorking}
+                  disabled={isWorking || isUploadingInterestMedia}
                   className="rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800 disabled:opacity-50"
                 >
-                  {isWorking ? 'Saving…' : 'Save active supports'}
+                  {isUploadingInterestMedia
+                    ? 'Uploading media…'
+                    : isWorking
+                      ? 'Saving…'
+                      : 'Save active supports'}
                 </button>
               </div>
             </form>

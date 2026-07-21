@@ -12,6 +12,7 @@ import type {
 import { choiceIdSchema, idempotencyKeySchema } from '@/lib/domain';
 import { speak } from '@/services/speech';
 import { ScratchCanvas } from '@/features/quiz/components/ScratchCanvas';
+import { InterestRewardContent } from '@/features/support-plans/InterestRewardContent';
 
 import {
   clearStudentDraft,
@@ -493,9 +494,7 @@ const QuestionWork = ({
             </p>
           )}
           {outcome === 'correct' && interestReward?.supportKey === 'interestReward' && (
-            <p className="mt-4 rounded-xl bg-violet-50 p-4 font-semibold text-violet-900">
-              {interestReward.rewardMessage}
-            </p>
+            <InterestRewardContent settings={interestReward} className="mt-4" />
           )}
           <div className="mt-5 flex flex-wrap gap-3">
             <button

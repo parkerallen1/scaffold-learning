@@ -12,7 +12,12 @@ const planningHarness = vi.hoisted(() => ({
   saveStudentProfile: vi.fn(),
 }));
 
+const mediaHarness = vi.hoisted(() => ({ upload: vi.fn() }));
+
 vi.mock('@/features/planning/planningService', () => planningHarness);
+vi.mock('@/features/support-plans/interestRewardMedia', () => ({
+  uploadInterestRewardMedia: mediaHarness.upload,
+}));
 
 vi.mock('@/features/audits/AuditReviewPanel', () => ({
   AuditReviewPanel: ({ disabled }: { disabled: boolean }) => (
@@ -128,6 +133,7 @@ describe('TeacherStudentPlanningPage', () => {
     });
     planningHarness.createSupportPlanVersion.mockReset().mockResolvedValue({ version: 1 });
     planningHarness.revertSupportPlanVersion.mockReset();
+    mediaHarness.upload.mockReset();
     vi.spyOn(window, 'confirm').mockReturnValue(true);
   });
 

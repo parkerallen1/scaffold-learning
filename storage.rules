@@ -1,0 +1,51 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    function isTeacher() {
+      return request.auth != null && request.auth.token.role == 'teacher';
+    }
+
+    function isStudent() {
+      return request.auth != null && request.auth.token.role == 'student';
+    }
+
+    function classroom(classroomId) {
+      return firestore.get(/databases/(default)/documents/classrooms/$(classroomId));
+    }
+
+    function student(classroomId, studentId) {
+      return firestore.get(
+        /databases/(default)/documents/classrooms/$(classroomId)/students/$(studentId)
+      );
+    }
+
+    function teacherOwnsClassroom(classroomId) {
+      return isTeacher()
+        && classroom(classroomId).data.teacherId == request.auth.uid
+        && classroom(classroomId).data.status == 'active';
+    }
+
+    function studentIs(classroomId, studentId) {
+      return isStudent()
+        && request.auth.uid == studentId
+        && request.auth.token.studentId == studentId
+        && request.auth.token.classroomId == classroomId
+        && classroom(classroomId).data.status == 'active'
+        && student(classroomId, studentId).data.id == studentId
+        && student(classroomId, studentId).data.status == 'active'
+        && student(classroomId, studentId).data.authVersion == request.auth.token.authVersion;
+    }
+
+    match /classrooms/{classroomId}/students/{studentId}/interest-rewards/{fileName} {
+      allow read: if teacherOwnsClassroom(classroomId) || studentIs(classroomId, studentId);
+      allow write: if teacherOwnsClassroom(classroomId)
+        && request.resource.size <= 20 * 1024 * 1024
+        && request.resource.contentType.matches('(image|audio)/.*');
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

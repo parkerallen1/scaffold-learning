@@ -112,7 +112,7 @@ export const SUPPORT_CATALOG = Object.freeze({
   interestReward: {
     label: 'Interest-based encouragement',
     description:
-      'Show a short teacher-written message connected to the student’s interests after a correct answer.',
+      'Show teacher-selected text, images, or audio connected to the student’s interests after a correct answer.',
     caution:
       'Keep the message private, age-appropriate, and encouraging rather than contingent or punitive.',
     evidenceSignals: ['shown'],
@@ -216,13 +216,61 @@ export const dyslexiaFontSettingsSchema = z
   })
   .strict();
 
+export const interestRewardMediaSchema = z
+  .object({
+    id: z
+      .string()
+      .trim()
+      .regex(/^[A-Za-z0-9_-]{8,64}$/),
+    kind: z.enum(['image', 'audio']),
+    storagePath: z
+      .string()
+      .trim()
+      .regex(
+        /^classrooms\/[A-Za-z0-9_-]{8,64}\/students\/[A-Za-z0-9_-]{8,64}\/interest-rewards\/[A-Za-z0-9._-]{8,180}$/,
+      ),
+    fileName: z.string().trim().min(1).max(120),
+    mimeType: z
+      .string()
+      .trim()
+      .regex(/^(image|audio)\/[A-Za-z0-9.+-]+$/),
+  })
+  .strict()
+  .superRefine((media, context) => {
+    if (!media.mimeType.startsWith(`${media.kind}/`)) {
+      context.addIssue({
+        code: 'custom',
+        path: ['mimeType'],
+        message: 'The media type must match its MIME type.',
+      });
+    }
+  });
+
 export const interestRewardSettingsSchema = z
   .object({
     supportKey: z.literal('interestReward'),
     enabled: enabledSchema,
-    rewardMessage: z.string().trim().min(1).max(240),
+    rewardMessage: z.string().trim().max(240),
+    rewardMedia: z.array(interestRewardMediaSchema).max(8).default([]),
   })
-  .strict();
+  .strict()
+  .superRefine((settings, context) => {
+    if (settings.rewardMessage.length === 0 && settings.rewardMedia.length === 0) {
+      context.addIssue({
+        code: 'custom',
+        path: ['rewardMessage'],
+        message: 'Add text or at least one media item.',
+      });
+    }
+    const mediaIds = settings.rewardMedia.map(({ id }) => id);
+    if (new Set(mediaIds).size !== mediaIds.length) {
+      context.addIssue({
+        code: 'custom',
+        path: ['rewardMedia'],
+        message: 'Media item IDs must be unique.',
+      });
+    }
+  });
 
 export const supportSettingsSchema = z.discriminatedUnion('supportKey', [
   readAloudSettingsSchema,
@@ -280,6 +328,7 @@ export const supportRecommendationSchema = z
   });
 
 export type SupportSettings = z.infer<typeof supportSettingsSchema>;
+export type InterestRewardMedia = z.infer<typeof interestRewardMediaSchema>;
 export type SupportPlanVersion = z.infer<typeof supportPlanVersionSchema>;
 export type SupportRecommendation = z.infer<typeof supportRecommendationSchema>;
 

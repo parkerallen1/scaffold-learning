@@ -31,6 +31,21 @@ const readAloudRecommendation: SupportRecommendation = {
   status: 'proposed',
 };
 
+const interestRecommendation: SupportRecommendation = {
+  supportKey: 'interestReward',
+  proposedSettings: {
+    supportKey: 'interestReward',
+    enabled: true,
+    rewardMessage: 'Great persistence!',
+    rewardMedia: [],
+  },
+  rationale: 'Personal encouragement helps the student recognize progress.',
+  basedOn: ['The student enjoys encouragement connected to drawing.'],
+  confidence: 'medium',
+  cautions: [],
+  status: 'proposed',
+};
+
 describe('SupportPlanReview', () => {
   it('keeps proposed recommendations out of the student preview and saved output', async () => {
     const user = userEvent.setup();
@@ -132,5 +147,59 @@ describe('SupportPlanReview', () => {
     for (const settings of output) {
       expect(supportSettingsSchema.safeParse(settings).success).toBe(true);
     }
+  });
+
+  it('uploads multiple encouragement media items before approval', async () => {
+    const user = userEvent.setup();
+    const onComplete = vi.fn();
+    const upload = vi
+      .fn()
+      .mockResolvedValueOnce({
+        id: 'media_image_01',
+        kind: 'image',
+        storagePath:
+          'classrooms/classroom_demo_01/students/student_demo_01/interest-rewards/media_image_01-space.png',
+        fileName: 'space.png',
+        mimeType: 'image/png',
+      })
+      .mockResolvedValueOnce({
+        id: 'media_audio_01',
+        kind: 'audio',
+        storagePath:
+          'classrooms/classroom_demo_01/students/student_demo_01/interest-rewards/media_audio_01-cheer.mp3',
+        fileName: 'cheer.mp3',
+        mimeType: 'audio/mpeg',
+      });
+
+    render(
+      <SupportPlanReview
+        recommendations={[interestRecommendation]}
+        onComplete={onComplete}
+        onUploadInterestMedia={upload}
+      />,
+    );
+
+    await user.upload(screen.getByLabelText('Upload encouragement images or audio'), [
+      new File(['image'], 'space.png', { type: 'image/png' }),
+      new File(['audio'], 'cheer.mp3', { type: 'audio/mpeg' }),
+    ]);
+
+    expect(await screen.findByText('space.png')).toBeInTheDocument();
+    expect(screen.getByText('cheer.mp3')).toBeInTheDocument();
+    expect(upload).toHaveBeenCalledTimes(2);
+
+    await user.click(screen.getByRole('button', { name: 'Approve Interest-based encouragement' }));
+    await user.click(screen.getByRole('button', { name: 'Save approved plan' }));
+
+    expect(onComplete).toHaveBeenCalledWith([
+      expect.objectContaining({
+        supportKey: 'interestReward',
+        rewardMessage: 'Great persistence!',
+        rewardMedia: [
+          expect.objectContaining({ kind: 'image', fileName: 'space.png' }),
+          expect.objectContaining({ kind: 'audio', fileName: 'cheer.mp3' }),
+        ],
+      }),
+    ]);
   });
 });

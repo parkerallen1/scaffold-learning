@@ -61,6 +61,45 @@ describe('support catalog boundaries', () => {
     }
   });
 
+  it('allows teacher-selected text, multiple images, and audio for encouragement', () => {
+    const settings = supportSettingsSchema.parse({
+      supportKey: 'interestReward',
+      enabled: true,
+      rewardMessage: 'Keep building like your favorite inventor!',
+      rewardMedia: [
+        {
+          id: 'media_image_01',
+          kind: 'image',
+          storagePath:
+            'classrooms/classroom_demo_01/students/student_demo_01/interest-rewards/media_image_01-robot.png',
+          fileName: 'robot.png',
+          mimeType: 'image/png',
+        },
+        {
+          id: 'media_audio_01',
+          kind: 'audio',
+          storagePath:
+            'classrooms/classroom_demo_01/students/student_demo_01/interest-rewards/media_audio_01-cheer.mp3',
+          fileName: 'cheer.mp3',
+          mimeType: 'audio/mpeg',
+        },
+      ],
+    });
+
+    expect(settings).toMatchObject({
+      supportKey: 'interestReward',
+      rewardMedia: [{ kind: 'image' }, { kind: 'audio' }],
+    });
+    expect(
+      supportSettingsSchema.safeParse({
+        supportKey: 'interestReward',
+        enabled: true,
+        rewardMessage: '',
+        rewardMedia: [],
+      }).success,
+    ).toBe(false);
+  });
+
   it('creates an immutable, attributable next version without mutating the prior plan', () => {
     const previous = syntheticDomainFixtures.supportPlan;
     const next = createNextSupportPlanVersion({

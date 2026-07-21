@@ -3,6 +3,7 @@ import { initializeAppCheck, ReCaptchaEnterpriseProvider } from 'firebase/app-ch
 import { connectAuthEmulator, getAuth } from 'firebase/auth';
 import { connectFirestoreEmulator, getFirestore } from 'firebase/firestore';
 import { connectFunctionsEmulator, getFunctions } from 'firebase/functions';
+import { connectStorageEmulator, getStorage } from 'firebase/storage';
 
 type PublicFirebaseEnv = {
   readonly VITE_USE_EMULATORS?: string;
@@ -10,6 +11,7 @@ type PublicFirebaseEnv = {
   readonly VITE_FIREBASE_AUTH_DOMAIN?: string;
   readonly VITE_FIREBASE_PROJECT_ID?: string;
   readonly VITE_FIREBASE_APP_ID?: string;
+  readonly VITE_FIREBASE_STORAGE_BUCKET?: string;
   readonly VITE_FIREBASE_APPCHECK_SITE_KEY?: string;
 };
 
@@ -43,6 +45,7 @@ const firebaseConfig: FirebaseOptions = {
   authDomain: requirePublicEnv('VITE_FIREBASE_AUTH_DOMAIN'),
   projectId,
   appId: requirePublicEnv('VITE_FIREBASE_APP_ID'),
+  storageBucket: requirePublicEnv('VITE_FIREBASE_STORAGE_BUCKET'),
 };
 
 export const firebaseApp = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
@@ -59,6 +62,7 @@ export const appCheck = useEmulators
 export const auth = getAuth(firebaseApp);
 export const db = getFirestore(firebaseApp);
 export const functions = getFunctions(firebaseApp, 'us-central1');
+export const storage = getStorage(firebaseApp);
 
 const runtimeState = globalThis as typeof globalThis & {
   __SCAFFOLD_LEARNING_EMULATORS_CONNECTED__?: boolean;
@@ -68,6 +72,7 @@ if (useEmulators && !runtimeState.__SCAFFOLD_LEARNING_EMULATORS_CONNECTED__) {
   connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
   connectFirestoreEmulator(db, '127.0.0.1', 8080);
   connectFunctionsEmulator(functions, '127.0.0.1', 5001);
+  connectStorageEmulator(storage, '127.0.0.1', 9199);
   runtimeState.__SCAFFOLD_LEARNING_EMULATORS_CONNECTED__ = true;
 }
 

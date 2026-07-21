@@ -4,6 +4,7 @@ import { QUESTIONS } from '../../constants';
 import { speak } from '../../services/speech';
 import type { Question } from '../../types';
 import type { SupportPlanVersion } from '../../lib/domain';
+import { InterestRewardContent } from '../support-plans/InterestRewardContent';
 import { isAnswerCorrect } from './answerChecking';
 import { AnswerPanel } from './components/AnswerPanel';
 import { CompletionScreen } from './components/CompletionScreen';
@@ -168,9 +169,7 @@ export const QuizRunner = ({ supportPlan }: { supportPlan?: SupportPlanVersion }
               />
             </ScratchCanvas>
             {answerOutcome === 'correct' && interestReward?.supportKey === 'interestReward' && (
-              <p className="mx-6 mb-6 rounded-xl bg-violet-50 p-4 font-semibold text-violet-900">
-                {interestReward.rewardMessage}
-              </p>
+              <InterestRewardContent settings={interestReward} className="mx-6 mb-6" />
             )}
           </>
         )}

@@ -11,6 +11,7 @@ This repository is the OpenAI Build Week education-pathway project and a synthet
 - Structured teacher onboarding based on observable classroom behavior, not diagnoses.
 - Fixed-catalog support recommendations through a deterministic local provider or server-side OpenAI Responses API.
 - Explicit teacher review, manual fallback, immutable support-plan versions, and revert.
+- Per-student interest encouragement using teacher-authored text and teacher-uploaded images or audio.
 - Teacher-authored assignments plus editable AI drafts from a prompt, PDF, DOCX, or text file.
 - Server-owned publication, protected answer keys, and student targeting pinned to a plan version.
 - Student assignment resume, deterministic checking, neutral retries, review-later escape, approved supports, scratch canvas, and local answer recovery.
@@ -64,7 +65,8 @@ enabled as described below.
 2. Create a classroom and save the display-once class code.
 3. Create a synthetic student, then click its handle or PIN in the roster to copy it.
 4. Open the student’s support-planning link from the roster.
-5. Complete the structured interview, review suggestions, and approve a plan.
+5. Complete the structured interview, review suggestions, and approve a plan. Interest-based
+   encouragement can include text plus up to eight teacher-uploaded images or audio clips.
 6. Open `/teacher/assignments`, author an activity, publish it, and assign the student.
 7. In another browser profile, open `/student`, sign in, and complete the activity.
 8. Open `/teacher/evidence` to inspect the completed session without exposing its answer key.
@@ -211,7 +213,7 @@ Useful commands:
 |---|---|
 | `npm run dev` | Vite client only |
 | `npm run setup:local` | Safely prepare missing ignored emulator configuration |
-| `npm run emulators:start` | Auth, Firestore, Functions, and Hosting emulators |
+| `npm run emulators:start` | Auth, Firestore, Functions, Storage, and Hosting emulators |
 | `npm run test:run` | Unit/component tests except Firestore rules |
 | `npm run firebase:validate` | Firestore rules tests |
 | `npm run e2e` | Emulator-backed Playwright route and cross-role demo paths |

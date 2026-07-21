@@ -1,12 +1,20 @@
 import { useState } from 'react';
 
 import { SUPPORT_CATALOG, supportRecommendationSchema, supportSettingsSchema } from '@/lib/domain';
-import type { SupportKey, SupportRecommendation, SupportSettings } from '@/lib/domain';
+import type {
+  InterestRewardMedia,
+  SupportKey,
+  SupportRecommendation,
+  SupportSettings,
+} from '@/lib/domain';
+
+import { InterestRewardContent } from './InterestRewardContent';
 
 interface SupportPlanReviewProps {
   recommendations?: readonly SupportRecommendation[];
   recommendationError?: string;
   onComplete: (approvedSupports: SupportSettings[]) => void;
+  onUploadInterestMedia?: (file: File) => Promise<InterestRewardMedia>;
 }
 
 interface ReviewItem {
@@ -73,17 +81,26 @@ const describeStudentExperience = (settings: SupportSettings) => {
         ? 'OpenDyslexic is used with extra letter and word spacing.'
         : 'OpenDyslexic is used with standard spacing.';
     case 'interestReward':
-      return `After a correct answer, the student sees: “${settings.rewardMessage}”`;
+      return `After a correct answer, the student receives ${settings.rewardMessage ? 'teacher-written text' : ''}${settings.rewardMessage && settings.rewardMedia.length > 0 ? ' and ' : ''}${settings.rewardMedia.length > 0 ? `${settings.rewardMedia.length} uploaded media ${settings.rewardMedia.length === 1 ? 'item' : 'items'}` : ''}.`;
   }
 };
 
 interface SettingsEditorProps {
   settings: SupportSettings;
   onChange: (settings: SupportSettings) => void;
+  onUploadInterestMedia?: (file: File) => Promise<InterestRewardMedia>;
+  onUploadStateChange?: (isUploading: boolean) => void;
 }
 
-export function SettingsEditor({ settings, onChange }: SettingsEditorProps) {
+export function SettingsEditor({
+  settings,
+  onChange,
+  onUploadInterestMedia,
+  onUploadStateChange,
+}: SettingsEditorProps) {
   const label = SUPPORT_CATALOG[settings.supportKey].label;
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   const setEnabled = (enabled: boolean) => onChange({ ...settings, enabled } as SupportSettings);
 
@@ -326,16 +343,112 @@ export function SettingsEditor({ settings, onChange }: SettingsEditorProps) {
       )}
 
       {settings.supportKey === 'interestReward' && (
-        <label className="block text-sm font-medium text-slate-800">
-          Encouragement shown after a correct answer
-          <textarea
-            aria-label="Interest encouragement message"
-            maxLength={240}
-            value={settings.rewardMessage}
-            onChange={(event) => onChange({ ...settings, rewardMessage: event.target.value })}
-            className="mt-1 block min-h-20 w-full rounded-md border border-slate-300 p-2"
-          />
-        </label>
+        <div className="space-y-4">
+          <label className="block text-sm font-medium text-slate-800">
+            Encouragement text (optional when media is added)
+            <textarea
+              aria-label="Interest encouragement message"
+              maxLength={240}
+              value={settings.rewardMessage}
+              onChange={(event) => onChange({ ...settings, rewardMessage: event.target.value })}
+              className="mt-1 block min-h-20 w-full rounded-md border border-slate-300 p-2"
+            />
+          </label>
+
+          {onUploadInterestMedia && (
+            <label className="block text-sm font-medium text-slate-800">
+              Add images or audio
+              <span className="mt-1 block font-normal text-slate-600">
+                Select several images or audio clips at once. Up to eight media items can be used.
+              </span>
+              <input
+                aria-label="Upload encouragement images or audio"
+                type="file"
+                accept="image/*,audio/*"
+                multiple
+                disabled={isUploading || settings.rewardMedia.length >= 8}
+                onChange={(event) => {
+                  const input = event.currentTarget;
+                  const files = Array.from(input.files ?? []);
+                  input.value = '';
+                  if (files.length === 0) return;
+                  const remaining = 8 - settings.rewardMedia.length;
+                  if (files.length > remaining) {
+                    setUploadError(`Choose ${remaining} or fewer additional files.`);
+                    return;
+                  }
+                  setIsUploading(true);
+                  onUploadStateChange?.(true);
+                  setUploadError(null);
+                  void (async () => {
+                    const uploaded: InterestRewardMedia[] = [];
+                    let failure: string | null = null;
+                    for (const file of files) {
+                      try {
+                        uploaded.push(await onUploadInterestMedia(file));
+                      } catch (error) {
+                        failure =
+                          error instanceof Error
+                            ? error.message
+                            : 'One of the selected files could not be uploaded.';
+                        break;
+                      }
+                    }
+                    if (uploaded.length > 0) {
+                      onChange({
+                        ...settings,
+                        rewardMedia: [...settings.rewardMedia, ...uploaded],
+                      });
+                    }
+                    setUploadError(failure);
+                    setIsUploading(false);
+                    onUploadStateChange?.(false);
+                  })();
+                }}
+                className="mt-2 block w-full rounded-lg border border-slate-300 bg-white p-2 file:mr-3 file:rounded-md file:border-0 file:bg-blue-700 file:px-3 file:py-2 file:font-semibold file:text-white"
+              />
+            </label>
+          )}
+
+          {isUploading && (
+            <p role="status" className="text-sm font-semibold text-blue-700">
+              Uploading encouragement media…
+            </p>
+          )}
+          {uploadError && (
+            <p role="alert" className="text-sm font-semibold text-red-700">
+              {uploadError}
+            </p>
+          )}
+          {settings.rewardMedia.length > 0 && (
+            <ul aria-label="Uploaded encouragement media" className="space-y-2">
+              {settings.rewardMedia.map((media) => (
+                <li
+                  key={media.id}
+                  className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2"
+                >
+                  <span className="min-w-0 text-sm">
+                    <span aria-hidden="true">{media.kind === 'image' ? '🖼️' : '🔊'}</span>{' '}
+                    <span className="break-all">{media.fileName}</span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      onChange({
+                        ...settings,
+                        rewardMedia: settings.rewardMedia.filter(({ id }) => id !== media.id),
+                      })
+                    }
+                    className="shrink-0 rounded-md px-2 py-1 text-sm font-semibold text-red-700 hover:bg-red-50"
+                    aria-label={`Remove ${media.fileName}`}
+                  >
+                    Remove
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       )}
     </fieldset>
   );
@@ -345,10 +458,12 @@ export function SupportPlanReview({
   recommendations = [],
   recommendationError,
   onComplete,
+  onUploadInterestMedia,
 }: SupportPlanReviewProps) {
   const [items, setItems] = useState<ReviewItem[]>(() => initialItems(recommendations));
   const [error, setError] = useState<string | null>(null);
   const [decisionMessage, setDecisionMessage] = useState<string | null>(null);
+  const [uploadingSupports, setUploadingSupports] = useState<ReadonlySet<SupportKey>>(new Set());
 
   const changeSettings = (supportKey: SupportKey, settings: SupportSettings) => {
     setItems((current) =>
@@ -359,6 +474,10 @@ export function SupportPlanReview({
   };
 
   const decide = (supportKey: SupportKey, status: 'approved' | 'rejected') => {
+    if (uploadingSupports.has(supportKey)) {
+      setError('Wait for the encouragement media upload to finish before approving it.');
+      return;
+    }
     const item = items.find((candidate) => candidate.supportKey === supportKey);
     if (item && status === 'approved' && !supportSettingsSchema.safeParse(item.settings).success) {
       setError(`Review the ${SUPPORT_CATALOG[supportKey].label} settings before approval.`);
@@ -393,6 +512,10 @@ export function SupportPlanReview({
   const approvedItems = items.filter((item) => item.status === 'approved');
 
   const finish = () => {
+    if (uploadingSupports.size > 0) {
+      setError('Wait for encouragement media uploads to finish before saving the plan.');
+      return;
+    }
     const parsed: SupportSettings[] = [];
     const seen = new Set<SupportKey>();
 
@@ -504,6 +627,15 @@ export function SupportPlanReview({
               <SettingsEditor
                 settings={item.settings}
                 onChange={(settings) => changeSettings(item.supportKey, settings)}
+                onUploadInterestMedia={onUploadInterestMedia}
+                onUploadStateChange={(isUploading) =>
+                  setUploadingSupports((current) => {
+                    const next = new Set(current);
+                    if (isUploading) next.add(item.supportKey);
+                    else next.delete(item.supportKey);
+                    return next;
+                  })
+                }
               />
 
               <div className="mt-5 flex flex-wrap gap-3">
@@ -584,9 +716,15 @@ export function SupportPlanReview({
           </p>
         ) : (
           <ul className="mt-4 list-disc space-y-2 pl-5">
-            {approvedItems.map((item) => (
-              <li key={item.supportKey}>{describeStudentExperience(item.settings)}</li>
-            ))}
+            {approvedItems.map((item) =>
+              item.settings.supportKey === 'interestReward' ? (
+                <li key={item.supportKey} className="list-none">
+                  <InterestRewardContent settings={item.settings} />
+                </li>
+              ) : (
+                <li key={item.supportKey}>{describeStudentExperience(item.settings)}</li>
+              ),
+            )}
           </ul>
         )}
       </section>
@@ -599,8 +737,9 @@ export function SupportPlanReview({
       <button
         type="button"
         onClick={finish}
+        disabled={uploadingSupports.size > 0}
         aria-label="Save approved plan"
-        className="rounded-lg bg-emerald-700 px-5 py-3 font-semibold text-white hover:bg-emerald-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600"
+        className="rounded-lg bg-emerald-700 px-5 py-3 font-semibold text-white hover:bg-emerald-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600 disabled:opacity-60"
       >
         Save approved plan{approvedItems.length > 0 ? ` (${approvedItems.length})` : ''}
       </button>
