@@ -4,8 +4,9 @@ test.describe('public and protected route smoke checks', () => {
   test('renders the public entry points and protects teacher access', async ({ page }) => {
     await page.goto('/');
     await expect(page.getByRole('heading', { name: 'Scaffold Learning' })).toBeVisible();
-    await expect(page.getByRole('link', { name: /teacher sign-in/i })).toBeVisible();
-    await expect(page.getByRole('link', { name: /student access/i })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Teacher' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Student' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Explore the demo' })).toHaveCount(0);
 
     await page.goto('/student');
     await expect(page.getByRole('heading', { name: 'Join your class' })).toBeVisible();

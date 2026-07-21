@@ -4,13 +4,11 @@ import { describe, expect, it } from 'vitest';
 import { HomePage } from './HomePage';
 
 describe('HomePage', () => {
-  it('opens the populated teacher demo from the primary demo link', () => {
+  it('offers only the teacher and student role choices', () => {
     render(<HomePage />);
 
-    expect(screen.getByRole('link', { name: 'Explore the demo' })).toHaveAttribute(
-      'href',
-      '/teacher?demo=1',
-    );
-    expect(screen.queryByText(/synthetic quiz demo/i)).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Teacher' })).toHaveAttribute('href', '/teacher');
+    expect(screen.getByRole('link', { name: 'Student' })).toHaveAttribute('href', '/student');
+    expect(screen.queryByRole('link', { name: 'Explore the demo' })).not.toBeInTheDocument();
   });
 });

@@ -14,34 +14,24 @@ export const HomePage = () => (
         <div className="mt-8 grid gap-4 sm:grid-cols-2">
           <a
             href="/teacher"
+            aria-label="Teacher"
             className="rounded-2xl bg-blue-600 p-6 text-white shadow-md hover:bg-blue-700"
           >
-            <span className="block text-xl font-bold">Teacher sign-in</span>
+            <span className="block text-xl font-bold">Teacher</span>
             <span className="mt-2 block text-sm text-blue-100">
               Manage classes, students, and approved supports.
             </span>
           </a>
           <a
             href="/student"
+            aria-label="Student"
             className="rounded-2xl border border-slate-200 bg-white p-6 shadow-md hover:bg-slate-50"
           >
-            <span className="block text-xl font-bold">Student access</span>
+            <span className="block text-xl font-bold">Student</span>
             <span className="mt-2 block text-sm text-slate-600">
               Join with a class code and student PIN.
             </span>
           </a>
-        </div>
-
-        <div className="mt-8 border-t border-slate-200 pt-6">
-          <a
-            className="inline-flex min-h-11 items-center font-semibold text-blue-700 hover:underline"
-            href="/teacher?demo=1"
-          >
-            Explore the demo
-          </a>
-          <p className="mt-1 text-sm text-slate-500">
-            Open a ready-to-use teacher workspace with synthetic classrooms and students.
-          </p>
         </div>
       </section>
     </div>
