@@ -6,8 +6,8 @@ This repository is the OpenAI Build Week education-pathway project and a synthet
 
 ## What works today
 
-- Google teacher authentication, with anonymous teacher access only in the Firebase emulator.
-- Teacher-owned classrooms, one-time class codes, student handles, and resettable PINs.
+- Google teacher authentication plus a public anonymous Build Week demo workspace.
+- Teacher-owned classrooms, copyable class codes, generated student handles, and teacher-visible PINs.
 - Structured teacher onboarding based on observable classroom behavior, not diagnoses.
 - Fixed-catalog support recommendations through a deterministic local provider or server-side OpenAI Responses API.
 - Explicit teacher review, manual fallback, immutable support-plan versions, and revert.
@@ -48,10 +48,11 @@ npm run emulators:start
 ```
 
 Open the Hosting emulator at `http://127.0.0.1:5002`. The Emulator UI is at `http://127.0.0.1:4000`.
+The hosted Build Week demo is available at [quiz-master-pg.web.app](https://quiz-master-pg.web.app).
 
-For the Build Week review flow, emulator class codes are assigned sequentially as `DEMO-01`,
-`DEMO-02`, and so on. Every student created or reset in the emulator uses the visible PIN `1234`.
-Production deployments continue to use random class codes, random PINs, and masked PIN entry.
+For this Build Week version, class codes are assigned sequentially as `DEMO-01`, `DEMO-02`, and so
+on. Every student created or reset uses the teacher-visible PIN `1234`. Teachers can copy the class
+code, generated student handle, and PIN directly from the roster. Keep all demo data synthetic.
 
 `setup:local` creates missing ignored emulator configuration and a local-only student PIN pepper; it
 never overwrites existing values. The checked-in environment template is locked to
@@ -61,11 +62,17 @@ enabled as described below.
 
 ## Demo flow
 
-1. Open `/teacher` and use the emulator teacher sign-in.
-2. Create a classroom and save the display-once class code.
-3. Create a synthetic student, then click its handle or PIN in the roster to copy it.
-4. Open the student’s support-planning link from the roster.
-5. Complete the structured interview, review suggestions, and approve a plan. Interest-based
+1. Open the [hosted app](https://quiz-master-pg.web.app), select **Teacher**, and choose **Explore the
+   demo**. No credentials are required. The same flow is available locally at
+   `http://127.0.0.1:5002/teacher` after starting the emulators.
+2. Explore either of the two pre-populated synthetic classrooms. Each contains two students with
+   different learning profiles and approved supports.
+3. Copy a class code, student handle, or PIN directly from the roster, or create another synthetic
+   classroom or student.
+4. Choose **Demo student’s experience** to see the student greeting and approved accommodations, or
+   open **Plan supports** to inspect and edit the active plan.
+5. Complete or review the multiple-choice observation interview, upload a synthetic IEP, review
+   suggestions, and approve a plan. Interest-based
    encouragement can include text plus up to eight teacher-uploaded images or audio clips.
 6. Open `/teacher/assignments`, author an activity, publish it, and assign the student.
 7. In another browser profile, open `/student`, sign in, and complete the activity.
